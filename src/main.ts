@@ -1,6 +1,7 @@
 import { initializeSDKMock } from "../.remix/mocks/RemixSDKMock";
 import GameSettings from "./config/GameSettings";
 import { GameScene } from "./scenes/GameScene";
+import { PreloadScene } from "./scenes/PreloadScene";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
 // Game configuration
@@ -16,8 +17,8 @@ const config: Phaser.Types.Core.GameConfig = {
     height: GameSettings.canvas.height,
   },
   backgroundColor: "#1a1a1a",
-  // Cargamos directamente GameScene para facilitar el desarrollo
-  scene: [GameScene],
+  // Scene order: PreloadScene -> GameScene
+  scene: [PreloadScene, GameScene],
   physics: {
     default: "arcade",
   },
