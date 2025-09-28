@@ -19,6 +19,8 @@ export function setupTileMapSystem(
   player: any,
   tilemapKey: string,
   layerName: string,
+  cursors: Phaser.Types.Input.Keyboard.CursorKeys,
+  wasdKeys: any,
   existingTilemap?: Phaser.Tilemaps.Tilemap
 ): {
   tileManager: TileMapManager;
@@ -43,41 +45,27 @@ export function setupTileMapSystem(
 
   if (existingLayer) {
     layer = existingLayer;
-    console.log(`🎯 Encontrado layer existente '${layerName}'`);
   } else {
     // Si no existe, intentar obtenerlo del tilemap
     const layerData = tilemap.getLayer(layerName);
     if (layerData) {
       layer = layerData.tilemapLayer;
-      console.log(`🎯 Obtenido layer '${layerName}' del tilemap`);
     }
   }
 
   if (!layer) {
-    console.warn(
-      `⚠️ Layer '${layerName}' no encontrado en el tilemap '${tilemapKey}'`
-    );
-    console.log(
-      "🔍 Layers disponibles:",
-      tilemap.layers.map((l) => l.name)
-    );
-    console.log(
-      "🔍 Objetos en escena:",
-      scene.children
-        .getAll()
-        .filter((c) => c.type === "TilemapLayer")
-        .map((c) => (c as any).layer?.name)
-    );
   } else {
     // Configurar colisiones automáticamente
     tileManager.setupCollisions(layer);
   }
 
   // Crear el state manager
-  const stateManager = new PlayerStateManager(player, tileManager, layerName);
-
-  console.log(
-    `🚀 Sistema de tilemap configurado para '${tilemapKey}' con layer '${layerName}'`
+  const stateManager = new PlayerStateManager(
+    player,
+    tileManager,
+    layerName,
+    cursors,
+    wasdKeys
   );
 
   return {

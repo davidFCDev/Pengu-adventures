@@ -9,11 +9,21 @@ export class PlayerStateManager {
   private player: Player;
   private tileManager: TileMapManager;
   private layerName: string;
+  private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
+  private wasdKeys: any;
 
-  constructor(player: Player, tileManager: TileMapManager, layerName: string) {
+  constructor(
+    player: Player,
+    tileManager: TileMapManager,
+    layerName: string,
+    cursors: Phaser.Types.Input.Keyboard.CursorKeys,
+    wasdKeys: any
+  ) {
     this.player = player;
     this.tileManager = tileManager;
     this.layerName = layerName;
+    this.cursors = cursors;
+    this.wasdKeys = wasdKeys;
   }
 
   /**
@@ -29,10 +39,8 @@ export class PlayerStateManager {
     );
 
     if (isInWater && !this.player.getIsSwimming()) {
-      console.log("🌊 Player entró al agua - modo Flappy Bird activado");
       this.player.setSwimming(true);
     } else if (!isInWater && this.player.getIsSwimming()) {
-      console.log("🏃 Player salió del agua - modo normal activado");
       this.player.setSwimming(false);
     }
 
@@ -43,11 +51,15 @@ export class PlayerStateManager {
       this.layerName
     );
 
-    if (isOnLadder && !this.player.getIsClimbing()) {
-      console.log("🪜 Player en escalera - modo trepar activado");
+    // Solo activar climbing si está en escalera Y presiona hacia arriba
+    const isPressingUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+
+    // ACTIVAR climbing: Solo si está en escalera Y presiona UP intencionalmente
+    if (isOnLadder && isPressingUp && !this.player.getIsClimbing()) {
       this.player.setClimbing(true);
-    } else if (!isOnLadder && this.player.getIsClimbing()) {
-      console.log("🚶 Player salió de escalera - modo normal activado");
+    }
+    // DESACTIVAR climbing: Si no está en escalera O deja de presionar UP
+    else if (this.player.getIsClimbing() && (!isOnLadder || !isPressingUp)) {
       this.player.setClimbing(false);
     }
   }

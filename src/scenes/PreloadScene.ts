@@ -1,4 +1,5 @@
 import GameSettings from "../config/GameSettings";
+import { PenguinSprites } from "../objects/player/PenguinSprites";
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -25,6 +26,9 @@ export class PreloadScene extends Phaser.Scene {
       "spritesheet-backgrounds-default",
       "assets/spritesheet-backgrounds-default.png"
     );
+
+    // Cargar todos los sprites del pingüino
+    PenguinSprites.loadSprites(this);
 
     // Handle loading completion
     this.load.on("complete", () => {
@@ -180,7 +184,6 @@ export class PreloadScene extends Phaser.Scene {
     const studioText = (this as any).studioText;
 
     if (!studioText) {
-      console.warn("⚠️ Studio text element not found, proceeding to game");
       this.transitionToGame();
       return;
     }
@@ -188,8 +191,6 @@ export class PreloadScene extends Phaser.Scene {
     // Show studio text with CSS transition
     studioText.style.opacity = "1";
     studioText.style.transform = "translateY(0) scale(1)";
-
-    console.log("📝 HELLBOUND STUDIOS text shown");
 
     // Hide after delay and transition to game
     setTimeout(() => {
@@ -212,12 +213,10 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    console.log("🎮 Transitioning to TestingMapScene");
     this.scene.start("TestingMapScene");
   }
 
   private loadingComplete(): void {
     // Assets loaded, ready to start
-    console.log("✅ Assets loading completed");
   }
 }

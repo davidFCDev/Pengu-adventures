@@ -1,5 +1,5 @@
 /**
- * TileMapManager - Sistema reutilizable para gestionar propiedades de tiles
+ * TileMapManager - Sistema reutilizable para gestionar propiedade
  *
  * Uso:
  * 1. En cualquier escena: this.tileManager = new TileMapManager(this, 'MiMapa', 'layerName');
@@ -32,9 +32,6 @@ export class TileMapManager {
     // Usar tilemap existente si se proporciona, si no intentar obtenerlo
     if (existingTilemap) {
       this.tilemap = existingTilemap;
-      console.log(
-        `🗺️ TileMapManager usando tilemap proporcionado '${tilemapKey}'`
-      );
     } else {
       // Intentar encontrar un tilemap existente en la escena primero
       let foundTilemap: Phaser.Tilemaps.Tilemap | null = null;
@@ -51,12 +48,8 @@ export class TileMapManager {
 
       if (foundTilemap) {
         this.tilemap = foundTilemap;
-        console.log(
-          `🗺️ TileMapManager encontró tilemap existente '${tilemapKey}'`
-        );
       } else {
         this.tilemap = scene.add.tilemap(tilemapKey);
-        console.log(`🗺️ TileMapManager creó nuevo tilemap '${tilemapKey}'`);
       }
     }
 
@@ -70,27 +63,11 @@ export class TileMapManager {
    */
   setupCollisions(layer: Phaser.Tilemaps.TilemapLayer): void {
     if (!layer) {
-      console.warn("⚠️ Layer no válido para configurar colisiones");
       return;
     }
 
     // Configurar colisiones usando propiedades (funciona automáticamente)
     this.tilemap.setCollisionByProperty({ collision: true }, true, true, layer);
-
-    console.log(
-      `🛡️ Colisiones configuradas automáticamente para layer '${layer.layer.name}'`
-    );
-
-    // Debug: mostrar algunos tiles con colisión
-    let collisionCount = 0;
-    layer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
-      if (tile.collides && collisionCount < 3) {
-        console.log(
-          `   Tile ${tile.index} en (${tile.x}, ${tile.y}) tiene colisión`
-        );
-        collisionCount++;
-      }
-    });
   }
 
   /**
@@ -200,22 +177,7 @@ export class TileMapManager {
           }
         });
       }
-
-      const stats = this.getCacheStats();
-      console.log(
-        `🏗️ Cache construido: ${stats.tilesWithProperties} tiles con propiedades especiales`
-      );
-
-      // Debug: mostrar algunos ejemplos
-      let count = 0;
-      this.tilePropertyCache.forEach((props, tileId) => {
-        if (count < 3 && Object.keys(props).length > 0) {
-          console.log(`   Tile ${tileId}:`, props);
-          count++;
-        }
-      });
     } catch (error) {
-      console.warn("⚠️ Error construyendo cache de propiedades:", error);
       this.tilePropertyCache = new Map();
     }
   }

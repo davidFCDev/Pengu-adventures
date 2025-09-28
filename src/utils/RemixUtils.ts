@@ -9,19 +9,22 @@ interface DevEnvironmentInfo {
 export function isRemixEnvironment(): boolean {
   try {
     // Check for local development indicators
-    const hostname = window.location.hostname
-    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0'
-    
+    const hostname = window.location.hostname;
+    const isLocalhost =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "0.0.0.0";
+
     // If we're on localhost, we're in local dev
     if (isLocalhost) {
-      return false
+      return false;
     }
-    
+
     // Otherwise assume we're in Remix environment (production, staging, or Remix iframe)
-    return true
+    return true;
   } catch (e) {
     // If we can't determine, assume we're in Remix environment for safety
-    return true
+    return true;
   }
 }
 
@@ -35,22 +38,23 @@ export function getDevEnvironmentInfo(): DevEnvironmentInfo | null {
   }
 }
 
-
 export function initializeRemixSDK(game: Phaser.Game): void {
   if (!("FarcadeSDK" in window && window.FarcadeSDK)) {
-    return
+    return;
   }
 
   // Make the game canvas focusable
-  game.canvas.setAttribute("tabindex", "-1")
+  game.canvas.setAttribute("tabindex", "-1");
 
   // Signal ready state
-  window.FarcadeSDK.singlePlayer.actions.ready()
+  window.FarcadeSDK.singlePlayer.actions.ready();
 
   // Set mute/unmute handler
-  window.FarcadeSDK.on("toggle_mute", (data: { isMuted: boolean }) => {
-    game.sound.mute = data.isMuted
-  })
+  window.FarcadeSDK.on("toggle_mute", (data: unknown) => {
+    if (typeof data === "object" && data !== null && "isMuted" in data) {
+      game.sound.mute = (data as { isMuted: boolean }).isMuted;
+    }
+  });
 
   // Setup play_again handler
   window.FarcadeSDK.on("play_again", () => {
@@ -59,18 +63,18 @@ export function initializeRemixSDK(game: Phaser.Game): void {
 
     // Attempt to bring focus back to the game canvas
     try {
-      game.canvas.focus()
+      game.canvas.focus();
     } catch (e) {
       // Could not programmatically focus game canvas
     }
-  })
+  });
 }
 
 // Initialize development features (separate from SDK)
 export function initializeDevelopment(): void {
   // Listen for dev info messages from the overlay
-  window.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'remix_dev_info') {
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "remix_dev_info") {
       (window as any).__remixDevInfo = event.data.data;
     }
   });
@@ -84,41 +88,38 @@ export function initializeDevelopment(): void {
 // Load and inject the performance monitoring plugin
 function loadRemixPerformancePlugin(): void {
   // Only load in development mode
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     return;
   }
 
   try {
     // Fetch the plugin code from the .remix directory
-    fetch('/.remix/plugins/performance-plugin.js')
-      .then(response => {
+    fetch("/.remix/plugins/performance-plugin.js")
+      .then((response) => {
         if (!response.ok) {
-          throw new Error('Performance plugin not found');
+          throw new Error("Performance plugin not found");
         }
         return response.text();
       })
-      .then(pluginCode => {
+      .then((pluginCode) => {
         // Execute the plugin code in the game context
-        const script = document.createElement('script');
+        const script = document.createElement("script");
         script.textContent = pluginCode;
         document.head.appendChild(script);
 
         // The plugin code sets window.RemixPerformancePluginCode as a string
         // We need to evaluate it to actually run the plugin
         if ((window as any).RemixPerformancePluginCode) {
-          const pluginScript = document.createElement('script');
+          const pluginScript = document.createElement("script");
           pluginScript.textContent = (window as any).RemixPerformancePluginCode;
           document.head.appendChild(pluginScript);
-          
+
           // Clean up
           setTimeout(() => {
             if (pluginScript.parentNode) {
               pluginScript.parentNode.removeChild(pluginScript);
             }
           }, 100);
-          
-          // Log success for debugging
-          console.log('[Remix Dev] Performance plugin loaded successfully');
         }
 
         // Clean up the script element
@@ -128,12 +129,10 @@ function loadRemixPerformancePlugin(): void {
           }
         }, 100);
       })
-      .catch(error => {
+      .catch((error) => {
         // Performance plugin loading failed, but this is non-critical
-        console.log('Performance plugin not available (fallback mode will be used):', error.message);
       });
   } catch (error) {
     // Silently fail if plugin loading fails
-    console.log('Performance plugin loading failed (fallback mode will be used)');
   }
 }

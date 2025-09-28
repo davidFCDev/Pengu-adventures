@@ -1,7 +1,7 @@
 import { initializeSDKMock } from "../.remix/mocks/RemixSDKMock";
 import GameSettings from "./config/GameSettings";
 import { PreloadScene } from "./scenes/PreloadScene";
-import { TestingMapScene } from "./scenes/TestingMapScene";
+import { TestingMapScene } from "./scenes/TestingMapSceneRefactored";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
 // Game configuration
