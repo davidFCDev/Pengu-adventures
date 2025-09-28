@@ -1,0 +1,136 @@
+{
+    "anims": [
+        {
+            "key": "walk",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "penguin",
+                    "frame": 0,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 1,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 2,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 3,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 4,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 5,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 6,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 7,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 8,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 24,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        },
+        {
+            "key": "jump",
+            "type": "frame",
+            "frames": [
+                {
+                    "key": "penguin",
+                    "frame": 144,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 145,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 146,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 147,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 148,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 149,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 150,
+                    "duration": 0,
+                    "keyframe": false
+                },
+                {
+                    "key": "penguin",
+                    "frame": 151,
+                    "duration": 0,
+                    "keyframe": false
+                }
+            ],
+            "frameRate": 24,
+            "skipMissedFrames": true,
+            "repeat": -1,
+            "randomFrame": false
+        }
+    ],
+    "globalTimeScale": 1,
+    "meta": {
+        "app": "Phaser Editor 2D v3",
+        "contentType": "Phaser v3 Animations"
+    },
+    "settings": {
+        "sourceLang": "JAVA_SCRIPT",
+        "esModule": false,
+        "generateCode": false
+    }
+}

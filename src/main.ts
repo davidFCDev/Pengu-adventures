@@ -1,7 +1,7 @@
 import { initializeSDKMock } from "../.remix/mocks/RemixSDKMock";
 import GameSettings from "./config/GameSettings";
-import { GameScene } from "./scenes/GameScene";
 import { PreloadScene } from "./scenes/PreloadScene";
+import { TestingMapScene } from "./scenes/TestingMapScene";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
 // Game configuration
@@ -17,10 +17,14 @@ const config: Phaser.Types.Core.GameConfig = {
     height: GameSettings.canvas.height,
   },
   backgroundColor: "#1a1a1a",
-  // Scene order: PreloadScene -> GameScene
-  scene: [PreloadScene, GameScene],
+  // Scene order: PreloadScene -> TestingMapScene
+  scene: [PreloadScene, TestingMapScene],
   physics: {
     default: "arcade",
+    arcade: {
+      gravity: { x: 0, y: 800 },
+      debug: false,
+    },
   },
   // Target frame rate
   fps: {

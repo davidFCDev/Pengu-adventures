@@ -1,0 +1,75 @@
+{
+    "id": "333c5aa3-d757-4d83-83b1-f406e2d72495",
+    "sceneType": "SCENE",
+    "settings": {
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "TestingMapScene",
+        "borderWidth": 1920,
+        "borderHeight": 1920
+    },
+    "displayList": [
+        {
+            "type": "TilemapLayer",
+            "id": "1d2df404-d775-4c31-bf28-b748a5483017",
+            "label": "fondo_1",
+            "tilemapId": "cc69a3d7-d4f9-43ed-9364-32828a2e418f",
+            "layerName": "fondo",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
+        },
+        {
+            "type": "TilemapLayer",
+            "id": "781d2238-749f-40cd-be8c-ddbbaa817510",
+            "label": "superficies_1",
+            "tilemapId": "f6a71783-5c97-4d2a-ae25-5ba9c2fcaacc",
+            "layerName": "superficies",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
+        }
+    ],
+    "plainObjects": [
+        {
+            "id": "cc69a3d7-d4f9-43ed-9364-32828a2e418f",
+            "type": "Tilemap",
+            "label": "testingMap",
+            "key": "TestingMap",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        },
+        {
+            "id": "f6a71783-5c97-4d2a-ae25-5ba9c2fcaacc",
+            "type": "Tilemap",
+            "label": "testingMap_1",
+            "key": "TestingMap",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

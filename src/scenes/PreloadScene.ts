@@ -13,7 +13,18 @@ export class PreloadScene extends Phaser.Scene {
     );
 
     // ========== PRELOAD GAME ASSETS HERE ==========
-    // Add your game assets loading here as needed
+    // Cargar el mapa de prueba
+    this.load.tilemapTiledJSON("TestingMap", "assets/TestingMap.json");
+
+    // Cargar los tilesets
+    this.load.image(
+      "spritesheet-tiles-default",
+      "assets/spritesheet-tiles-default.png"
+    );
+    this.load.image(
+      "spritesheet-backgrounds-default",
+      "assets/spritesheet-backgrounds-default.png"
+    );
 
     // Handle loading completion
     this.load.on("complete", () => {
@@ -201,8 +212,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    console.log("🎮 Transitioning to GameScene");
-    this.scene.start("GameScene");
+    console.log("🎮 Transitioning to TestingMapScene");
+    this.scene.start("TestingMapScene");
   }
 
   private loadingComplete(): void {

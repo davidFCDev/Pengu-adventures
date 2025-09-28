@@ -1,0 +1,57 @@
+{
+    "section1": {
+        "files": [
+            {
+                "url": "assets/animations.json",
+                "type": "animation",
+                "key": "animations"
+            },
+            {
+                "url": "assets/penguin.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "penguin"
+            },
+            {
+                "url": "assets/spritesheet-backgrounds-default.png",
+                "type": "image",
+                "key": "spritesheet-backgrounds-default"
+            },
+            {
+                "url": "assets/spritesheet-tiles-default.png",
+                "type": "image",
+                "key": "spritesheet-tiles-default"
+            },
+            {
+                "url": "assets/standing.png",
+                "type": "image",
+                "key": "standing"
+            },
+            {
+                "url": "assets/TestingMap.json",
+                "type": "tilemapTiledJSON",
+                "key": "TestingMap"
+            },
+            {
+                "url": "assets/TestMap.json",
+                "type": "tilemapTiledJSON",
+                "key": "TestMap"
+            }
+        ]
+    },
+    "meta": {
+        "app": "Phaser Editor 2D - Asset Pack Editor",
+        "contentType": "phasereditor2d.pack.core.AssetContentType",
+        "url": "https://phasereditor2d.com",
+        "version": 2,
+        "showAllFilesInBlocks": false,
+        "visible": true
+    }
+}
