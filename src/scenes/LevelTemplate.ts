@@ -124,6 +124,12 @@ export class LevelTemplate extends BaseGameScene {
 
 □ Crear mapa en Tiled con layers: fondo, superficies, objects
 □ Añadir tile con propiedad start=true donde aparecerá el player
+□ Configurar propiedades de tiles:
+  - collision=true: Bloquea paso del player
+  - cross=true: Colisión en modo normal, atravesable en modo fantasma
+  - water=true: Activa modo natación
+  - ladder=true: Activa modo escalada
+  - kill=true: Quita vida (usar con collision=true)
 □ Exportar mapa como JSON a /assets/
 □ Cargar tilemap en PreloadScene:
   this.load.tilemapTiledJSON("mi_mapa", "assets/mi_mapa.json");

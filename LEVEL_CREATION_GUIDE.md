@@ -66,6 +66,12 @@ Nuevo_Mapa.tmx
 { "collision": true } // Bloquea el paso del player
 ```
 
+#### **Tiles Cross (Fantasma)**
+
+```json
+{ "cross": true } // Colisión en modo normal, atravesable en modo fantasma
+```
+
 #### **Spikes (Enemigos)**
 
 ```json
@@ -260,7 +266,23 @@ create() {
 { "ladder": true, "direction": "up" }
 ```
 
-### 🔥 **Sistema de Spikes**
+### � **Sistema Cross (Fantasma)**
+
+```json
+// Tile que bloquea en modo normal pero se puede atravesar en modo fantasma
+{ "cross": true }
+
+// Combinado con otros sistemas (futuro)
+{ "cross": true, "decoration": true }
+```
+
+**Comportamiento:**
+
+- ✅ **Modo Normal**: El tile tiene colisión, bloquea el paso
+- 👻 **Modo Fantasma**: El tile no tiene colisión, se puede atravesar
+- 🔄 **Dinámico**: El cambio es inmediato al alternar entre modos
+
+### �🔥 **Sistema de Spikes**
 
 ```json
 // Spike que se auto-orienta según rotación en Tiled

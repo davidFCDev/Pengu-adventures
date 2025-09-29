@@ -7,6 +7,154 @@
                 "key": "animations"
             },
             {
+                "url": "assets/Dino Rex/dino_rex_ability_black.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_ability_black"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_ability_red.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_ability_red"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_ability_yellow.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_ability_yellow"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_attack_A.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_attack_A"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_attack_B_1_start.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_attack_B_1_start"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_attack_B_2_loop.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_attack_B_2_loop"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_attack_B_3_end.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_attack_B_3_end"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_hurt.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_hurt"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_idle.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_idle"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_move.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_move"
+            },
+            {
+                "url": "assets/Dino Rex/dino_rex_stomp.png",
+                "frameConfig": {
+                    "frameWidth": 128,
+                    "frameHeight": 128,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "dino_rex_stomp"
+            },
+            {
+                "url": "assets/mini-pingu.png",
+                "type": "image",
+                "key": "mini-pingu"
+            },
+            {
                 "url": "assets/penguin.png",
                 "frameConfig": {
                     "frameWidth": 128,
@@ -18,6 +166,11 @@
                 },
                 "type": "spritesheet",
                 "key": "penguin"
+            },
+            {
+                "url": "assets/PT_TOKEN_MASTER_001.png",
+                "type": "image",
+                "key": "PT_TOKEN_MASTER_001"
             },
             {
                 "url": "assets/spritesheet-backgrounds-default.png",

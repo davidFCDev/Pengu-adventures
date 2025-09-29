@@ -11,6 +11,7 @@ export interface TileProperties {
   swim?: boolean;
   climb?: boolean;
   collision?: boolean;
+  cross?: boolean;
   [key: string]: boolean | undefined;
 }
 

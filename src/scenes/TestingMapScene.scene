@@ -2,6 +2,9 @@
     "id": "333c5aa3-d757-4d83-83b1-f406e2d72495",
     "sceneType": "SCENE",
     "settings": {
+        "snapEnabled": true,
+        "snapWidth": 128,
+        "snapHeight": 128,
         "preloadPackFiles": [],
         "createMethodName": "editorCreate",
         "sceneKey": "TestingMapScene",

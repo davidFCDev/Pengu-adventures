@@ -61,8 +61,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected playerCollider!: Phaser.Physics.Arcade.Collider;
   protected lifeSystem!: LifeSystem;
   protected spikesGroup!: Phaser.Physics.Arcade.StaticGroup;
-  protected ghostToggleButton!: Phaser.GameObjects.Rectangle;
-  protected ghostToggleText!: Phaser.GameObjects.Text;
+  protected ghostToggleButton!: Phaser.GameObjects.Graphics;
+  protected isGameOverInProgress: boolean = false;
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -247,7 +247,14 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.surfaceLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
         if (tile && tile.properties) {
           const hasCollision = this.checkTileProperty(tile, "collision");
+          const hasCross = this.checkTileProperty(tile, "cross");
+
           if (hasCollision) {
+            tile.setCollision(true);
+          }
+
+          // Los tiles con cross=true siempre tienen colisión inicialmente (modo normal)
+          if (hasCross) {
             tile.setCollision(true);
           }
         }
@@ -274,6 +281,27 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
+   * Actualizar colisiones de tiles cross según el estado del jugador
+   */
+  public updateCrossCollisions(): void {
+    if (!this.surfaceLayer || !this.player) return;
+
+    const isGhostMode = this.player.getIsGhost();
+
+    this.surfaceLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+      if (tile && tile.properties) {
+        const hasCross = this.checkTileProperty(tile, "cross");
+
+        if (hasCross) {
+          // En modo fantasma, los tiles cross no tienen colisión
+          // En modo normal, sí tienen colisión
+          tile.setCollision(!isGhostMode);
+        }
+      }
+    });
+  }
+
+  /**
    * Configurar colisiones físicas entre player y superficie
    */
   private setupPhysicsCollisions(): void {
@@ -290,17 +318,115 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
-   * Crear grupo de spikes con colisiones personalizadas
+   * Auto-configurar propiedades de tiles especiales basándose en patrones comunes
+   * 🔥 Detecta automáticamente spikes, agua, escaleras, etc. por nombre o ID
+   */
+  private autoConfigureSpikeProperties(tile: Phaser.Tilemaps.Tile): boolean {
+    if (!tile) return false;
+
+    // Patrones comunes para detectar spikes automáticamente
+    const spikePatterns = [
+      /spike/i, // Cualquier cosa con "spike" en el nombre
+      /pua/i, // "pua" en español
+      /espina/i, // "espina" en español
+      /thorn/i, // "thorn" en inglés
+      /needle/i, // "needle" en inglés
+      /pincho/i, // "pincho" en español
+    ];
+
+    // Obtener información del tile desde el tilemap
+    let tileName = "";
+    let tilesetName = "";
+
+    try {
+      // Intentar obtener el nombre del tileset y tile
+      const tilemapData = this.cache.tilemap.get(this.config.tilemapKey);
+      if (tilemapData && tilemapData.data && tilemapData.data.tilesets) {
+        tilemapData.data.tilesets.forEach((tilesetData: any) => {
+          if (
+            tile.index >= tilesetData.firstgid &&
+            tile.index < tilesetData.firstgid + tilesetData.tilecount
+          ) {
+            tilesetName = tilesetData.name || "";
+
+            // Buscar información específica del tile
+            if (tilesetData.tiles) {
+              const localTileId = tile.index - tilesetData.firstgid;
+              const tileData = tilesetData.tiles.find(
+                (t: any) => t.id === localTileId
+              );
+              if (tileData) {
+                tileName = tileData.type || tileData.class || "";
+              }
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.warn(
+        "Error al obtener información del tile para auto-configuración:",
+        error
+      );
+    }
+
+    // Verificar patrones en nombre del tile o tileset
+    const textToCheck = `${tileName} ${tilesetName}`.toLowerCase();
+
+    // DEBUG: Mostrar información del tile
+    console.log(
+      `🔍 DEBUG: Verificando tile ${tile.index} - texto: "${textToCheck}"`
+    );
+    const isSpike = spikePatterns.some((pattern) => pattern.test(textToCheck));
+
+    if (isSpike) {
+      console.log(
+        `🔥 AUTO-CONFIGURACIÓN: Tile ${tile.index} detectado como spike (${textToCheck})`
+      );
+
+      // Crear propiedades temporales para este tile
+      if (!tile.properties) {
+        tile.properties = {};
+      }
+      (tile.properties as any).kill = true;
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Crear grupo de spikes с colisiones personalizadas
+   * ✅ AUTO-CONFIGURACIÓN: Detecta automáticamente tiles de spikes por nombre/ID y les asigna kill=true
    */
   private createSpikesGroup(): void {
     // Crear grupo estático para los spikes
     this.spikesGroup = this.physics.add.staticGroup();
 
-    // Buscar tiles con propiedad kill y crear sprites de colisión personalizados
+    console.log("🔍 DEBUG: Iniciando createSpikesGroup...");
+    console.log(`🔍 DEBUG: objectsLayer existe: ${!!this.objectsLayer}`);
+    console.log(`🔍 DEBUG: objectsLayer nombre: ${this.objectsLayer?.name}`);
+    let tilesChecked = 0;
+    let spikesFound = 0;
+
+    // Buscar tiles con propiedad kill Y auto-configurar spikes por nombre
     if (this.objectsLayer) {
       this.objectsLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
-        if (tile && tile.properties) {
-          const hasKill = this.checkTileProperty(tile, "kill");
+        if (tile) {
+          tilesChecked++;
+          let hasKill = this.checkTileProperty(tile, "kill");
+
+          // 🔥 AUTO-CONFIGURACIÓN: Si no tiene kill=true pero es un spike, configurarlo automáticamente
+          if (!hasKill) {
+            hasKill = this.autoConfigureSpikeProperties(tile);
+          }
+
+          if (hasKill) {
+            spikesFound++;
+            console.log(
+              `🔥 SPIKE ENCONTRADO: Tile ${tile.index} en posición (${tile.x}, ${tile.y})`
+            );
+          }
 
           if (hasKill) {
             // Detectar orientación automáticamente basada en las transformaciones de Tiled
@@ -392,69 +518,112 @@ export abstract class BaseGameScene extends Phaser.Scene {
           }
         }
       });
+
+      console.log(
+        `🔍 DEBUG: Tiles verificados: ${tilesChecked}, Spikes encontrados: ${spikesFound}`
+      );
+      console.log(
+        `🔍 DEBUG: Spikes en grupo: ${this.spikesGroup.children.size}`
+      );
+    } else {
+      console.warn("⚠️ DEBUG: objectsLayer no existe!");
+    }
+
+    // 🔍 DEBUG ADICIONAL: Revisar TODOS los layers para encontrar los spikes
+    console.log("🔍 DEBUG: Revisando TODOS los layers...");
+    if (this.tilemap) {
+      this.tilemap.layers.forEach((layerData, index) => {
+        console.log(
+          `🔍 Layer ${index}: ${layerData.name} (${
+            layerData.tilemapLayer ? "activo" : "inactivo"
+          })`
+        );
+
+        if (layerData.tilemapLayer) {
+          let layerTiles = 0;
+          layerData.tilemapLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+            if (tile) {
+              layerTiles++;
+              // Solo verificar algunos tiles para no spam la consola
+              if (layerTiles <= 5) {
+                console.log(
+                  `🔍 Tile ejemplo en ${layerData.name}: index=${tile.index}, pos=(${tile.x},${tile.y})`
+                );
+              }
+            }
+          });
+          console.log(`🔍 Total tiles en ${layerData.name}: ${layerTiles}`);
+        }
+      });
     }
   }
 
   /**
-   * Crear botón de prueba para alternar modo fantasma
+   * Crear botón redondo para alternar modo fantasma
    */
   private createGhostToggleButton(): void {
-    const buttonWidth = 120;
-    const buttonHeight = 50;
-    const margin = 20;
+    const buttonRadius = 30;
+    const margin = 25;
 
     // Posicionar en la esquina inferior derecha
-    const buttonX = this.cameras.main.width - buttonWidth - margin;
-    const buttonY = this.cameras.main.height - buttonHeight - margin;
+    const buttonX = this.cameras.main.width - buttonRadius - margin;
+    const buttonY = this.cameras.main.height - buttonRadius - margin;
 
-    // Crear el botón (rectángulo con borde)
-    this.ghostToggleButton = this.add.rectangle(
-      buttonX,
-      buttonY,
-      buttonWidth,
-      buttonHeight,
-      0x2a2a2a, // Fondo gris oscuro
-      0.8 // Semi-transparente
+    // Crear botón usando Graphics (más confiable)
+    this.ghostToggleButton = this.add.graphics();
+    this.ghostToggleButton.x = buttonX;
+    this.ghostToggleButton.y = buttonY;
+
+    // Dibujar círculo inicial (modo normal)
+    this.drawButton(false);
+
+    // Hacer interactivo
+    this.ghostToggleButton.setInteractive(
+      new Phaser.Geom.Circle(0, 0, buttonRadius),
+      Phaser.Geom.Circle.Contains
     );
-    this.ghostToggleButton.setStrokeStyle(3, 0xffffff); // Borde blanco
-    this.ghostToggleButton.setOrigin(0, 0);
 
-    // Crear el texto del botón
-    this.ghostToggleText = this.add.text(
-      buttonX + buttonWidth / 2,
-      buttonY + buttonHeight / 2,
-      "👻 GHOST",
-      {
-        fontSize: "14px",
-        color: "#ffffff",
-        fontFamily: "Arial",
-        align: "center",
-      }
-    );
-    this.ghostToggleText.setOrigin(0.5, 0.5);
-
-    // Hacer el botón interactivo
-    this.ghostToggleButton.setInteractive();
+    // Evento de click
     this.ghostToggleButton.on("pointerdown", () => {
+      console.log("🖱️ Click en botón ghost toggle");
       this.toggleGhostMode();
     });
 
     // Efectos hover
     this.ghostToggleButton.on("pointerover", () => {
-      this.ghostToggleButton.setFillStyle(0x3a3a3a);
-      this.ghostToggleButton.setScale(1.05);
+      this.ghostToggleButton.setScale(1.1);
     });
 
     this.ghostToggleButton.on("pointerout", () => {
-      this.ghostToggleButton.setFillStyle(0x2a2a2a);
       this.ghostToggleButton.setScale(1.0);
     });
 
     // Mantener fijo en pantalla
     this.ghostToggleButton.setScrollFactor(0);
-    this.ghostToggleText.setScrollFactor(0);
     this.ghostToggleButton.setDepth(1000);
-    this.ghostToggleText.setDepth(1001);
+  }
+
+  /**
+   * Dibujar el botón según el estado
+   */
+  private drawButton(isGhost: boolean): void {
+    this.ghostToggleButton.clear();
+
+    const radius = 30;
+
+    if (isGhost) {
+      // Modo ghost: círculo verde con "G"
+      this.ghostToggleButton.fillStyle(0x4caf50); // Verde
+      this.ghostToggleButton.lineStyle(3, 0xffffff); // Borde blanco
+      this.ghostToggleButton.fillCircle(0, 0, radius);
+      this.ghostToggleButton.strokeCircle(0, 0, radius);
+    } else {
+      // Modo normal: círculo azul con "N"
+      this.ghostToggleButton.fillStyle(0x2196f3); // Azul
+      this.ghostToggleButton.lineStyle(3, 0xffffff); // Borde blanco
+      this.ghostToggleButton.fillCircle(0, 0, radius);
+      this.ghostToggleButton.strokeCircle(0, 0, radius);
+    }
   }
 
   /**
@@ -464,14 +633,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
     const isCurrentlyGhost = this.player.getIsGhost();
     this.player.setGhostMode(!isCurrentlyGhost);
 
-    // Actualizar texto del botón
-    if (!isCurrentlyGhost) {
-      this.ghostToggleText.setText("🐧 NORMAL");
-      this.ghostToggleButton.setStrokeStyle(3, 0xaaaaff); // Borde azul
-    } else {
-      this.ghostToggleText.setText("👻 GHOST");
-      this.ghostToggleButton.setStrokeStyle(3, 0xffffff); // Borde blanco
-    }
+    // Actualizar colisiones de tiles cross
+    this.updateCrossCollisions();
+
+    // Redibujar botón con el nuevo estado
+    this.drawButton(this.player.getIsGhost());
+
+    console.log(
+      `🔄 Botón actualizado: ${
+        this.player.getIsGhost() ? "GHOST (verde)" : "NORMAL (azul)"
+      }`
+    );
   }
 
   /**
@@ -614,11 +786,35 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // Configurar callback para cuando el player recibe daño
     this.player.setOnHitCallback(() => {
+      // Evitar múltiples activaciones si ya está en proceso de game over
+      if (this.isGameOverInProgress || this.lifeSystem.isGameOver()) {
+        console.log(
+          "⚠️ Ya en Game Over o proceso en curso, ignorando daño adicional"
+        );
+        return;
+      }
+
+      console.log(
+        `💔 Jugador recibe daño. Vidas antes: ${this.lifeSystem.getCurrentLives()}`
+      );
+
       const hasLivesLeft = this.lifeSystem.loseLife();
 
-      if (!hasLivesLeft) {
-        // Game Over - reiniciar nivel
-        this.restartLevel();
+      console.log(
+        `💔 Vidas después: ${this.lifeSystem.getCurrentLives()}, ¿Vidas restantes? ${hasLivesLeft}`
+      );
+
+      // Verificar tanto el retorno como el estado interno
+      if (!hasLivesLeft || this.lifeSystem.isGameOver()) {
+        console.log("💀 GAME OVER - Iniciando reinicio de nivel");
+
+        // Marcar que el game over está en proceso
+        this.isGameOverInProgress = true;
+
+        // Pequeño delay para que se vea la última animación de pérdida de vida
+        this.time.delayedCall(1000, () => {
+          this.restartLevel();
+        });
       }
     });
   }
@@ -654,9 +850,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Manejar colisiones con spikes personalizados
    */
   private handleSpikeCollision(player: any, spike: any): void {
+    console.log("💥 DEBUG: handleSpikeCollision ejecutado!");
+    console.log(
+      `💥 DEBUG: Player invulnerable: ${this.player.getIsInvulnerable()}`
+    );
+
     // Solo hacer daño si el player no es invulnerable
     if (!this.player.getIsInvulnerable()) {
+      console.log("💔 DEBUG: Ejecutando player.hit()");
       this.player.hit();
+    } else {
+      console.log("🛡️ DEBUG: Player invulnerable, no hace daño");
     }
   }
 
@@ -683,24 +887,53 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Reiniciar el nivel actual
    */
   private restartLevel(): void {
-    // Reiniciar sistema de vidas
-    this.lifeSystem.resetLives();
+    console.log("🔄 Reiniciando nivel - Game Over");
 
-    // Reiniciar posición del player
-    const startPos = this.config.playerStartPosition;
-    this.player.setPosition(startPos.x, startPos.y);
+    // 0. CRÍTICO: Cancelar todos los timers pendientes para evitar callbacks retrasados
+    this.time.removeAllEvents();
+    console.log("⏹️ Todos los timers cancelados");
 
-    // Detener velocidades
+    // 1. Resetear completamente el estado del jugador
+    this.player.resetForRestart();
+
+    // 2. Volver al jugador a modo normal
+    if (this.player.getIsGhost()) {
+      this.player.setGhostMode(false);
+      console.log("🐧 Jugador vuelto a modo normal");
+    }
+
+    // 3. Reiniciar sistema de vidas (después de limpiar timers)
+    this.lifeSystem.resetLivesImmediate();
+
+    // 4. Encontrar y mover a posición de inicio real
+    this.positionPlayerAtStart();
+
+    // 5. Detener velocidades y resetear estado
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     body.setVelocity(0, 0);
 
-    // Opcional: Añadir efecto visual de respawn
+    // 6. Resetear estados del jugador
+    this.player.setSwimming(false);
+    this.player.setClimbing(false);
+
+    // 7. Efecto visual de respawn mejorado
     this.player.setAlpha(0);
+    this.player.setScale(0.5);
+
     this.tweens.add({
       targets: this.player,
       alpha: 1,
-      duration: 500,
-      ease: "Power2",
+      scaleX: 1,
+      scaleY: 1,
+      duration: 800,
+      ease: "Back.easeOut",
+      onComplete: () => {
+        // Resetear bandera de game over
+        this.isGameOverInProgress = false;
+        console.log(
+          "✅ Reinicio de nivel completado - Game Over flag reseteado"
+        );
+      },
     });
   }
 

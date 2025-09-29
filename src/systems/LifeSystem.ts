@@ -73,11 +73,17 @@ export class LifeSystem {
   }
 
   public loseLife(): boolean {
+    console.log(
+      `💔 LifeSystem.loseLife() llamado. Vidas actuales: ${this.currentLives}`
+    );
+
     if (this.currentLives <= 0) {
+      console.log("💀 Ya no hay vidas disponibles");
       return false; // Ya no hay vidas
     }
 
     this.currentLives--;
+    console.log(`💔 Vida perdida. Vidas restantes: ${this.currentLives}`);
 
     // Animar la pérdida del corazón
     const heartIndex = this.currentLives; // El corazón que se va a vaciar
@@ -98,11 +104,15 @@ export class LifeSystem {
           heart.setFrame(2);
           heart.setAlpha(0.8);
           heart.setScale(1.5);
+
+          console.log(`💔 Corazón ${heartIndex} animado como vacío`);
         },
       });
     }
 
-    return this.currentLives > 0;
+    const hasLivesLeft = this.currentLives > 0;
+    console.log(`💔 Retornando hasLivesLeft: ${hasLivesLeft}`);
+    return hasLivesLeft;
   }
 
   public gainLife(): void {
@@ -146,6 +156,24 @@ export class LifeSystem {
     });
   }
 
+  /**
+   * Resetear vidas inmediatamente, cancelando animaciones pendientes
+   */
+  public resetLivesImmediate(): void {
+    console.log("🔄 Reseteando vidas inmediatamente, cancelando animaciones");
+
+    // Cancelar todos los tweens de los corazones
+    this.hearts.forEach((heart) => {
+      this.scene.tweens.killTweensOf(heart);
+      heart.setFrame(0); // Frame 0 = corazón lleno
+      heart.setAlpha(1);
+      heart.setScale(1.5);
+    });
+
+    this.currentLives = this.maxLives;
+    console.log(`✅ Vidas reseteadas inmediatamente a ${this.maxLives}`);
+  }
+
   public getCurrentLives(): number {
     return this.currentLives;
   }
@@ -155,7 +183,11 @@ export class LifeSystem {
   }
 
   public isGameOver(): boolean {
-    return this.currentLives <= 0;
+    const gameOver = this.currentLives <= 0;
+    console.log(
+      `🎮 isGameOver() llamado: ${gameOver} (vidas: ${this.currentLives})`
+    );
+    return gameOver;
   }
 
   public destroy(): void {

@@ -36,14 +36,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private onHitCallback?: () => void;
   private isGhost: boolean = false;
   private ghostSpeed: number = 180; // Velocidad en modo fantasma
-  private ghostImpulse: number = -200; // Impulso hacia arriba como flotando (natural)
+  private ghostImpulse: number = -400; // Impulso hacia arriba más potente
   private lastGhostFlappyTime: number = 0;
   private ghostFlappyCooldown: number = 180; // Cooldown para flotar
+  private ghostJumpsRemaining: number = 3; // Saltos restantes en modo fantasma
+  private maxGhostJumps: number = 3; // Máximo de saltos consecutivos en modo fantasma
+  private wasOnGroundLastFrame: boolean = false; // Para detectar cuando toca el suelo
+  private hasTouchedGroundSinceLastModeChange: boolean = true; // 🔒 Anti-exploit de saltos infinitos
   private canBlow: boolean = true;
   private blowCooldown: number = 800; // Cooldown para soplar
   private lastBlowTime: number = 0;
   private isPlayingBlow: boolean = false;
   private windParticles?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private activeTimers: Phaser.Time.TimerEvent[] = []; // Track de timers activos
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
@@ -184,11 +189,62 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Detectar si está en el suelo
     this.isOnGround = body.touching.down || body.blocked.down;
 
+    // 🔒 ANTI-EXPLOIT: Marcar que tocó el suelo (para prevenir exploit de cambio de modo)
+    if (this.isOnGround && !this.wasOnGroundLastFrame) {
+      this.hasTouchedGroundSinceLastModeChange = true;
+    }
+
+    // Sistema de saltos limitados en modo fantasma
+    if (this.isGhost) {
+      // Si toca el suelo y no tocaba en el frame anterior, reiniciar saltos
+      // PERO solo si realmente ha tocado el suelo desde el último cambio de modo
+      if (
+        this.isOnGround &&
+        !this.wasOnGroundLastFrame &&
+        this.hasTouchedGroundSinceLastModeChange
+      ) {
+        this.ghostJumpsRemaining = this.maxGhostJumps;
+        console.log(
+          "👻🦘 Saltos fantasma reseteados al tocar suelo:",
+          this.ghostJumpsRemaining
+        );
+      }
+      // Nota: wasOnGroundLastFrame se actualiza al final del método update
+    }
+
     // Manejar lanzamiento de bola de nieve
     this.handleThrow();
 
     // Manejar agacharse
     this.handleCrouch();
+
+    // 🐛 FIX: Limpiar animación de caída cuando toca el suelo DESPUÉS de handleCrouch
+    if (this.isOnGround && !this.wasOnGroundLastFrame) {
+      console.log(
+        "🔥 DEBUG: Acabamos de aterrizar! Frame actual:",
+        this.frame.name
+      );
+      console.log("🔥 Animación actual:", this.anims.currentAnim?.key);
+      console.log("🔥 isCrouching:", this.isCrouching);
+
+      // El problema es que el frame visual puede quedarse "colgado" independientemente de la animación
+      // Forzar el frame correcto inmediatamente al aterrizar
+      if (this.isCrouching) {
+        console.log("🔥 FORZANDO frame y animación de crouch");
+        this.anims.stop(); // Parar cualquier animación actual
+        this.playAnimation("penguin_crouch");
+        // Cuando termine la animación, mantener el último frame
+        this.once("animationcomplete-penguin_crouch", () => {
+          this.anims.stop();
+          this.setFrame(2); // Frame 2 es el último frame de la animación crouch
+          this.updateCrouchHitbox(true);
+        });
+      } else {
+        console.log("🔥 FORZANDO frame y animación idle");
+        this.anims.stop(); // Parar cualquier animación actual
+        this.playAnimation("penguin_idle");
+      }
+    }
 
     // Debug: mostrar información del estado cada cierto tiempo
 
@@ -209,7 +265,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
-        !this.isClimbing
+        !this.isClimbing &&
+        Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
       ) {
         this.playAnimation("penguin_walk");
       }
@@ -223,7 +280,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
-        !this.isClimbing
+        !this.isClimbing &&
+        Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
       ) {
         this.playAnimation("penguin_walk");
       }
@@ -285,14 +343,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.playAnimation("penguin_climb");
       }
     } else {
-      // En tierra firme
-      if (
-        (this.cursors.up.isDown ||
-          this.wasdKeys.W.isDown ||
-          this.jumpKey.isDown) &&
-        this.isOnGround &&
-        this.canJump
-      ) {
+      // En tierra firme - solo SPACE para saltar
+      if (this.jumpKey.isDown && this.isOnGround && this.canJump) {
         body.setVelocityY(this.jumpVelocity);
         this.canJump = false;
         this.playAnimation("penguin_jump");
@@ -301,12 +353,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }, 200); // Cooldown del salto
       }
 
+      // 🐛 FIX: Mantener animación de salto si está subiendo rápidamente
+      if (body.velocity.y < -200 && !this.isOnGround) {
+        this.playAnimation("penguin_jump");
+      }
+
       // Animación de caída - pero cambiar a swim si estamos en agua
-      if (body.velocity.y > 50 && !this.isOnGround) {
+      // 🏃‍♂️ NO interferir si está en modo CRAWL
+      if (body.velocity.y > 50 && !this.isOnGround && !this.isCrouching) {
         if (this.isSwimming) {
           this.playAnimation("penguin_swing");
         } else {
-          // Restaurar el cuerpo físico original
+          // Restaurar el cuerpo físico original SOLO si no está en CRAWL
           body.setSize(95, 110); // Altura original
           body.setOffset(7, 5); // Offset original
           this.playAnimation("penguin_fall");
@@ -316,6 +374,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Actualizar animaciones basadas en el estado
     this.updateAnimations();
+
+    // Actualizar estado del frame anterior (DEBE ser al final del update)
+    this.wasOnGroundLastFrame = this.isOnGround;
   }
 
   private handleThrow(): void {
@@ -374,6 +435,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       (!this.isClimbing &&
         (this.cursors!.down.isDown || this.wasdKeys!.S.isDown));
 
+    const wasCrouching = this.isCrouching;
     this.isCrouching = isCrouchPressed;
 
     if (
@@ -382,17 +444,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       !this.isSwimming &&
       !this.isClimbing
     ) {
-      // Reproducir animación de crouch y mantener el último frame
-      if (this.currentAnimation !== "penguin_crouch") {
+      // Solo iniciar animación si no estaba agachado antes
+      if (!wasCrouching) {
         this.playAnimation("penguin_crouch");
 
         // Cuando termine la animación, mantener el último frame
         this.once("animationcomplete-penguin_crouch", () => {
-          if (this.isCrouching) {
-            // Parar en el último frame si aún está agachado
-            this.anims.stop();
-            this.setFrame(2); // Frame 2 es el último frame de la animación crouch
-          }
+          // Parar en el último frame
+          this.anims.stop();
+          this.setFrame(2); // Frame 2 es el último frame de la animación crouch
+
+          // 🏃‍♂️ ALTURA REDUCIDA: Cambiar hitbox a 32px de altura cuando está en CRAWL
+          this.updateCrouchHitbox(true);
         });
       }
 
@@ -401,12 +464,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (Math.abs(body.velocity.x) > 0) {
         body.setVelocityX(body.velocity.x * 0.5);
       }
-    } else if (
-      !this.isCrouching &&
-      this.currentAnimation === "penguin_crouch"
-    ) {
-      // Si deja de agacharse, volver a la animación normal
+    } else if (!this.isCrouching && wasCrouching) {
+      // Solo cuando deja de agacharse (cambio de estado)
       this.playAnimation("penguin_standing");
+
+      // 🏃‍♂️ ALTURA NORMAL: Restaurar hitbox normal de 64px
+      this.updateCrouchHitbox(false);
+    }
+  }
+
+  /**
+   * Actualizar hitbox del jugador para el sistema CRAWL
+   * 🏃‍♂️ Cuando está agachado: altura reducida, cuando está normal: altura original
+   */
+  private updateCrouchHitbox(isCrawling: boolean): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    if (isCrawling) {
+      // Reducir altura a la mitad manteniendo los pies en el suelo
+      const originalHeight = 110;
+      const crouchHeight = 55; // Mitad de la altura original
+      const heightDifference = originalHeight - crouchHeight;
+
+      body.setSize(95, crouchHeight); // Ancho original, altura reducida
+      body.setOffset(7, 5 + heightDifference); // Mover el hitbox hacia arriba para que los pies queden igual
+
+      console.log("🏃‍♂️ CRAWL activado: Altura hitbox = 55px");
+    } else {
+      // Restaurar configuración original del constructor
+      body.setSize(95, 110);
+      body.setOffset(7, 5);
+
+      console.log("🏃‍♂️ CRAWL desactivado: Altura hitbox = 110px");
     }
   }
 
@@ -510,6 +599,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   public setSwimming(swimming: boolean): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Si está en modo fantasma y toca el agua, pierde una vida
+    if (swimming && this.isGhost) {
+      this.handleGhostWaterContact();
+      return; // No procesar natación en modo fantasma
+    }
 
     this.isSwimming = swimming;
 
@@ -622,11 +717,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     // Desactivar invulnerabilidad después del tiempo establecido
-    this.scene.time.delayedCall(this.invulnerabilityTime, () => {
-      this.isInvulnerable = false;
-      this.clearTint(); // Asegurar que no quede tinte
-      this.setAlpha(1); // Restaurar alpha completo
-    });
+    const invulnTimer = this.scene.time.delayedCall(
+      this.invulnerabilityTime,
+      () => {
+        this.isInvulnerable = false;
+        this.clearTint(); // Asegurar que no quede tinte
+        this.setAlpha(1); // Restaurar alpha completo
+      }
+    );
+    this.addTrackedTimer(invulnTimer);
   }
 
   /**
@@ -676,19 +775,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private handleGhostMovement(body: Phaser.Physics.Arcade.Body): void {
     const currentTime = this.scene.time.now;
 
-    // Detectar si se presiona cualquiera de las teclas de flotación
-    const isFloatKeyPressed =
-      this.cursors!.up.isDown ||
-      this.wasdKeys!.W.isDown ||
-      this.jumpKey!.isDown;
+    // Solo SPACE para saltos fantasma - tap normal
+    const isJumpKeyPressed = this.jumpKey!.isDown;
 
+    // Sistema de salto fantasma simple (tap)
     if (
-      isFloatKeyPressed &&
+      isJumpKeyPressed &&
+      this.ghostJumpsRemaining > 0 &&
       currentTime - this.lastGhostFlappyTime > this.ghostFlappyCooldown
     ) {
-      // Impulso hacia arriba tipo flotación fantasmal
+      // Aplicar impulso fijo
       body.setVelocityY(this.ghostImpulse);
       this.lastGhostFlappyTime = currentTime;
+
+      // Consumir un salto fantasma
+      this.ghostJumpsRemaining--;
 
       // Animación de fantasma flotando
       this.playAnimation("penguin_ghost_idle");
@@ -706,7 +807,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setVelocityX(body.velocity.x * 0.88); // Resistencia suave
     }
 
-    // ...sin corrección de posición vertical, solo física flotante...
     // Animación flotante constante cuando no se mueve
     if (Math.abs(body.velocity.x) < 10 && Math.abs(body.velocity.y) < 10) {
       this.playAnimation("penguin_ghost_idle");
@@ -720,10 +820,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     this.isGhost = isGhost;
 
+    // 🔒 ANTI-EXPLOIT: Marcar cambio de modo
+    this.hasTouchedGroundSinceLastModeChange = this.isOnGround;
+
     if (isGhost) {
       // Configurar física para modo fantasma (flotante pero con colisiones)
       this.isSwimming = false;
       this.isClimbing = false;
+
+      // 🔒 ANTI-EXPLOIT: Solo resetear saltos si está en el suelo Y ha tocado suelo desde último cambio
+      if (this.isOnGround && this.hasTouchedGroundSinceLastModeChange) {
+        this.ghostJumpsRemaining = this.maxGhostJumps;
+        console.log(
+          "👻🦘 Saltos fantasma reseteados (en suelo):",
+          this.ghostJumpsRemaining
+        );
+      } else {
+        console.log(
+          "🚫 No se resetean saltos fantasma - jugador en el aire o cambio reciente de modo"
+        );
+      }
+      this.wasOnGroundLastFrame = this.isOnGround;
 
       // Gravedad reducida pero presente para efecto flotante natural
       body.setGravityY(-400); // Gravedad efectiva de 400 (flotante con peso natural)
@@ -761,5 +878,422 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    */
   public getIsGhost(): boolean {
     return this.isGhost;
+  }
+
+  /**
+   * Verificar si está en modo CRAWL (agachado con hitbox reducida)
+   */
+  public getIsCrawling(): boolean {
+    return (
+      this.isCrouching &&
+      this.currentAnimation === "penguin_crouch" &&
+      this.frame.name === "2"
+    );
+  }
+
+  /**
+   * Obtener saltos fantasma restantes
+   */
+  public getGhostJumpsRemaining(): number {
+    return this.ghostJumpsRemaining;
+  }
+
+  /**
+   * Obtener máximo de saltos fantasma
+   */
+  public getMaxGhostJumps(): number {
+    return this.maxGhostJumps;
+  }
+
+  /**
+   * Añadir timer a la lista de tracking
+   */
+  private addTrackedTimer(timer: Phaser.Time.TimerEvent): void {
+    this.activeTimers.push(timer);
+  }
+
+  /**
+   * Cancelar todos los timers activos del player
+   */
+  private cancelAllPlayerTimers(): void {
+    console.log(`⏹️ Cancelando ${this.activeTimers.length} timers del player`);
+
+    this.activeTimers.forEach((timer) => {
+      if (timer && !timer.hasDispatched) {
+        timer.destroy();
+      }
+    });
+
+    this.activeTimers = [];
+    console.log("✅ Todos los timers del player cancelados");
+  }
+
+  /**
+   * Resetear completamente el jugador para reinicio de nivel
+   */
+  public resetForRestart(): void {
+    console.log("🔄 Reseteando player para reinicio de nivel");
+
+    // Cancelar todos los timers pendientes del jugador
+    this.cancelAllPlayerTimers();
+
+    // Resetear estado de invulnerabilidad
+    this.isInvulnerable = false;
+
+    // Resetear saltos fantasma
+    this.ghostJumpsRemaining = this.maxGhostJumps;
+
+    // Limpiar efectos visuales
+    this.clearTint();
+    this.setAlpha(1);
+    this.setScale(1);
+
+    // Resetear estados de movimiento
+    this.isSwimming = false;
+    this.isClimbing = false;
+    this.isCrouching = false;
+
+    // Resetear hitbox a tamaño normal
+    this.updateCrouchHitbox(false);
+
+    console.log("✅ Player reseteado completamente");
+  }
+
+  /**
+   * Manejar contacto del fantasma con el agua
+   */
+  private handleGhostWaterContact(): void {
+    // Evitar múltiples activaciones
+    if (this.isInvulnerable) return;
+
+    console.log("👻💧 Fantasma tocó el agua - iniciando secuencia");
+
+    // Hacer al jugador invulnerable temporalmente
+    this.isInvulnerable = true;
+
+    // 1. Encontrar y mover a superficie más cercana inmediatamente
+    const moveTimer = this.scene.time.delayedCall(50, () => {
+      console.log("👻🏃 Moviendo fantasma a superficie más cercana");
+      this.moveToNearestSurface();
+
+      // Asegurar que sigue en modo fantasma después de mover
+      this.ensureGhostMode();
+
+      // 3. Quitar una vida pero mantener modo fantasma
+      if (this.onHitCallback) {
+        this.onHitCallback();
+      }
+
+      // Restaurar invulnerabilidad después de un tiempo
+      const invulnTimer = this.scene.time.delayedCall(1000, () => {
+        this.isInvulnerable = false;
+        console.log("👻✅ Fantasma listo para otra interacción");
+      });
+      this.addTrackedTimer(invulnTimer);
+    });
+    this.addTrackedTimer(moveTimer);
+  }
+
+  /**
+   * Asegurar que el jugador permanezca en modo fantasma
+   */
+  private ensureGhostMode(): void {
+    if (!this.isGhost) {
+      console.log("👻🔄 Reactivando modo fantasma");
+      this.setGhostMode(true);
+    }
+
+    // 🔒 ANTI-EXPLOIT: Solo resetear saltos si está en el suelo Y ha tocado suelo desde último cambio
+    if (this.isOnGround && this.hasTouchedGroundSinceLastModeChange) {
+      this.ghostJumpsRemaining = this.maxGhostJumps;
+      console.log(
+        "👻🦘 Saltos fantasma reseteados (en suelo):",
+        this.ghostJumpsRemaining
+      );
+    } else {
+      console.log(
+        "🚫 No se resetean saltos fantasma - jugador en el aire o cambio reciente de modo"
+      );
+    }
+  }
+
+  /**
+   * Mover al jugador a la superficie más cercana
+   */
+  private moveToNearestSurface(): void {
+    console.log("👻🏊 Iniciando moveToNearestSurface");
+
+    const tilemap = (this.scene as any).tilemap;
+    const surfaceLayer = (this.scene as any).surfaceLayer;
+
+    console.log("👻🗺️ Tilemap:", !!tilemap, "SurfaceLayer:", !!surfaceLayer);
+
+    if (!tilemap || !surfaceLayer) {
+      console.log(
+        "👻❌ No hay tilemap o surfaceLayer, usando posición de inicio"
+      );
+      // Fallback: mover a posición de inicio del nivel
+      const startPos = this.findStartPosition(tilemap, surfaceLayer);
+      this.setPosition(startPos.x, startPos.y);
+      return;
+    }
+
+    // Convertir posición actual a coordenadas de tile
+    const currentTileX = Math.floor(this.x / tilemap.tileWidth);
+    const currentTileY = Math.floor(this.y / tilemap.tileHeight);
+
+    console.log(`👻📍 Posición actual del jugador: (${this.x}, ${this.y})`);
+    console.log(
+      `👻📍 Posición actual en tiles: (${currentTileX}, ${currentTileY})`
+    );
+
+    let bestPosition = this.findBestSurfacePosition(
+      tilemap,
+      surfaceLayer,
+      currentTileX,
+      currentTileY
+    );
+
+    if (bestPosition) {
+      console.log(
+        `👻✅ Moviendo a superficie encontrada: (${bestPosition.x}, ${bestPosition.y})`
+      );
+      this.setPosition(bestPosition.x, bestPosition.y);
+      // Asegurar que el jugador esté completamente fuera del agua
+      (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+    } else {
+      console.log("👻❌ No se encontró superficie, usando posición de inicio");
+      // Si todo falla, usar la posición de inicio del nivel
+      const startPos = this.findStartPosition(tilemap, surfaceLayer);
+      this.setPosition(startPos.x, startPos.y);
+    }
+  }
+
+  /**
+   * Encontrar la mejor posición de superficie cercana
+   */
+  private findBestSurfacePosition(
+    tilemap: Phaser.Tilemaps.Tilemap,
+    surfaceLayer: Phaser.Tilemaps.TilemapLayer,
+    currentTileX: number,
+    currentTileY: number
+  ): { x: number; y: number } | null {
+    console.log(
+      `👻🔍 Buscando superficie desde tile (${currentTileX}, ${currentTileY})`
+    );
+
+    // PASO 1: Buscar primero hacia los lados en el mismo nivel (prioridad alta)
+    console.log("👻🔍 PASO 1: Buscando horizontalmente en el mismo nivel");
+    for (let dx = 1; dx <= 8; dx++) {
+      // Buscar a la izquierda y derecha
+      for (const direction of [-1, 1]) {
+        const checkX = currentTileX + dx * direction;
+        const checkY = currentTileY;
+
+        const tile = tilemap.getTileAt(checkX, checkY, false, surfaceLayer);
+        if (tile && this.isSafeSurface(tile)) {
+          const result = this.checkSurfaceWithSpace(
+            tilemap,
+            surfaceLayer,
+            checkX,
+            checkY
+          );
+          if (result) return result;
+        }
+      }
+    }
+
+    // PASO 2: Buscar en líneas horizontales hacia abajo (segunda prioridad)
+    console.log("👻🔍 PASO 2: Buscando horizontalmente hacia abajo");
+    for (let dy = 1; dy <= 6; dy++) {
+      for (let dx = -6; dx <= 6; dx++) {
+        const checkX = currentTileX + dx;
+        const checkY = currentTileY + dy;
+
+        const tile = tilemap.getTileAt(checkX, checkY, false, surfaceLayer);
+        if (tile && this.isSafeSurface(tile)) {
+          const result = this.checkSurfaceWithSpace(
+            tilemap,
+            surfaceLayer,
+            checkX,
+            checkY
+          );
+          if (result) return result;
+        }
+      }
+    }
+
+    // PASO 3: Búsqueda radial completa como último recurso
+    console.log("👻🔍 PASO 3: Búsqueda radial completa");
+    for (let radius = 1; radius <= 10; radius++) {
+      const directions = 16;
+
+      for (let i = 0; i < directions; i++) {
+        const angle = (i * 360) / directions;
+        const dx = Math.round(Math.cos((angle * Math.PI) / 180) * radius);
+        const dy = Math.round(Math.sin((angle * Math.PI) / 180) * radius);
+
+        const checkX = currentTileX + dx;
+        const checkY = currentTileY + dy;
+
+        const tile = tilemap.getTileAt(checkX, checkY, false, surfaceLayer);
+
+        if (tile && this.isSafeSurface(tile)) {
+          const result = this.checkSurfaceWithSpace(
+            tilemap,
+            surfaceLayer,
+            checkX,
+            checkY
+          );
+          if (result) return result;
+        }
+      }
+    }
+
+    console.log("👻❌ No se encontró superficie segura");
+    return null;
+  }
+
+  /**
+   * Verificar superficie con espacio libre encima
+   */
+  private checkSurfaceWithSpace(
+    tilemap: Phaser.Tilemaps.Tilemap,
+    surfaceLayer: Phaser.Tilemaps.TilemapLayer,
+    tileX: number,
+    tileY: number
+  ): { x: number; y: number } | null {
+    // Verificar que hay espacio libre encima para pararse
+    const tileAbove = tilemap.getTileAt(tileX, tileY - 1, false, surfaceLayer);
+    const tileAbove2 = tilemap.getTileAt(tileX, tileY - 2, false, surfaceLayer);
+
+    // Verificar que hay al menos 2 tiles de altura libre encima
+    const hasSpaceAbove =
+      (!tileAbove || !this.isSolidTile(tileAbove)) &&
+      (!tileAbove2 || !this.isSolidTile(tileAbove2));
+
+    if (hasSpaceAbove) {
+      console.log(`👻✅ Superficie CON ESPACIO en (${tileX}, ${tileY})`);
+
+      const worldX = tileX * tilemap.tileWidth + tilemap.tileWidth / 2;
+      const worldY = tileY * tilemap.tileHeight - 50; // Un poco encima del tile
+
+      console.log(`👻📍 Posición calculada: (${worldX}, ${worldY})`);
+      return { x: worldX, y: worldY };
+    } else {
+      console.log(
+        `👻⚠️ Superficie en (${tileX}, ${tileY}) NO tiene espacio libre encima`
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Verificar si una superficie es segura (no agua, sólida)
+   */
+  private isSafeSurface(tile: Phaser.Tilemaps.Tile): boolean {
+    if (!tile) return false;
+
+    // Verificar que NO sea agua
+    const isWater = tile.properties && (tile.properties as any).water === true;
+    if (isWater) {
+      return false;
+    }
+
+    // Verificar que SÍ sea sólido (collision o cross)
+    const isSolid =
+      tile.properties &&
+      ((tile.properties as any).collision === true ||
+        (tile.properties as any).cross === true);
+
+    console.log(
+      `👻🧪 Tile (${tile.x}, ${tile.y}): agua=${isWater}, sólido=${isSolid}`
+    );
+    return isSolid;
+  }
+
+  /**
+   * Calcular una posición segura encima de un tile
+   */
+  private calculateSafePosition(
+    tilemap: Phaser.Tilemaps.Tilemap,
+    tileX: number,
+    tileY: number
+  ): { x: number; y: number } | null {
+    // Verificar que hay espacio libre encima del tile
+    const tileAbove = tilemap.getTileAt(
+      tileX,
+      tileY - 1,
+      false,
+      (this.scene as any).surfaceLayer
+    );
+    const tileAbove2 = tilemap.getTileAt(
+      tileX,
+      tileY - 2,
+      false,
+      (this.scene as any).surfaceLayer
+    );
+
+    // Asegurar que hay al menos 2 tiles de espacio libre encima
+    if (
+      (tileAbove && this.isSolidTile(tileAbove)) ||
+      (tileAbove2 && this.isSolidTile(tileAbove2))
+    ) {
+      return null; // No hay espacio suficiente
+    }
+
+    const worldX = tileX * tilemap.tileWidth + tilemap.tileWidth / 2;
+    const worldY = tileY * tilemap.tileHeight - 40; // Posicionar encima del tile
+
+    return { x: worldX, y: worldY };
+  }
+
+  /**
+   * Encontrar la posición de inicio del nivel
+   */
+  private findStartPosition(
+    tilemap: Phaser.Tilemaps.Tilemap,
+    surfaceLayer: Phaser.Tilemaps.TilemapLayer
+  ): { x: number; y: number } {
+    // Buscar tile con propiedad start=true
+    let startPosition: { x: number; y: number } | null = null;
+
+    surfaceLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+      if (
+        tile &&
+        tile.properties &&
+        (tile.properties as any).start === true &&
+        !startPosition
+      ) {
+        const worldX = tile.x * tilemap.tileWidth + tilemap.tileWidth / 2;
+        const worldY = tile.y * tilemap.tileHeight - 32;
+        startPosition = { x: worldX, y: worldY };
+      }
+    });
+
+    if (startPosition) {
+      return startPosition;
+    }
+
+    // Fallback final
+    return { x: 400, y: 400 };
+  }
+
+  /**
+   * Verificar si un tile es agua
+   */
+  private isWaterTile(tile: Phaser.Tilemaps.Tile): boolean {
+    return tile.properties && (tile.properties as any).water === true;
+  }
+
+  /**
+   * Verificar si un tile es sólido (tiene colisión)
+   */
+  private isSolidTile(tile: Phaser.Tilemaps.Tile): boolean {
+    return (
+      tile.properties &&
+      ((tile.properties as any).collision === true ||
+        (tile.properties as any).cross === true)
+    );
   }
 }
