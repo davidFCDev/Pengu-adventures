@@ -12,6 +12,7 @@ export class TestingMapScene extends BaseGameScene {
       tilemapKey: "TestingMap",
       surfaceLayerName: "superficies",
       backgroundLayerName: "fondo",
+      objectsLayerName: "objects",
       playerStartPosition: { x: 400, y: 900 },
       cameraZoom: 1.0,
       cameraFollow: {
@@ -31,32 +32,17 @@ export class TestingMapScene extends BaseGameScene {
    * Implementación específica para crear el mapa TestingMap
    */
   protected createMap(): void {
-    // testingMap
+    // Crear tilemap
     this.tilemap = this.add.tilemap("TestingMap");
-    this.tilemap.addTilesetImage(
-      "spritesheet-tiles-default",
-      "spritesheet-tiles-default"
-    );
-    this.tilemap.addTilesetImage(
-      "spritesheet-backgrounds-default",
-      "spritesheet-backgrounds-default"
-    );
 
-    // fondo_1
-    this.fondoLayer = this.tilemap.createLayer(
-      "fondo",
-      ["spritesheet-backgrounds-default"],
-      0,
-      0
-    )!;
+    // Configurar tilesets usando el método helper
+    this.setupTilesets();
 
-    // superficies_1
-    this.surfaceLayer = this.tilemap.createLayer(
-      "superficies",
-      ["spritesheet-tiles-default"],
-      0,
-      0
-    )!;
+    // Crear layers estándar usando el método helper
+    this.createStandardLayers();
+
+    // Mantener referencia al layer de fondo para compatibilidad
+    this.fondoLayer = this.backgroundLayer!;
 
     // Emitir evento para compatibilidad con editor
     this.events.emit("scene-awake");

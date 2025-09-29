@@ -31,6 +31,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isFacingRight: boolean = true;
   private collider?: Phaser.Physics.Arcade.Collider;
   private isPlayingThrow: boolean = false;
+  private isInvulnerable: boolean = false;
+  private invulnerabilityTime: number = 2000; // 2 segundos de invulnerabilidad
+  private onHitCallback?: () => void;
+  private isGhost: boolean = false;
+  private ghostSpeed: number = 180; // Velocidad en modo fantasma
+  private ghostImpulse: number = -200; // Impulso hacia arriba como flotando (natural)
+  private lastGhostFlappyTime: number = 0;
+  private ghostFlappyCooldown: number = 180; // Cooldown para flotar
+  private canBlow: boolean = true;
+  private blowCooldown: number = 800; // Cooldown para soplar
+  private lastBlowTime: number = 0;
+  private isPlayingBlow: boolean = false;
+  private windParticles?: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
@@ -54,11 +67,25 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setSize(95, 110); // Cuerpo un poco menos ajustado
     body.setOffset(7, 5); // Offset más moderado para contacto natural con el suelo
 
+    // Crear textura para partículas de nieve si no existe
+    this.createSnowParticleTexture();
+
     // Configurar controles
     this.setupControls();
 
     // Iniciar con la animación de parado
     this.playAnimation("penguin_standing");
+  }
+
+  private createSnowParticleTexture(): void {
+    // Crear textura para partículas de nieve si no existe
+    if (!this.scene.textures.exists("snow_particle")) {
+      const graphics = this.scene.add.graphics();
+      graphics.fillStyle(0xffffff, 0.9); // Blanco semi-transparente
+      graphics.fillCircle(3, 3, 3); // Círculo pequeño de 3px de radio
+      graphics.generateTexture("snow_particle", 6, 6);
+      graphics.destroy();
+    }
   }
 
   private setupControls(): void {
@@ -69,7 +96,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         Phaser.Input.Keyboard.KeyCodes.SPACE
       );
       this.throwKey = this.scene.input.keyboard.addKey(
-        Phaser.Input.Keyboard.KeyCodes.X
+        Phaser.Input.Keyboard.KeyCodes.E
       );
       this.crouchKey = this.scene.input.keyboard.addKey(
         Phaser.Input.Keyboard.KeyCodes.SHIFT
@@ -77,9 +104,61 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  /**
+   * Posiciona al player en la posición de inicio basada en el tile con start=true
+   */
+  public setStartPosition(tilemapLayer: Phaser.Tilemaps.TilemapLayer): void {
+    const tilemap = tilemapLayer.tilemap;
+
+    // Buscar el tile con start=true
+    let startTile: Phaser.Tilemaps.Tile | null = null;
+
+    tilemap.forEachTile(
+      (tile: Phaser.Tilemaps.Tile) => {
+        if (tile.properties && Object.keys(tile.properties).length > 0) {
+          // Buscar start (puede ser string "true" en lugar de boolean true)
+          if (
+            tile.properties.start === true ||
+            tile.properties.start === "true"
+          ) {
+            startTile = tile;
+          }
+        }
+      },
+      this.scene,
+      0,
+      0,
+      tilemap.width,
+      tilemap.height,
+      undefined,
+      tilemapLayer
+    );
+
+    if (!startTile) {
+      return;
+    }
+
+    // Calcular la posición un tile (64px) a la derecha del tile de inicio
+    const targetX = (startTile as any).getCenterX() + 64;
+    const targetY = (startTile as any).pixelY - this.height / 2;
+
+    this.setPosition(targetX, targetY);
+
+    // Resetear la velocidad para que no caiga desde arriba
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setVelocity(0, 0);
+  }
+
   private playAnimation(animationKey: string): void {
-    // No cambiar animación si está ejecutando THROW
-    if (this.isPlayingThrow && animationKey !== "penguin_throw") {
+    // No cambiar animación si está ejecutando THROW o BLOW, excepto para animaciones especiales
+    const isSpecialAnimation =
+      animationKey === "penguin_climb" || animationKey === "penguin_swing";
+
+    if (
+      !isSpecialAnimation &&
+      ((this.isPlayingThrow && animationKey !== "penguin_throw") ||
+        (this.isPlayingBlow && animationKey !== "penguin_ghost_blowing"))
+    ) {
       return;
     }
 
@@ -117,11 +196,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isMovingLeft = this.cursors.left.isDown || this.wasdKeys.A.isDown;
     const isMovingRight = this.cursors.right.isDown || this.wasdKeys.D.isDown;
 
+    // Ajustar velocidad según el modo
+    const currentSpeed = this.isGhost ? this.ghostSpeed : speed;
+
     if (isMovingLeft) {
-      body.setVelocityX(-speed);
+      body.setVelocityX(-currentSpeed);
       this.isFacingRight = false;
       this.setFlipX(true);
-      if (
+      if (this.isGhost) {
+        this.playAnimation("penguin_ghost_idle");
+      } else if (
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
@@ -130,10 +214,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.playAnimation("penguin_walk");
       }
     } else if (isMovingRight) {
-      body.setVelocityX(speed);
+      body.setVelocityX(currentSpeed);
       this.isFacingRight = true;
       this.setFlipX(false);
-      if (
+      if (this.isGhost) {
+        this.playAnimation("penguin_ghost_idle");
+      } else if (
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
@@ -142,8 +228,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.playAnimation("penguin_walk");
       }
     } else {
-      body.setVelocityX(0);
-      if (
+      if (!this.isGhost) {
+        body.setVelocityX(0);
+      }
+      if (this.isGhost) {
+        this.playAnimation("penguin_ghost_idle");
+      } else if (
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
@@ -153,8 +243,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    // Salto / Nado / Trepado
-    if (this.isSwimming) {
+    // Salto / Nado / Trepado / Fantasma
+    if (this.isGhost) {
+      // Modo fantasma: movimiento flotante similar al agua pero en el aire
+      this.handleGhostMovement(body);
+    } else if (this.isSwimming) {
       // Estilo Flappy Bird: impulsos hacia arriba, gravedad constante hacia abajo
       const currentTime = this.scene.time.now;
 
@@ -169,34 +262,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Impulso hacia arriba tipo Flappy Bird
         body.setVelocityY(this.flappyImpulse);
         this.lastFlappyTime = currentTime;
-
         // Animación de nado
         this.playAnimation("penguin_swing");
       }
-
-      // En el agua, aplicar resistencia solo si no hay input horizontal
-      if (
-        !(
-          this.cursors.left.isDown ||
-          this.wasdKeys.A.isDown ||
-          this.cursors.right.isDown ||
-          this.wasdKeys.D.isDown
-        )
-      ) {
-        body.setVelocityX(body.velocity.x * 0.85);
-      }
     } else if (this.isClimbing) {
-      // En escaleras, se puede mover verticalmente
-      if (this.cursors.up.isDown || this.wasdKeys.W.isDown) {
+      // Modo escalada: movimiento vertical controlado
+      const isMovingUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+      const isMovingDown = this.cursors.down.isDown || this.wasdKeys.S.isDown;
+
+      if (isMovingUp) {
         body.setVelocityY(-this.climbSpeed);
+        // Mantener animación de escalada
         this.playAnimation("penguin_climb");
-      } else if (this.cursors.down.isDown || this.wasdKeys.S.isDown) {
+      } else if (isMovingDown) {
         body.setVelocityY(this.climbSpeed);
+        // Mantener animación de escalada
         this.playAnimation("penguin_climb");
       } else {
-        // Si no se mueve verticalmente, mantener posición
+        // Si no se mueve verticalmente, detener movimiento vertical
         body.setVelocityY(0);
-        this.playAnimation("penguin_standing");
+        // Mantener animación de escalada pero más lenta o pausa
+        this.playAnimation("penguin_climb");
       }
     } else {
       // En tierra firme
@@ -220,6 +306,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.isSwimming) {
           this.playAnimation("penguin_swing");
         } else {
+          // Restaurar el cuerpo físico original
+          body.setSize(95, 110); // Altura original
+          body.setOffset(7, 5); // Offset original
           this.playAnimation("penguin_fall");
         }
       }
@@ -231,20 +320,49 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   private handleThrow(): void {
     const currentTime = this.scene.time.now;
+    const body = this.body as Phaser.Physics.Arcade.Body;
 
-    if (
-      this.throwKey!.isDown &&
-      this.canThrow &&
-      currentTime - this.lastThrowTime > this.throwCooldown
-    ) {
-      this.throwSnowball();
-      this.lastThrowTime = currentTime;
-      this.canThrow = false;
+    if (this.throwKey!.isDown) {
+      if (this.isGhost) {
+        // BLOW: Solo en parado, ni volando, ni saltando, ni cayendo ni en el agua
+        const canUseBlow =
+          this.canBlow &&
+          currentTime - this.lastBlowTime > this.blowCooldown &&
+          this.isOnGround && // Debe estar en el suelo
+          !this.isSwimming && // No en agua
+          !this.isClimbing && // No escalando
+          Math.abs(body.velocity.x) < 10 && // No moviéndose horizontalmente (casi parado)
+          Math.abs(body.velocity.y) < 10; // No moviéndose verticalmente (no saltando/cayendo)
 
-      // Cooldown para el siguiente lanzamiento
-      this.scene.time.delayedCall(this.throwCooldown, () => {
-        this.canThrow = true;
-      });
+        if (canUseBlow) {
+          this.blowWind();
+          this.lastBlowTime = currentTime;
+          this.canBlow = false;
+
+          // Cooldown para el siguiente soplido
+          this.scene.time.delayedCall(this.blowCooldown, () => {
+            this.canBlow = true;
+          });
+        }
+      } else {
+        // SNOWBALL: No la podemos usar nadando, pero si andando, saltando
+        const canUseSnowball =
+          this.canThrow &&
+          currentTime - this.lastThrowTime > this.throwCooldown &&
+          !this.isSwimming && // No en agua
+          !this.isClimbing; // No escalando
+
+        if (canUseSnowball) {
+          this.throwSnowball();
+          this.lastThrowTime = currentTime;
+          this.canThrow = false;
+
+          // Cooldown para el siguiente lanzamiento
+          this.scene.time.delayedCall(this.throwCooldown, () => {
+            this.canThrow = true;
+          });
+        }
+      }
     }
   }
 
@@ -311,13 +429,78 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const direction = this.isFacingRight ? 1 : -1;
       const offsetX = direction * 35; // Offset ajustado para la bola más grande
 
+      // Intentar obtener el layer de superficie para colisiones
+      let collisionLayer: Phaser.Tilemaps.TilemapLayer | undefined;
+
+      // Buscar el layer de superficie en la escena
+      const baseScene = this.scene as any;
+      if (baseScene.surfaceLayer) {
+        collisionLayer = baseScene.surfaceLayer;
+      }
+
       const snowball = new Snowball(
         this.scene,
         this.x + offsetX,
         this.y - 15, // Ajustado para la nueva bola más grande
-        direction
+        direction,
+        collisionLayer
       );
     });
+  }
+
+  private blowWind(): void {
+    // Activar bandera para proteger la animación BLOW
+    this.isPlayingBlow = true;
+
+    // Forzar la animación BLOW sin verificaciones
+    this.currentAnimation = "penguin_ghost_blowing";
+    this.play("penguin_ghost_blowing");
+
+    // Escuchar cuando termine la animación
+    this.once("animationcomplete-penguin_ghost_blowing", () => {
+      this.isPlayingBlow = false;
+    });
+
+    // Crear efecto de viento con partículas después de un retraso más corto
+    this.scene.time.delayedCall(250, () => {
+      this.createWindEffect();
+    });
+  }
+
+  private createWindEffect(): void {
+    const direction = this.isFacingRight ? 1 : -1;
+    const startX = this.x + direction * 60; // Posición inicial del viento
+    const startY = this.y - 10;
+
+    // Crear sistema de partículas para el efecto de viento con nieve
+    const windParticles = this.scene.add.particles(
+      startX,
+      startY,
+      "snow_particle",
+      {
+        scale: { start: 1.5, end: 0.5 }, // Escala de las partículas de nieve
+        alpha: { start: 0.9, end: 0 },
+        speed: { min: 450, max: 650 }, // Velocidad aún más alta para efecto más rápido
+        angle: direction > 0 ? { min: -10, max: 10 } : { min: 170, max: 190 }, // Dirección del viento
+        lifespan: 700, // Reducido de 1000 a 700ms
+        quantity: 4, // Aumentado para más intensidad en menos tiempo
+        frequency: 25, // Frecuencia aún más rápida
+        emitZone: {
+          type: "edge",
+          source: new Phaser.Geom.Rectangle(-15, -25, 30, 50), // Zona de emisión más vertical
+          quantity: 15,
+        },
+        gravityY: -50, // Gravedad negativa para simular viento hacia arriba
+      }
+    );
+
+    // Destruir el emisor después de 800ms (más rápido)
+    this.scene.time.delayedCall(800, () => {
+      windParticles.destroy();
+    });
+
+    // Efecto de sonido del viento (opcional)
+    // this.scene.sound.play('wind_sound', { volume: 0.3 });
   }
 
   private updateAnimations(): void {
@@ -381,6 +564,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.collider) {
         this.collider.active = false;
       }
+
+      // Activar animación de escalada
+      this.playAnimation("penguin_climb");
     } else if (!this.isSwimming) {
       // Restaurar gravedad normal solo si no está nadando
       body.setGravityY(0);
@@ -416,5 +602,164 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   public setCollider(collider: Phaser.Physics.Arcade.Collider): void {
     this.collider = collider;
+  }
+
+  /**
+   * Método llamado cuando el player recibe daño
+   */
+  public hit(): void {
+    if (this.isInvulnerable) return;
+
+    // Activar invulnerabilidad
+    this.isInvulnerable = true;
+
+    // Efecto flash blanco
+    this.createHitEffect();
+
+    // Llamar callback si existe (para reducir vidas)
+    if (this.onHitCallback) {
+      this.onHitCallback();
+    }
+
+    // Desactivar invulnerabilidad después del tiempo establecido
+    this.scene.time.delayedCall(this.invulnerabilityTime, () => {
+      this.isInvulnerable = false;
+      this.clearTint(); // Asegurar que no quede tinte
+      this.setAlpha(1); // Restaurar alpha completo
+    });
+  }
+
+  /**
+   * Crear efecto visual de flash blanco cuando recibe daño
+   */
+  private createHitEffect(): void {
+    // Flash blanco inmediato
+    this.setTint(0xffffff);
+
+    // Parpadeo durante el período de invulnerabilidad
+    this.scene.tweens.add({
+      targets: this,
+      alpha: 0.3,
+      duration: 150,
+      yoyo: true,
+      repeat: Math.floor(this.invulnerabilityTime / 300), // Parpadea durante la invulnerabilidad
+      onComplete: () => {
+        this.setAlpha(1);
+        this.clearTint();
+      },
+    });
+
+    // Pequeño empujón hacia atrás
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    const knockbackForce = this.isFacingRight ? -150 : 150;
+    body.setVelocityX(knockbackForce);
+    body.setVelocityY(-100);
+  }
+
+  /**
+   * Establecer callback para cuando el player recibe daño
+   */
+  public setOnHitCallback(callback: () => void): void {
+    this.onHitCallback = callback;
+  }
+
+  /**
+   * Verificar si el player es invulnerable
+   */
+  public getIsInvulnerable(): boolean {
+    return this.isInvulnerable;
+  }
+
+  /**
+   * Manejar movimiento en modo fantasma
+   */
+  private handleGhostMovement(body: Phaser.Physics.Arcade.Body): void {
+    const currentTime = this.scene.time.now;
+
+    // Detectar si se presiona cualquiera de las teclas de flotación
+    const isFloatKeyPressed =
+      this.cursors!.up.isDown ||
+      this.wasdKeys!.W.isDown ||
+      this.jumpKey!.isDown;
+
+    if (
+      isFloatKeyPressed &&
+      currentTime - this.lastGhostFlappyTime > this.ghostFlappyCooldown
+    ) {
+      // Impulso hacia arriba tipo flotación fantasmal
+      body.setVelocityY(this.ghostImpulse);
+      this.lastGhostFlappyTime = currentTime;
+
+      // Animación de fantasma flotando
+      this.playAnimation("penguin_ghost_idle");
+    }
+
+    // En modo fantasma, aplicar resistencia suave
+    if (
+      !(
+        this.cursors!.left.isDown ||
+        this.wasdKeys!.A.isDown ||
+        this.cursors!.right.isDown ||
+        this.wasdKeys!.D.isDown
+      )
+    ) {
+      body.setVelocityX(body.velocity.x * 0.88); // Resistencia suave
+    }
+
+    // ...sin corrección de posición vertical, solo física flotante...
+    // Animación flotante constante cuando no se mueve
+    if (Math.abs(body.velocity.x) < 10 && Math.abs(body.velocity.y) < 10) {
+      this.playAnimation("penguin_ghost_idle");
+    }
+  }
+
+  /**
+   * Cambiar al modo fantasma
+   */
+  public setGhostMode(isGhost: boolean): void {
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    this.isGhost = isGhost;
+
+    if (isGhost) {
+      // Configurar física para modo fantasma (flotante pero con colisiones)
+      this.isSwimming = false;
+      this.isClimbing = false;
+
+      // Gravedad reducida pero presente para efecto flotante natural
+      body.setGravityY(-400); // Gravedad efectiva de 400 (flotante con peso natural)
+      body.setDragX(120); // Resistencia horizontal suave
+      body.setDragY(60); // Resistencia vertical moderada
+      body.setMaxVelocity(this.ghostSpeed, 350); // Velocidades controladas
+
+      // Efecto visual fantasmal
+      this.setAlpha(0.8); // Ligeramente transparente
+      this.setTint(0xddddff); // Tinte azul pálido
+
+      // MANTENER colisiones activas (el fantasma tiene físicas normales pero flota)
+      // Las colisiones permanecen activas para interactuar con el mundo
+
+      console.log("👻 Player convertido a modo fantasma (con colisiones)");
+    } else {
+      // Restaurar modo normal
+      body.setGravityY(0);
+      body.setDragX(400);
+      body.setDragY(0);
+      body.setMaxVelocity(300, 600);
+
+      // Restaurar apariencia normal
+      this.setAlpha(1);
+      this.clearTint();
+
+      // Las colisiones ya estaban activas, no necesitamos reactivarlas
+
+      console.log("🐧 Player vuelto a modo normal");
+    }
+  }
+
+  /**
+   * Verificar si está en modo fantasma
+   */
+  public getIsGhost(): boolean {
+    return this.isGhost;
   }
 }

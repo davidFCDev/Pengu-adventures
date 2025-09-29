@@ -30,6 +30,39 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar todos los sprites del pingüino
     PenguinSprites.loadSprites(this);
 
+    // Cargar el spritesheet del fantasma soplando (12 frames)
+    this.load.spritesheet(
+      "ghost_blowing",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/ghost_blowing-LqyxkcbCRmswFy56C4IKedBSFWaX6n.png",
+      {
+        frameWidth: 110, // Ajustar según el tamaño real del frame
+        frameHeight: 110,
+        endFrame: 11, // 12 frames (0-11)
+      }
+    );
+
+    // Crear una textura simple para partículas de nieve
+    this.load.once("complete", () => {
+      if (!this.textures.exists("snow_particle")) {
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0xffffff, 0.9); // Blanco semi-transparente
+        graphics.fillCircle(3, 3, 3); // Círculo pequeño
+        graphics.generateTexture("snow_particle", 6, 6);
+        graphics.destroy();
+      }
+    });
+
+    // Cargar el spritesheet de corazones para el sistema de vidas
+    this.load.spritesheet(
+      "heart_spritesheet",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/heart-Yb604s53ChLnxx6liA2W05EYnHKnn9.png?vag4",
+      {
+        frameWidth: 32,
+        frameHeight: 32,
+        endFrame: 2, // Solo necesitamos frames 0 (lleno) y 2 (vacío)
+      }
+    );
+
     // Handle loading completion
     this.load.on("complete", () => {
       this.loadingComplete();

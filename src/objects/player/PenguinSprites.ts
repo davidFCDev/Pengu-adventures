@@ -256,7 +256,7 @@ export class PenguinSprites {
         start: 0,
         end: 11,
       }),
-      frameRate: 10,
+      frameRate: 16, // Aumentado de 10 a 16 para animación más rápida
       repeat: 0,
     });
   }

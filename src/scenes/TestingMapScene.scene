@@ -30,6 +30,17 @@
                 "spritesheet-tiles-default",
                 "spritesheet-backgrounds-default"
             ]
+        },
+        {
+            "type": "TilemapLayer",
+            "id": "c7d95ec8-7dae-46e3-8937-749ce96d3936",
+            "label": "objects_1",
+            "tilemapId": "a3b36cb8-683f-4a80-bfa3-14f6d9a16282",
+            "layerName": "objects",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
         }
     ],
     "plainObjects": [
@@ -53,6 +64,22 @@
             "id": "f6a71783-5c97-4d2a-ae25-5ba9c2fcaacc",
             "type": "Tilemap",
             "label": "testingMap_1",
+            "key": "TestingMap",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        },
+        {
+            "id": "a3b36cb8-683f-4a80-bfa3-14f6d9a16282",
+            "type": "Tilemap",
+            "label": "testingMap_2",
             "key": "TestingMap",
             "tilesets": [
                 {

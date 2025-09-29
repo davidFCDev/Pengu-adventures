@@ -24,7 +24,7 @@
     "openFiles": [
     ],
     "project": "TileMaps.tiled-project",
-    "property.type": "string",
+    "property.type": "bool",
     "recentFiles": [
     ],
     "tileset.embedInMap": true,
