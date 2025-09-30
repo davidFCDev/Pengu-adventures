@@ -41,6 +41,17 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
+    // Cargar el spritesheet de aparición (7 frames)
+    this.load.spritesheet(
+      "appearing",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Appearing-dn5Xh72TXz8j3WHvjRgX5qhpAeNZHI.png",
+      {
+        frameWidth: 96,
+        frameHeight: 96,
+        endFrame: 6, // 7 frames (0-6)
+      }
+    );
+
     // Crear una textura simple para partículas de nieve
     this.load.once("complete", () => {
       if (!this.textures.exists("snow_particle")) {
@@ -61,6 +72,44 @@ export class PreloadScene extends Phaser.Scene {
         frameHeight: 32,
         endFrame: 2, // Solo necesitamos frames 0 (lleno) y 2 (vacío)
       }
+    );
+
+    // ========== MÚSICA DE NIVELES ==========
+    // Cargar música del nivel de test
+    this.load.audio(
+      "level1_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-oFuFEHvgIOYOwUItEyjAzmuKezGcyo.mp3"
+    );
+
+    // ========== SONIDOS DEL PLAYER ==========
+    // Sonido de colisión de bola de nieve (también usado para caminar)
+    this.load.audio(
+      "snowball_hit_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/throw-dOGOYFxj6vxBWNDwgT3RC7UekmZcjO.mp3?EVjO"
+    );
+
+    // Sonido de salto (solo modo normal)
+    this.load.audio(
+      "jump_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/jump-fZREmg47OmHKs7n50lWiI8IC1gt8EP.mp3?GXA9"
+    );
+
+    // Sonido de salto/nado en el agua
+    this.load.audio(
+      "swim_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/swim-SwpcxfxhmItcxJU2PhvgmOs9QxzlLR.mp3?gcSl"
+    );
+
+    // Sonido de daño/hurt cuando perdemos una vida
+    this.load.audio(
+      "hurt_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/hurt-Nls2Ffjm9810PWTjFhRFDJXiXsY1wM.mp3?NW2H"
+    );
+
+    // Sonido de soplido del fantasma
+    this.load.audio(
+      "blow_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/blow-4zYjtNIREJ7SWiPLYM6lOSwk3thCAi.mp3?IWs8"
     );
 
     // Handle loading completion

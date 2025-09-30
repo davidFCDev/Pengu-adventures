@@ -105,6 +105,8 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
 
   private handleTileCollision(): void {
     if (!this.hasExploded) {
+      // Reproducir sonido de colisión de bola de nieve
+      this.scene.sound.play("snowball_hit_sound", { volume: 0.5 });
       this.explode();
     }
   }

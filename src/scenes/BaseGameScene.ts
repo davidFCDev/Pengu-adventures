@@ -36,6 +36,8 @@ export interface GameSceneConfig {
     lerp?: { x: number; y: number };
     offset?: { x: number; y: number };
   };
+  /** Clave de la música del nivel (opcional) */
+  musicKey?: string;
 }
 
 /**
@@ -63,6 +65,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected spikesGroup!: Phaser.Physics.Arcade.StaticGroup;
   protected ghostToggleButton!: Phaser.GameObjects.Graphics;
   protected isGameOverInProgress: boolean = false;
+  protected currentMusic?: Phaser.Sound.BaseSound;
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -182,6 +185,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // 9. Posicionar el player basándose en el tile de inicio (después de que todo esté configurado)
     this.positionPlayerAtStart();
+
+    // 10. Inicializar música del nivel
+    this.setupLevelMusic();
   }
 
   /**
@@ -214,6 +220,13 @@ export abstract class BaseGameScene extends Phaser.Scene {
       } else {
         this.player.setStartPosition(this.surfaceLayer);
       }
+
+      // Reproducir animación de aparición al inicio del nivel
+      this.time.delayedCall(100, () => {
+        if (this.player) {
+          this.player.playAppearing();
+        }
+      });
     }
   }
 
@@ -949,5 +962,74 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
   public getLifeSystem(): LifeSystem {
     return this.lifeSystem;
+  }
+
+  /**
+   * Configurar música del nivel
+   */
+  private setupLevelMusic(): void {
+    if (!this.config.musicKey) {
+      console.log("🎵 No hay música configurada para este nivel");
+      return;
+    }
+
+    // Detener música anterior si existe
+    this.stopCurrentMusic();
+
+    // Verificar que el audio existe
+    if (!this.sound.get(this.config.musicKey)) {
+      console.log(`🎵 Iniciando música del nivel: ${this.config.musicKey}`);
+
+      this.currentMusic = this.sound.add(this.config.musicKey, {
+        loop: true,
+        volume: 0.3, // Volumen medio/bajo como solicitado
+      });
+
+      this.currentMusic.play();
+    } else {
+      console.warn(`⚠️ Música "${this.config.musicKey}" no encontrada`);
+    }
+  }
+
+  /**
+   * Detener música actual
+   */
+  private stopCurrentMusic(): void {
+    if (this.currentMusic && this.currentMusic.isPlaying) {
+      console.log("🎵 Deteniendo música actual");
+      this.currentMusic.stop();
+      this.currentMusic.destroy();
+      this.currentMusic = undefined;
+    }
+  }
+
+  /**
+   * Cambiar música del nivel
+   */
+  public changeMusic(musicKey: string): void {
+    this.config.musicKey = musicKey;
+    this.setupLevelMusic();
+  }
+
+  /**
+   * Pausar/reanudar música
+   */
+  public toggleMusic(): void {
+    if (this.currentMusic) {
+      if (this.currentMusic.isPlaying) {
+        this.currentMusic.pause();
+        console.log("🎵 Música pausada");
+      } else {
+        this.currentMusic.resume();
+        console.log("🎵 Música reanudada");
+      }
+    }
+  }
+
+  /**
+   * Cleanup cuando se destruye la escena
+   */
+  shutdown(): void {
+    this.stopCurrentMusic();
   }
 }

@@ -259,6 +259,17 @@ export class PenguinSprites {
       frameRate: 16, // Aumentado de 10 a 16 para animación más rápida
       repeat: 0,
     });
+
+    // Animación de aparición
+    scene.anims.create({
+      key: "appearing",
+      frames: scene.anims.generateFrameNumbers("appearing", {
+        start: 0,
+        end: 6,
+      }),
+      frameRate: 12, // Velocidad moderada para la aparición
+      repeat: 0,
+    });
   }
 
   /**

@@ -89,6 +89,7 @@ export function createLevelConfig(
     cameraPreset?: keyof typeof CameraPresets;
     cameraZoom?: number;
     customTilesets?: Array<{ name: string; imageKey: string }>;
+    musicKey?: string;
   } = {}
 ): GameSceneConfig {
   const {
@@ -99,6 +100,7 @@ export function createLevelConfig(
     cameraPreset = "NORMAL",
     cameraZoom = 1.0,
     customTilesets = [],
+    musicKey,
   } = options;
 
   return {
@@ -113,6 +115,7 @@ export function createLevelConfig(
       customTilesets.length > 0
         ? TilesetPresets.CUSTOM(customTilesets)
         : undefined,
+    musicKey,
   };
 }
 
@@ -127,6 +130,7 @@ export const LevelTypeConfigs = {
     createLevelConfig(tilemapKey, {
       startPosition: StartPositions.DEFAULT,
       cameraPreset: "NORMAL",
+      musicKey: "level1_music",
     }),
 
   /**

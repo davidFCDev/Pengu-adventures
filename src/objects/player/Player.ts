@@ -49,6 +49,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private isPlayingBlow: boolean = false;
   private windParticles?: Phaser.GameObjects.Particles.ParticleEmitter;
   private activeTimers: Phaser.Time.TimerEvent[] = []; // Track de timers activos
+  private snowParticles?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private isWalkingOnSnow: boolean = false;
+  private lastWalkParticleTime: number = 0;
+  private walkParticleCooldown: number = 200; // Cooldown más largo para simular pasos reales
+  private isLeftFootStep: boolean = true; // Alternar entre pie izquierdo y derecho
+
+  // Sonidos del player
+  private jumpSound?: Phaser.Sound.BaseSound;
+  private swimSound?: Phaser.Sound.BaseSound;
+  private hurtSound?: Phaser.Sound.BaseSound;
+  private blowSound?: Phaser.Sound.BaseSound;
+  private lastWalkSoundTime: number = 0;
+  private walkSoundCooldown: number = 300; // Cooldown para evitar spam del sonido de caminar
+  private wasThrowKeyDown: boolean = false; // Para detectar tap en lugar de hold
+  private isPlayingAppearing: boolean = false; // Flag para la animación de aparición
+  private appearingSprite?: Phaser.GameObjects.Sprite; // Sprite separado para la aparición
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
@@ -78,6 +94,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Configurar controles
     this.setupControls();
 
+    // Inicializar sonidos
+    this.setupSounds();
+
     // Iniciar con la animación de parado
     this.playAnimation("penguin_standing");
   }
@@ -106,6 +125,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.crouchKey = this.scene.input.keyboard.addKey(
         Phaser.Input.Keyboard.KeyCodes.SHIFT
       );
+    }
+  }
+
+  private setupSounds(): void {
+    // Configurar sonidos con volumen bajo y suave
+    this.jumpSound = this.scene.sound.add("jump_sound", { volume: 0.25 });
+    this.swimSound = this.scene.sound.add("swim_sound", { volume: 0.3 });
+    this.hurtSound = this.scene.sound.add("hurt_sound", { volume: 0.35 });
+    this.blowSound = this.scene.sound.add("blow_sound", { volume: 0.5 });
+  }
+
+  private playWalkSound(): void {
+    const currentTime = this.scene.time.now;
+
+    // Usar el mismo sonido que la bola de nieve para caminar
+    // Cooldown para evitar spam del sonido de caminar
+    if (currentTime - this.lastWalkSoundTime > this.walkSoundCooldown) {
+      // Reproducir el sonido de la bola de nieve como sonido de pasos
+      this.scene.sound.play("snowball_hit_sound", { volume: 0.4 });
+      this.lastWalkSoundTime = currentTime;
     }
   }
 
@@ -269,6 +308,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
       ) {
         this.playAnimation("penguin_walk");
+        // Crear partículas de nieve al caminar
+        this.createSnowWalkEffect();
+        // Reproducir sonido de caminar
+        this.playWalkSound();
       }
     } else if (isMovingRight) {
       body.setVelocityX(currentSpeed);
@@ -284,6 +327,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
       ) {
         this.playAnimation("penguin_walk");
+        // Crear partículas de nieve al caminar
+        this.createSnowWalkEffect();
+        // Reproducir sonido de caminar
+        this.playWalkSound();
       }
     } else {
       if (!this.isGhost) {
@@ -322,6 +369,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.lastFlappyTime = currentTime;
         // Animación de nado
         this.playAnimation("penguin_swing");
+        // Reproducir sonido de nado
+        if (this.swimSound) {
+          this.swimSound.play();
+        }
       }
     } else if (this.isClimbing) {
       // Modo escalada: movimiento vertical controlado
@@ -348,6 +399,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         body.setVelocityY(this.jumpVelocity);
         this.canJump = false;
         this.playAnimation("penguin_jump");
+        // Reproducir sonido de salto
+        if (!this.isGhost && this.jumpSound) {
+          // Modo normal: sonido de salto
+          this.jumpSound.play();
+        } else if (this.isGhost && this.swimSound) {
+          // Modo fantasma: sonido de nadar
+          this.swimSound.play();
+        }
         setTimeout(() => {
           this.canJump = true;
         }, 200); // Cooldown del salto
@@ -383,7 +442,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const currentTime = this.scene.time.now;
     const body = this.body as Phaser.Physics.Arcade.Body;
 
-    if (this.throwKey!.isDown) {
+    // Detectar tap de la tecla E (presionada ahora pero no estaba presionada antes)
+    const isThrowKeyJustPressed =
+      this.throwKey!.isDown && !this.wasThrowKeyDown;
+
+    if (isThrowKeyJustPressed) {
       if (this.isGhost) {
         // BLOW: Solo en parado, ni volando, ni saltando, ni cayendo ni en el agua
         const canUseBlow =
@@ -425,6 +488,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }
       }
     }
+
+    // Actualizar estado de la tecla para el próximo frame
+    this.wasThrowKeyDown = this.throwKey!.isDown;
   }
 
   private handleCrouch(): void {
@@ -541,6 +607,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Activar bandera para proteger la animación BLOW
     this.isPlayingBlow = true;
 
+    // Reproducir sonido de soplido
+    if (this.blowSound) {
+      this.blowSound.play();
+    }
+
     // Forzar la animación BLOW sin verificaciones
     this.currentAnimation = "penguin_ghost_blowing";
     this.play("penguin_ghost_blowing");
@@ -590,6 +661,132 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Efecto de sonido del viento (opcional)
     // this.scene.sound.play('wind_sound', { volume: 0.3 });
+  }
+
+  /**
+   * Reproducir animación de aparición
+   */
+  private playAppearingAnimation(): void {
+    if (this.isPlayingAppearing) {
+      return; // Ya se está reproduciendo
+    }
+
+    this.isPlayingAppearing = true;
+
+    // Crear sprite temporal para la animación de aparición
+    this.appearingSprite = this.scene.add.sprite(this.x, this.y, "appearing");
+    this.appearingSprite.setOrigin(0.5, 0.5);
+    this.appearingSprite.setDepth(this.depth + 1); // Encima del player
+
+    // Hacer invisible al player temporalmente
+    this.setVisible(false);
+
+    // Reproducir la animación
+    this.appearingSprite.play("appearing");
+
+    // Cuando termine la animación
+    this.appearingSprite.once("animationcomplete-appearing", () => {
+      // Destruir el sprite temporal
+      if (this.appearingSprite) {
+        this.appearingSprite.destroy();
+        this.appearingSprite = undefined;
+      }
+
+      // Hacer visible al player de nuevo
+      this.setVisible(true);
+      this.isPlayingAppearing = false;
+    });
+  }
+
+  /**
+   * Crear efecto de partículas de nieve al caminar - más realista
+   */
+  private createSnowWalkEffect(): void {
+    const currentTime = this.scene.time.now;
+
+    // Cooldown para evitar spam de partículas
+    if (currentTime - this.lastWalkParticleTime < this.walkParticleCooldown) {
+      return;
+    }
+
+    this.lastWalkParticleTime = currentTime;
+
+    // Determinar posición del pie que está tocando el suelo
+    // Alternar entre pie izquierdo y derecho para más realismo
+    const baseFootOffsetX = this.isFacingRight ? -15 : 15; // Pie trasero base
+    const footVariation = this.isLeftFootStep ? -3 : 3; // Separación entre pies
+    const footX = this.x + baseFootOffsetX + footVariation;
+    const footY = this.y + 45; // Justo en el nivel del suelo
+
+    // Alternar pie para el próximo paso
+    this.isLeftFootStep = !this.isLeftFootStep;
+
+    // EFECTO 1: Salpicadura inicial de nieve (como si pisara)
+    const splashParticles = this.scene.add.particles(
+      footX,
+      footY,
+      "snow_particle",
+      {
+        speed: { min: 40, max: 120 },
+        scale: { min: 0.4, max: 1.2 },
+        alpha: { start: 0.9, end: 0.1 },
+        lifespan: { min: 400, max: 800 },
+        quantity: { min: 8, max: 12 },
+        // Ángulo en forma de abanico hacia atrás y a los lados
+        angle: this.isFacingRight
+          ? { min: 135, max: 225 } // Hacia la izquierda si mira derecha
+          : { min: -45, max: 45 }, // Hacia la derecha si mira izquierda
+        gravityY: 200, // Gravedad más fuerte para que caigan naturalmente
+        // Sin emitZone específica, usará la posición base
+      }
+    );
+
+    // EFECTO 2: Polvo/nieve que se levanta (más sutil)
+    const dustParticles = this.scene.add.particles(
+      footX,
+      footY - 5,
+      "snow_particle",
+      {
+        speed: { min: 15, max: 40 },
+        scale: { min: 0.2, max: 0.6 },
+        alpha: { start: 0.6, end: 0 },
+        lifespan: { min: 600, max: 1000 },
+        quantity: { min: 4, max: 7 },
+        angle: { min: -30, max: 30 }, // Hacia arriba
+        gravityY: -50, // Gravedad negativa para que floten un poco
+        // Sin emitZone específica, usará la posición base
+      }
+    );
+
+    // EFECTO 3: Rastro de nieve que cae del pie (acumulación)
+    const trailParticles = this.scene.add.particles(
+      footX,
+      footY - 10,
+      "snow_particle",
+      {
+        speed: { min: 5, max: 25 },
+        scale: { min: 0.3, max: 0.8 },
+        alpha: { start: 0.7, end: 0.2 },
+        lifespan: { min: 800, max: 1200 },
+        quantity: { min: 3, max: 5 },
+        angle: { min: 80, max: 100 }, // Hacia abajo principalmente
+        gravityY: 150,
+        // Sin emitZone específica, usará la posición base
+      }
+    );
+
+    // Destruir los emisores después de tiempos diferentes para más realismo
+    this.scene.time.delayedCall(150, () => {
+      splashParticles.destroy();
+    });
+
+    this.scene.time.delayedCall(300, () => {
+      dustParticles.destroy();
+    });
+
+    this.scene.time.delayedCall(500, () => {
+      trailParticles.destroy();
+    });
   }
 
   private updateAnimations(): void {
@@ -708,6 +905,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Activar invulnerabilidad
     this.isInvulnerable = true;
 
+    // Reproducir sonido de daño
+    if (this.hurtSound) {
+      this.hurtSound.play();
+    }
+
     // Efecto flash blanco
     this.createHitEffect();
 
@@ -787,6 +989,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // Aplicar impulso fijo
       body.setVelocityY(this.ghostImpulse);
       this.lastGhostFlappyTime = currentTime;
+
+      // Reproducir sonido de nadar para salto fantasma
+      if (this.swimSound) {
+        this.swimSound.play();
+      }
 
       // Consumir un salto fantasma
       this.ghostJumpsRemaining--;
@@ -971,6 +1178,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Hacer al jugador invulnerable temporalmente
     this.isInvulnerable = true;
 
+    // Crear efecto de parpadeo igual que cuando pierde vida normal
+    this.createHitEffect();
+
     // 1. Encontrar y mover a superficie más cercana inmediatamente
     const moveTimer = this.scene.time.delayedCall(50, () => {
       console.log("👻🏃 Moviendo fantasma a superficie más cercana");
@@ -1061,11 +1271,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setPosition(bestPosition.x, bestPosition.y);
       // Asegurar que el jugador esté completamente fuera del agua
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+      
+      // Reproducir animación de aparición cuando el fantasma reaparece
+      this.playAppearingAnimation();
     } else {
       console.log("👻❌ No se encontró superficie, usando posición de inicio");
       // Si todo falla, usar la posición de inicio del nivel
       const startPos = this.findStartPosition(tilemap, surfaceLayer);
       this.setPosition(startPos.x, startPos.y);
+      
+      // También reproducir la animación en el fallback
+      this.playAppearingAnimation();
     }
   }
 
@@ -1295,5 +1511,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       ((tile.properties as any).collision === true ||
         (tile.properties as any).cross === true)
     );
+  }
+
+  /**
+   * Reproducir animación de aparición (público para llamar desde escenas)
+   */
+  public playAppearing(): void {
+    this.playAppearingAnimation();
   }
 }
