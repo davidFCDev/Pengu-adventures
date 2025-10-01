@@ -4,6 +4,7 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
   private direction: number; // 1 para derecha, -1 para izquierda
   private hasExploded: boolean = false;
   private isDestroyed: boolean = false;
+  private particles?: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     scene: Phaser.Scene,
@@ -36,7 +37,7 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
         this,
         collisionLayer,
         this.handleTileCollision,
-        undefined,
+        this.checkTileCollision, // Callback de proceso para verificar propiedades
         this
       );
     }
@@ -44,10 +45,21 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
     // Lanzar la bola de nieve
     this.launch();
 
+    // Emitir evento para que la escena pueda registrar esta snowball
+    scene.events.emit("snowballCreated", this);
+
     // Autodestruirse después del tiempo de vida
     scene.time.delayedCall(this.lifeTime, () => {
       if (!this.hasExploded && !this.isDestroyed && this.active) {
         this.explode();
+      }
+    });
+
+    // Seguridad adicional: destruir partículas si la snowball se destruye sin explotar
+    scene.time.delayedCall(this.lifeTime + 100, () => {
+      if (this.particles && this.particles.active) {
+        this.particles.destroy();
+        this.particles = undefined;
       }
     });
   }
@@ -90,6 +102,14 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
     // Velocidad inicial hacia arriba muy reducida para trayectoria más recta
     body.setVelocityY(-20); // Mucho menos para trayectoria casi horizontal
 
+    // Debug: verificar que la velocidad se estableció correctamente
+    console.log("🏐 Snowball lanzada:", {
+      position: { x: this.x, y: this.y },
+      velocity: { x: body.velocity.x, y: body.velocity.y },
+      direction: this.direction,
+      speed: this.speed,
+    });
+
     // Crear partículas de nieve que siguen la bola
     this.createSnowParticles();
 
@@ -103,6 +123,16 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
     });
   }
 
+  private checkTileCollision(obj1: any, obj2: any): boolean {
+    // obj2 es el tile, verificar si tiene collision=true
+    if (obj2 && obj2.properties) {
+      console.log("🔍 Verificando tile collision:", obj2.properties);
+      return obj2.properties.collision === true;
+    }
+    // Si no tiene propiedades, no colisionar por defecto
+    return false;
+  }
+
   private handleTileCollision(): void {
     if (!this.hasExploded) {
       // Reproducir sonido de colisión de bola de nieve
@@ -113,30 +143,29 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
 
   private createSnowParticles(): void {
     // Crear sistema de partículas de nieve
-    const particles = this.scene.add.particles(this.x, this.y, "snowball", {
-      scale: { start: 0.1, end: 0.05 },
-      speed: { min: 10, max: 30 },
-      lifespan: { min: 200, max: 500 },
-      quantity: 2,
-      frequency: 50,
-      alpha: { start: 0.8, end: 0 },
+    this.particles = this.scene.add.particles(this.x, this.y, "snowball", {
+      scale: { start: 0.08, end: 0.03 },
+      speed: { min: 8, max: 20 },
+      lifespan: { min: 150, max: 300 }, // Reducido para evitar acumulación
+      quantity: 1, // Reducido de 2 a 1
+      frequency: 80, // Menos frecuente
+      alpha: { start: 0.6, end: 0 }, // Menos opacidad
       tint: [0xffffff, 0xf0f0f0, 0xe0e0e0],
     });
 
     // Hacer que las partículas sigan la bola de nieve
-    particles.startFollow(this);
-
-    // Destruir las partículas cuando se destruya la bola
-    this.scene.time.delayedCall(this.lifeTime, () => {
-      if (particles && particles.active && !this.isDestroyed) {
-        particles.destroy();
-      }
-    });
+    this.particles.startFollow(this);
   }
 
   public explode(): void {
     if (this.hasExploded || this.isDestroyed) return;
     this.hasExploded = true;
+
+    // Destruir partículas inmediatamente al explotar
+    if (this.particles && this.particles.active) {
+      this.particles.destroy();
+      this.particles = undefined;
+    }
     this.isDestroyed = true;
 
     // Crear efecto de explosión con partículas de nieve esparciéndose
@@ -250,6 +279,13 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
 
   destroy(): void {
     this.isDestroyed = true;
+
+    // Asegurar que las partículas se destruyan
+    if (this.particles && this.particles.active) {
+      this.particles.destroy();
+      this.particles = undefined;
+    }
+
     super.destroy();
   }
 }

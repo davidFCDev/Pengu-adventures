@@ -41,17 +41,6 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
-    // Cargar el spritesheet de aparición (7 frames)
-    this.load.spritesheet(
-      "appearing",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Appearing-dn5Xh72TXz8j3WHvjRgX5qhpAeNZHI.png",
-      {
-        frameWidth: 96,
-        frameHeight: 96,
-        endFrame: 6, // 7 frames (0-6)
-      }
-    );
-
     // Crear una textura simple para partículas de nieve
     this.load.once("complete", () => {
       if (!this.textures.exists("snow_particle")) {

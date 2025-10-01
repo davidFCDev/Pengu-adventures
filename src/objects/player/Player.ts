@@ -63,8 +63,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private lastWalkSoundTime: number = 0;
   private walkSoundCooldown: number = 300; // Cooldown para evitar spam del sonido de caminar
   private wasThrowKeyDown: boolean = false; // Para detectar tap en lugar de hold
-  private isPlayingAppearing: boolean = false; // Flag para la animación de aparición
-  private appearingSprite?: Phaser.GameObjects.Sprite; // Sprite separado para la aparición
 
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
@@ -279,9 +277,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.updateCrouchHitbox(true);
         });
       } else {
-        console.log("🔥 FORZANDO frame y animación idle");
+        console.log("🔥 FORZANDO frame y animación standing");
         this.anims.stop(); // Parar cualquier animación actual
-        this.playAnimation("penguin_idle");
+        this.playAnimation("penguin_standing");
       }
     }
 
@@ -582,7 +580,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // La bola aparece cuando el pingüino está en medio del lanzamiento
     this.scene.time.delayedCall(300, () => {
       const direction = this.isFacingRight ? 1 : -1;
-      const offsetX = direction * 35; // Offset ajustado para la bola más grande
+      const offsetX = direction * 50; // Más alejado del player para evitar colisiones
 
       // Intentar obtener el layer de superficie para colisiones
       let collisionLayer: Phaser.Tilemaps.TilemapLayer | undefined;
@@ -591,12 +589,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const baseScene = this.scene as any;
       if (baseScene.surfaceLayer) {
         collisionLayer = baseScene.surfaceLayer;
+        console.log("🎯 Usando surfaceLayer para snowball collision");
       }
 
       const snowball = new Snowball(
         this.scene,
         this.x + offsetX,
-        this.y - 15, // Ajustado para la nueva bola más grande
+        this.y - 30, // Más arriba para evitar colisiones inmediatas
         direction,
         collisionLayer
       );
@@ -661,41 +660,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Efecto de sonido del viento (opcional)
     // this.scene.sound.play('wind_sound', { volume: 0.3 });
-  }
-
-  /**
-   * Reproducir animación de aparición
-   */
-  private playAppearingAnimation(): void {
-    if (this.isPlayingAppearing) {
-      return; // Ya se está reproduciendo
-    }
-
-    this.isPlayingAppearing = true;
-
-    // Crear sprite temporal para la animación de aparición
-    this.appearingSprite = this.scene.add.sprite(this.x, this.y, "appearing");
-    this.appearingSprite.setOrigin(0.5, 0.5);
-    this.appearingSprite.setDepth(this.depth + 1); // Encima del player
-
-    // Hacer invisible al player temporalmente
-    this.setVisible(false);
-
-    // Reproducir la animación
-    this.appearingSprite.play("appearing");
-
-    // Cuando termine la animación
-    this.appearingSprite.once("animationcomplete-appearing", () => {
-      // Destruir el sprite temporal
-      if (this.appearingSprite) {
-        this.appearingSprite.destroy();
-        this.appearingSprite = undefined;
-      }
-
-      // Hacer visible al player de nuevo
-      this.setVisible(true);
-      this.isPlayingAppearing = false;
-    });
   }
 
   /**
@@ -1271,17 +1235,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setPosition(bestPosition.x, bestPosition.y);
       // Asegurar que el jugador esté completamente fuera del agua
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
-      
-      // Reproducir animación de aparición cuando el fantasma reaparece
-      this.playAppearingAnimation();
     } else {
       console.log("👻❌ No se encontró superficie, usando posición de inicio");
       // Si todo falla, usar la posición de inicio del nivel
       const startPos = this.findStartPosition(tilemap, surfaceLayer);
       this.setPosition(startPos.x, startPos.y);
-      
-      // También reproducir la animación en el fallback
-      this.playAppearingAnimation();
     }
   }
 
@@ -1511,12 +1469,5 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       ((tile.properties as any).collision === true ||
         (tile.properties as any).cross === true)
     );
-  }
-
-  /**
-   * Reproducir animación de aparición (público para llamar desde escenas)
-   */
-  public playAppearing(): void {
-    this.playAppearingAnimation();
   }
 }

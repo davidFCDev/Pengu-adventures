@@ -220,13 +220,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
       } else {
         this.player.setStartPosition(this.surfaceLayer);
       }
-
-      // Reproducir animación de aparición al inicio del nivel
-      this.time.delayedCall(100, () => {
-        if (this.player) {
-          this.player.playAppearing();
-        }
-      });
     }
   }
 
