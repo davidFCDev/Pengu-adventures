@@ -264,12 +264,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       console.log("🔥 Animación actual:", this.anims.currentAnim?.key);
       console.log("🔥 isCrouching:", this.isCrouching);
 
+      // Resetear banderas de throw y blow al aterrizar para evitar quedarse clavado
+      if (this.isPlayingThrow) {
+        console.log("🔥 RESET: Reseteando isPlayingThrow al aterrizar");
+        this.isPlayingThrow = false;
+      }
+      if (this.isPlayingBlow) {
+        console.log("🔥 RESET: Reseteando isPlayingBlow al aterrizar");
+        this.isPlayingBlow = false;
+      }
+
       // El problema es que el frame visual puede quedarse "colgado" independientemente de la animación
       // Forzar el frame correcto inmediatamente al aterrizar
       if (this.isCrouching) {
         console.log("🔥 FORZANDO frame y animación de crouch");
         this.anims.stop(); // Parar cualquier animación actual
-        this.playAnimation("penguin_crouch");
+        // Forzar la animación crouch directamente sin pasar por playAnimation
+        this.currentAnimation = "penguin_crouch";
+        this.play("penguin_crouch");
         // Cuando termine la animación, mantener el último frame
         this.once("animationcomplete-penguin_crouch", () => {
           this.anims.stop();
@@ -279,7 +291,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       } else {
         console.log("🔥 FORZANDO frame y animación standing");
         this.anims.stop(); // Parar cualquier animación actual
-        this.playAnimation("penguin_standing");
+        // Forzar la animación standing directamente sin pasar por playAnimation
+        // para evitar que isPlayingThrow bloquee el cambio
+        this.currentAnimation = "penguin_standing";
+        this.play("penguin_standing");
       }
     }
 
@@ -446,15 +461,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (isThrowKeyJustPressed) {
       if (this.isGhost) {
-        // BLOW: Solo en parado, ni volando, ni saltando, ni cayendo ni en el agua
+        // BLOW: Se puede usar en movimiento, solo requiere cooldown (como snowball)
         const canUseBlow =
           this.canBlow &&
           currentTime - this.lastBlowTime > this.blowCooldown &&
-          this.isOnGround && // Debe estar en el suelo
           !this.isSwimming && // No en agua
-          !this.isClimbing && // No escalando
-          Math.abs(body.velocity.x) < 10 && // No moviéndose horizontalmente (casi parado)
-          Math.abs(body.velocity.y) < 10; // No moviéndose verticalmente (no saltando/cayendo)
+          !this.isClimbing; // No escalando
 
         if (canUseBlow) {
           this.blowWind();
@@ -574,6 +586,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Escuchar cuando termine la animación THROW
     this.once("animationcomplete-penguin_throw", () => {
       this.isPlayingThrow = false;
+      console.log("✅ Animación THROW completada normalmente");
+    });
+
+    // Seguridad: resetear la bandera después de un tiempo máximo
+    // La animación de throw no debería durar más de 500ms
+    this.scene.time.delayedCall(500, () => {
+      if (this.isPlayingThrow) {
+        console.log("⚠️ Forzando reset de isPlayingThrow por timeout");
+        this.isPlayingThrow = false;
+      }
     });
 
     // Crear la bola de nieve con un pequeño retraso para sincronizar con la animación
@@ -618,6 +640,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Escuchar cuando termine la animación
     this.once("animationcomplete-penguin_ghost_blowing", () => {
       this.isPlayingBlow = false;
+      console.log("✅ Animación BLOW completada normalmente");
+    });
+
+    // Seguridad: resetear la bandera después de un tiempo máximo
+    this.scene.time.delayedCall(600, () => {
+      if (this.isPlayingBlow) {
+        console.log("⚠️ Forzando reset de isPlayingBlow por timeout");
+        this.isPlayingBlow = false;
+      }
     });
 
     // Crear efecto de viento con partículas después de un retraso más corto

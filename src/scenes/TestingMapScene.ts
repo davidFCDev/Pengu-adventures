@@ -22,6 +22,7 @@ export class TestingMapScene extends BaseGameScene {
         lerp: { x: 1, y: 1 },
         offset: { x: 0, y: 0 },
       },
+      musicKey: "level1_music", // Música de fondo para el nivel de prueba
     };
 
     super("TestingMapScene", config);

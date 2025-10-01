@@ -10,6 +10,12 @@
         "#spritesheet-tiles-default": {
             "scaleInDock": 0.75
         },
+        "TestingMap.json#spritesheet-backgrounds-default": {
+            "scaleInEditor": 1
+        },
+        "TestingMap.json#spritesheet-tiles-default": {
+            "scaleInEditor": 1
+        },
         "TestingMap.tmx#spritesheet-tiles-default": {
             "scaleInEditor": 0.5
         }
