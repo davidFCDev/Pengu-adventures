@@ -7,6 +7,9 @@
     "expandedProjectPaths": [
     ],
     "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
         "#spritesheet-tiles-default": {
             "scaleInDock": 0.75
         },

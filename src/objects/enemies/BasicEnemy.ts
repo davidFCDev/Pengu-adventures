@@ -43,8 +43,8 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
 
     // Configurar físicas (más grande)
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(54, 54); // Hitbox más grande pero un poco menor que el sprite visual
-    body.setOffset(5, 5); // Centrar el hitbox
+    body.setSize(70, 70); // Hitbox más grande
+    body.setOffset(7, 7); // Centrar el hitbox
     body.setCollideWorldBounds(true);
     body.setGravityY(800);
 
@@ -76,52 +76,52 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
 
       // Cuerpo principal (círculo rojo más grande)
       graphics.fillStyle(0xff3333);
-      graphics.fillCircle(32, 32, 28);
+      graphics.fillCircle(42, 42, 36);
 
       // Sombra/borde para efecto 3D
-      graphics.lineStyle(4, 0xcc0000);
-      graphics.strokeCircle(32, 32, 28);
+      graphics.lineStyle(5, 0xcc0000);
+      graphics.strokeCircle(42, 42, 36);
 
       // Ojos grandes y expresivos (blancos)
       graphics.fillStyle(0xffffff);
-      graphics.fillCircle(22, 22, 8);
-      graphics.fillCircle(42, 22, 8);
+      graphics.fillCircle(30, 30, 10);
+      graphics.fillCircle(54, 30, 10);
 
       // Borde de ojos
       graphics.lineStyle(2, 0x000000);
-      graphics.strokeCircle(22, 22, 8);
-      graphics.strokeCircle(42, 22, 8);
+      graphics.strokeCircle(30, 30, 10);
+      graphics.strokeCircle(54, 30, 10);
 
       // Pupilas grandes y animadas
       graphics.fillStyle(0x000000);
-      graphics.fillCircle(24, 24, 4);
-      graphics.fillCircle(40, 24, 4);
+      graphics.fillCircle(32, 32, 5);
+      graphics.fillCircle(52, 32, 5);
 
       // Reflejos en los ojos para efecto cartoon
       graphics.fillStyle(0xffffff);
-      graphics.fillCircle(26, 22, 2);
-      graphics.fillCircle(38, 22, 2);
+      graphics.fillCircle(34, 30, 3);
+      graphics.fillCircle(50, 30, 3);
 
       // Boca grande y expresiva (sonrisa malvada)
-      graphics.lineStyle(3, 0x000000);
+      graphics.lineStyle(4, 0x000000);
       graphics.beginPath();
-      graphics.arc(32, 42, 12, 0, Math.PI, false);
+      graphics.arc(42, 54, 16, 0, Math.PI, false);
       graphics.strokePath();
 
       // Dientes pequeños para efecto malvado
       graphics.fillStyle(0xffffff);
-      graphics.fillRect(28, 42, 3, 4);
-      graphics.fillRect(33, 42, 3, 4);
-      graphics.fillRect(38, 42, 3, 4);
+      graphics.fillRect(36, 54, 4, 5);
+      graphics.fillRect(42, 54, 4, 5);
+      graphics.fillRect(48, 54, 4, 5);
 
-      // Generar textura más grande
-      graphics.generateTexture("basicEnemyTexture", 64, 64);
+      // Generar textura más grande (84x84)
+      graphics.generateTexture("basicEnemyTexture", 84, 84);
       graphics.destroy();
     }
 
-    // Aplicar la textura al sprite
+    // Aplicar la textura al sprite (84x84)
     this.setTexture("basicEnemyTexture");
-    this.setDisplaySize(64, 64);
+    this.setDisplaySize(84, 84);
   }
 
   private startIdlePhase(): void {
@@ -153,6 +153,8 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
       return;
     }
 
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
     switch (this.state) {
       case EnemyState.IDLE:
         this.idleTimer -= delta;
@@ -162,10 +164,21 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
         break;
 
       case EnemyState.MOVING:
+        // Verificar colisión con paredes (tiles con colisión)
+        const touchingWall = body.blocked.left || body.blocked.right;
+
+        if (touchingWall) {
+          console.log("🧱 Enemigo chocó con pared, cambiando dirección");
+          body.setVelocityX(0);
+          this.switchTarget();
+          this.startIdlePhase();
+          break;
+        }
+
         // Verificar si llegó al objetivo
         const distanceToTarget = Math.abs(this.x - this.currentTarget.x);
         if (distanceToTarget < 10) {
-          (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
+          body.setVelocityX(0);
           this.switchTarget();
           this.startIdlePhase();
         }

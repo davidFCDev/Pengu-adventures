@@ -111,17 +111,35 @@ export class TestingMapScene extends BaseGameScene {
 
     // Crear enemigos en diferentes superficies (evitando el área del player)
     const playerStartX = this.config.playerStartPosition.x;
-    const safeDistance = 200; // Distancia mínima del player
+    const safeDistance = 100; // Distancia mínima del player
 
     let enemiesCreated = 0;
+    let surfacesEvaluated = 0;
+
     for (let i = 0; i < validSurfaces.length; i++) {
       const surface = validSurfaces[i];
+      surfacesEvaluated++;
+
       console.log(`🔍 Evaluando superficie ${i}:`, {
         centerX: surface.centerX,
         playerStartX,
         distance: Math.abs(surface.centerX - playerStartX),
+        width: surface.endX - surface.startX,
       });
-      // Evitar superficies cerca del inicio del player
+
+      // Verificar que hay suficiente espacio para patrulla después de márgenes
+      const margin = 50; // Margen reducido para más flexibilidad
+      const patrolWidth = surface.endX - margin - (surface.startX + margin);
+
+      if (patrolWidth < 80) {
+        // Espacio mínimo reducido
+        console.log(
+          `⚠️ Superficie ${i} rechazada: no hay suficiente espacio de patrulla (${patrolWidth}px < 80px)`
+        );
+        continue;
+      }
+
+      // Evitar solo la superficie inmediata del inicio del player
       if (Math.abs(surface.centerX - playerStartX) < safeDistance) {
         console.log(
           `❌ Superficie ${i} rechazada: muy cerca del player (${Math.abs(
@@ -131,28 +149,16 @@ export class TestingMapScene extends BaseGameScene {
         continue;
       }
 
-      // Verificar que hay suficiente espacio para patrulla después de márgenes
-      const patrolWidth = surface.endX - 64 - (surface.startX + 64);
-      if (patrolWidth < 64) {
-        // Reducido temporalmente para debug
-        console.log(
-          `⚠️ Superficie ${i} rechazada: no hay suficiente espacio de patrulla (${patrolWidth}px < 64px)`
-        );
-        continue;
-      }
-
       console.log(
-        `✅ Superficie ${i} aceptada: espacio de patrulla = ${patrolWidth}px`
+        `✅ Superficie ${i} ACEPTADA: espacio de patrulla = ${patrolWidth}px`
       );
-
-      if (enemiesCreated >= 4) break; // Máximo 4 enemigos
 
       const enemy = new BasicEnemy(
         this,
         surface.centerX, // x inicial (centro de la superficie)
-        surface.y - 64, // y inicial (más arriba para el enemigo más grande)
-        { x: surface.startX + 64, y: surface.y - 64 }, // punto A (más margen)
-        { x: surface.endX - 64, y: surface.y - 64 }, // punto B (más margen)
+        surface.y - 84, // y inicial (ajustado para enemigo de 84x84)
+        { x: surface.startX + margin, y: surface.y - 84 }, // punto A
+        { x: surface.endX - margin, y: surface.y - 84 }, // punto B
         this.surfaceLayer! // layer de colisión
       );
 
@@ -161,11 +167,19 @@ export class TestingMapScene extends BaseGameScene {
 
       console.log(`🔴 Enemigo ${enemiesCreated} creado en superficie:`, {
         center: surface.centerX,
-        y: surface.y - 64,
+        y: surface.y - 84,
         width: surface.endX - surface.startX,
-        patrol: `${surface.startX + 64} - ${surface.endX - 64}`,
+        patrol: `${surface.startX + margin} -> ${surface.endX - margin}`,
       });
+
+      if (enemiesCreated >= 8) break; // Máximo 8 enemigos
     }
+
+    console.log(
+      `\n📊 Resumen: ${surfacesEvaluated} superficies evaluadas, ${enemiesCreated} enemigos creados`
+    );
+
+    console.log(`\n✅ Total de enemigos creados: ${enemiesCreated}`);
   }
 
   private findValidSurfaces(): Array<{
@@ -181,10 +195,17 @@ export class TestingMapScene extends BaseGameScene {
       y: number;
     }> = [];
     const tileSize = 32;
-    // Temporalmente reducido para debug - mínimo 4 tiles
-    const minSurfaceWidth = 4;
+    // Mínimo 5 tiles de ancho (160px mínimo) - reducido para encontrar más superficies
+    const minSurfaceWidth = 5;
 
-    if (!this.surfaceLayer) return surfaces;
+    if (!this.surfaceLayer) {
+      console.log("❌ No hay surfaceLayer disponible");
+      return surfaces;
+    }
+
+    console.log(
+      `🔍 Buscando superficies en mapa de ${this.surfaceLayer.width}x${this.surfaceLayer.height} tiles...`
+    );
 
     // Recorrer el mapa buscando superficies horizontales
     for (let y = 0; y < this.surfaceLayer.height; y++) {
