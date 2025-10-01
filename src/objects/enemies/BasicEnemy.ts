@@ -204,14 +204,9 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   public damagePlayer(player: any): void {
-    // El player pierde una vida
+    // El player pierde una vida y es repelido
     if (player.takeDamage) {
-      player.takeDamage();
+      player.takeDamage(this.x); // Pasamos la posición X del enemigo
     }
-
-    // Repeler al player hacia atrás
-    const repelForce = 200;
-    const direction = player.x > this.x ? 1 : -1;
-    player.body.setVelocityX(direction * repelForce);
   }
 }

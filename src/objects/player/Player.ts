@@ -43,6 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private maxGhostJumps: number = 3; // Máximo de saltos consecutivos en modo fantasma
   private wasOnGroundLastFrame: boolean = false; // Para detectar cuando toca el suelo
   private hasTouchedGroundSinceLastModeChange: boolean = true; // 🔒 Anti-exploit de saltos infinitos
+  private wasJumpKeyDown: boolean = false; // Para detectar cuando se suelta y presiona la tecla
   private canBlow: boolean = true;
   private blowCooldown: number = 800; // Cooldown para soplar
   private lastBlowTime: number = 0;
@@ -637,6 +638,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.currentAnimation = "penguin_ghost_blowing";
     this.play("penguin_ghost_blowing");
 
+    // Notificar a la escena sobre el soplido (para destruir muros de nieve)
+    this.scene.events.emit("playerBlowing");
+
     // Escuchar cuando termine la animación
     this.once("animationcomplete-penguin_ghost_blowing", () => {
       this.isPlayingBlow = false;
@@ -967,6 +971,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * Método llamado cuando el player recibe daño de un enemigo
+   * Incluye repeler y llamar a hit()
+   */
+  public takeDamage(enemyX?: number): void {
+    if (this.isInvulnerable) return;
+
+    // Llamar a hit para aplicar daño, sonido y efectos visuales
+    this.hit();
+
+    // Repeler al player hacia atrás si se proporciona la posición del enemigo
+    if (enemyX !== undefined) {
+      const repelForce = 300;
+      const direction = this.x > enemyX ? 1 : -1;
+      if (this.body) {
+        (this.body as Phaser.Physics.Arcade.Body).setVelocityX(direction * repelForce);
+        (this.body as Phaser.Physics.Arcade.Body).setVelocityY(-200); // Pequeño salto hacia arriba
+      }
+    }
+  }
+
+  /**
    * Manejar movimiento en modo fantasma
    */
   private handleGhostMovement(body: Phaser.Physics.Arcade.Body): void {
@@ -975,15 +1000,22 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Solo SPACE para saltos fantasma - tap normal
     const isJumpKeyPressed = this.jumpKey!.isDown;
 
-    // Sistema de salto fantasma simple (tap)
+    // Detectar cuando se suelta la tecla de salto
+    if (!isJumpKeyPressed && this.wasJumpKeyDown) {
+      this.wasJumpKeyDown = false;
+    }
+
+    // Sistema de salto fantasma simple (tap) - requiere que se suelte y presione la tecla
     if (
       isJumpKeyPressed &&
+      !this.wasJumpKeyDown && // Nueva condición: solo si la tecla no estaba presionada antes
       this.ghostJumpsRemaining > 0 &&
       currentTime - this.lastGhostFlappyTime > this.ghostFlappyCooldown
     ) {
       // Aplicar impulso fijo
       body.setVelocityY(this.ghostImpulse);
       this.lastGhostFlappyTime = currentTime;
+      this.wasJumpKeyDown = true; // Marcar tecla como presionada
 
       // Reproducir sonido de nadar para salto fantasma
       if (this.swimSound) {

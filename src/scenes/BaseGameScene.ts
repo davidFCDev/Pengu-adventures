@@ -66,6 +66,14 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected ghostToggleButton!: Phaser.GameObjects.Graphics;
   protected isGameOverInProgress: boolean = false;
   protected currentMusic?: Phaser.Sound.BaseSound;
+  protected snowWalls: Array<{
+    container: Phaser.GameObjects.Container;
+    sprite: Phaser.Physics.Arcade.Sprite;
+    worldX: number;
+    worldY: number;
+  }> = []; // Array para muros de nieve
+  protected levelEndUI?: any; // UI de fin de nivel
+  protected hasFinishedLevel: boolean = false;
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -188,6 +196,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // 10. Inicializar música del nivel
     this.setupLevelMusic();
+
+    // 11. Crear muros de nieve
+    this.createSnowWalls();
+
+    // 12. Configurar detección de final de nivel
+    this.setupLevelEndDetection();
+
+    // 13. Escuchar evento de soplido para destruir muros de nieve
+    this.events.on("playerBlowing", () => {
+      this.checkSnowWallDestruction();
+    });
   }
 
   /**
@@ -1017,6 +1036,270 @@ export abstract class BaseGameScene extends Phaser.Scene {
         console.log("🎵 Música reanudada");
       }
     }
+  }
+
+  /**
+   * Crear muros de nieve desde tiles con propiedad snow=true
+   * Usa la misma estrategia que createSpikesGroup - crear objetos inmediatamente
+   */
+  protected createSnowWalls(): void {
+    console.log("🔍 Iniciando búsqueda de muros de nieve...");
+    console.log("🔍 ObjectsLayer existe?", !!this.objectsLayer);
+    
+    if (!this.objectsLayer) {
+      console.error("❌ No hay objectsLayer para crear muros de nieve");
+      return;
+    }
+
+    let tilesChecked = 0;
+    let snowTilesFound = 0;
+
+    // Buscar tiles con propiedad snow INMEDIATAMENTE (como los spikes)
+    this.objectsLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+      tilesChecked++;
+      if (tile && tile.index !== -1 && tile.properties && tile.properties.snow === true) {
+        snowTilesFound++;
+
+        const centerX = tile.getCenterX();
+        const centerY = tile.getCenterY();
+
+        // Crear el muro centrado en el tile
+        const wallContainer = this.add.container(centerX, centerY);
+        wallContainer.setDepth(50);
+
+        // Bloque inferior: centrado en el tile
+        const lowerBlock = this.add.graphics();
+        lowerBlock.fillStyle(0xffffff, 0.95);
+        lowerBlock.fillRect(-32, -32, 64, 64);
+        
+        // Sombras para efecto 3D
+        lowerBlock.fillStyle(0xe8f4f8, 0.6);
+        lowerBlock.fillRect(-27, -27, 50, 12);
+        lowerBlock.fillRect(-27, -10, 30, 15);
+        
+        // Borde suave
+        lowerBlock.lineStyle(2, 0xccddee, 0.8);
+        lowerBlock.strokeRect(-32, -32, 64, 64);
+        wallContainer.add(lowerBlock);
+
+        // Bloque superior
+        const upperBlock = this.add.graphics();
+        upperBlock.fillStyle(0xffffff, 0.95);
+        upperBlock.fillRect(-32, -96, 64, 64);
+        
+        // Sombras para efecto 3D
+        upperBlock.fillStyle(0xe8f4f8, 0.6);
+        upperBlock.fillRect(-27, -91, 50, 12);
+        upperBlock.fillRect(-27, -74, 30, 15);
+        
+        // Borde suave
+        upperBlock.lineStyle(2, 0xccddee, 0.8);
+        upperBlock.strokeRect(-32, -96, 64, 64);
+        wallContainer.add(upperBlock);
+
+        // Crear física para colisión (invisible)
+        const physicsSprite = this.physics.add.sprite(centerX, centerY - 32, "");
+        physicsSprite.setVisible(false);
+        (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(64, 128);
+        (physicsSprite.body as Phaser.Physics.Arcade.Body).setImmovable(true);
+        (physicsSprite.body as Phaser.Physics.Arcade.Body).moves = false;
+        (physicsSprite as any).isSnowWall = true;
+
+        // Guardar referencias
+        (wallContainer as any).physicsSprite = physicsSprite;
+        (physicsSprite as any).wallContainer = wallContainer;
+        this.snowWalls.push({ 
+          container: wallContainer, 
+          sprite: physicsSprite, 
+          worldX: centerX, 
+          worldY: centerY 
+        });
+
+        // Configurar colisión
+        if (this.player) {
+          this.physics.add.collider(this.player, physicsSprite);
+        }
+
+        tile.setVisible(false);
+        tile.setCollision(false);
+      }
+    });
+
+    console.log(`📊 Tiles revisados: ${tilesChecked}, Tiles con snow=true encontrados: ${snowTilesFound}`);
+    console.log(`📊 Total muros en array: ${this.snowWalls.length}`);
+  }
+
+  /**
+   * Detectar si el jugador puede destruir un muro cercano con el soplido
+   */
+  protected checkSnowWallDestruction(): void {
+    if (!this.player || !this.player.getIsGhost()) return;
+
+    const playerX = this.player.x;
+    const playerY = this.player.y;
+    const direction = this.player.flipX ? -1 : 1;
+
+    // Buscar muros cercanos
+    for (let i = this.snowWalls.length - 1; i >= 0; i--) {
+      const wall = this.snowWalls[i];
+      if (wall && wall.container && wall.sprite) {
+        const distance = Phaser.Math.Distance.Between(
+          playerX,
+          playerY,
+          wall.worldX,
+          wall.worldY - 32
+        );
+        
+        if (distance <= 200) {
+          // Reproducir sonido
+          this.sound.play("blow_sound", { volume: 0.3 });
+          
+          // Crear explosión de partículas de nieve desde toda la superficie del muro
+          this.createSnowExplosion(wall.worldX, wall.worldY - 32, direction);
+          
+          // Fade out suave del muro con movimiento hacia el lado contrario del soplido
+          this.tweens.add({
+            targets: wall.container,
+            alpha: 0,
+            x: wall.container.x - direction * 30, // Movimiento suave hacia el lado contrario
+            y: wall.container.y + 10, // Ligero movimiento hacia abajo
+            duration: 400,
+            ease: "Cubic.easeOut",
+            onComplete: () => {
+              wall.container.destroy();
+              wall.sprite.destroy();
+            }
+          });
+          
+          // Remover del array
+          this.snowWalls.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  /**
+   * Crear explosión de partículas de nieve estilo cartoon desde toda la superficie del muro
+   */
+  private createSnowExplosion(x: number, y: number, direction: number): void {
+    // Crear partículas desde múltiples puntos de la superficie del muro (2 bloques de 64x64)
+    const emissionPoints = [
+      { x: x - 20, y: y - 60 }, // Superior izquierda del bloque superior
+      { x: x + 20, y: y - 60 }, // Superior derecha del bloque superior
+      { x: x, y: y - 40 },      // Centro del bloque superior
+      { x: x - 20, y: y + 5 },  // Superior izquierda del bloque inferior
+      { x: x + 20, y: y + 5 },  // Superior derecha del bloque inferior
+      { x: x, y: y + 25 },      // Centro del bloque inferior
+    ];
+
+    emissionPoints.forEach(point => {
+      // Partículas medianas desde cada punto
+      const particles = this.add.particles(point.x, point.y, "snow_particle", {
+        speed: { min: 80, max: 180 },
+        angle: { 
+          min: direction > 0 ? -50 : 130, 
+          max: direction > 0 ? 50 : 230 
+        },
+        scale: { start: 1.8, end: 0.2 },
+        alpha: { start: 0.95, end: 0 },
+        lifespan: 800,
+        quantity: 4,
+        gravityY: 200,
+        bounce: 0.3
+      });
+
+      this.time.delayedCall(1000, () => particles.destroy());
+    });
+
+    // Partículas pequeñas volando (copos de nieve)
+    const smallSnowParticles = this.add.particles(x, y, "snow_particle", {
+      speed: { min: 100, max: 250 },
+      angle: { 
+        min: direction > 0 ? -60 : 120, 
+        max: direction > 0 ? 60 : 240 
+      },
+      scale: { start: 1.2, end: 0.1 },
+      alpha: { start: 0.8, end: 0 },
+      lifespan: 1000,
+      quantity: 20,
+      gravityY: 120,
+      rotate: { start: 0, end: 360 }
+    });
+
+    this.time.delayedCall(1200, () => smallSnowParticles.destroy());
+  }
+
+  /**
+   * Configurar detección de final de nivel
+   * Usa la misma estrategia que createSpikesGroup - crear objetos inmediatamente
+   */
+  protected setupLevelEndDetection(): void {
+    if (!this.objectsLayer || !this.player) {
+      return;
+    }
+
+    // Buscar tile con propiedad end=true INMEDIATAMENTE (como los spikes)
+    this.objectsLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+      if (tile && tile.index !== -1 && tile.properties && tile.properties.end === true) {
+        // Crear zona de trigger centrada en el tile
+        const worldX = tile.getCenterX();
+        const worldY = tile.getCenterY();
+
+        // Crear sprite invisible para física (como los spikes)
+        const endZone = this.add.rectangle(worldX, worldY, 64, 64);
+        endZone.setVisible(false);
+        
+        // Agregar física
+        this.physics.add.existing(endZone);
+        const body = endZone.body as Phaser.Physics.Arcade.Body;
+        body.setSize(64, 64);
+        body.setAllowGravity(false);
+        body.setImmovable(true);
+
+        // Detectar overlap con el player (como los spikes con el player)
+        this.physics.add.overlap(
+          this.player,
+          endZone,
+          () => {
+            this.onLevelEnd();
+          },
+          undefined,
+          this
+        );
+      }
+    });
+  }
+
+  /**
+   * Llamado cuando el jugador llega al final del nivel
+   */
+  private onLevelEnd(): void {
+    if (this.hasFinishedLevel) return;
+
+    this.hasFinishedLevel = true;
+
+    // Detener al player
+    if (this.player && this.player.body) {
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      body.setVelocity(0, 0);
+      body.setAllowGravity(false);
+    }
+
+    // Reproducir sonido de finalización
+    this.sound.play("finish_level_sound", { volume: 0.5 });
+
+    // Pausar música del nivel
+    if (this.currentMusic && this.currentMusic.isPlaying) {
+      this.currentMusic.pause();
+    }
+
+    // Mostrar UI de fin de nivel con un pequeño delay para ver la animación completa
+    this.time.delayedCall(300, () => {
+      import("../objects/ui/LevelEndUI").then(({ LevelEndUI }) => {
+        this.levelEndUI = new LevelEndUI(this);
+        this.levelEndUI.show();
+      });
+    });
   }
 
   /**

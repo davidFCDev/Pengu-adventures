@@ -41,16 +41,8 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
-    // Crear una textura simple para partículas de nieve
-    this.load.once("complete", () => {
-      if (!this.textures.exists("snow_particle")) {
-        const graphics = this.add.graphics();
-        graphics.fillStyle(0xffffff, 0.9); // Blanco semi-transparente
-        graphics.fillCircle(3, 3, 3); // Círculo pequeño
-        graphics.generateTexture("snow_particle", 6, 6);
-        graphics.destroy();
-      }
-    });
+    // Crear una textura simple para partículas de nieve (creada en create)
+    // Se crea después de que Phaser esté completamente inicializado
 
     // Cargar el spritesheet de corazones para el sistema de vidas
     this.load.spritesheet(
@@ -60,6 +52,17 @@ export class PreloadScene extends Phaser.Scene {
         frameWidth: 32,
         frameHeight: 32,
         endFrame: 2, // Solo necesitamos frames 0 (lleno) y 2 (vacío)
+      }
+    );
+
+    // Cargar el spritesheet de celebración (4 frames de 128x128)
+    this.load.spritesheet(
+      "celebrate",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/celebrate-icTGklgzJfwuEIAvMbCAcYDel5Nojk.png?6ISy",
+      {
+        frameWidth: 128,
+        frameHeight: 128,
+        endFrame: 3, // 4 frames (0-3)
       }
     );
 
@@ -95,6 +98,12 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/hurt-Nls2Ffjm9810PWTjFhRFDJXiXsY1wM.mp3?NW2H"
     );
 
+    // Sonido de finalizar nivel
+    this.load.audio(
+      "finish_level_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/finish-level-4pyYbYK1y4fWxi9Si6P8o2YQyjUAjm.mp3?wTty"
+    );
+
     // Sonido de soplido del fantasma
     this.load.audio(
       "blow_sound",
@@ -108,6 +117,15 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Crear textura de partículas de nieve si no existe
+    if (!this.textures.exists("snow_particle")) {
+      const graphics = this.add.graphics();
+      graphics.fillStyle(0xffffff, 1);
+      graphics.fillCircle(4, 4, 4); // Círculo blanco
+      graphics.generateTexture("snow_particle", 8, 8);
+      graphics.destroy();
+    }
+
     // Set black background
     this.cameras.main.setBackgroundColor("#000000");
 

@@ -8,7 +8,8 @@
     ],
     "fileStates": {
         "": {
-            "scaleInDock": 1
+            "scaleInDock": 1,
+            "scaleInEditor": 1
         },
         "#spritesheet-tiles-default": {
             "scaleInDock": 0.75
