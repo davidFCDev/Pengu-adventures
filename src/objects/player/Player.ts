@@ -985,7 +985,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const repelForce = 300;
       const direction = this.x > enemyX ? 1 : -1;
       if (this.body) {
-        (this.body as Phaser.Physics.Arcade.Body).setVelocityX(direction * repelForce);
+        (this.body as Phaser.Physics.Arcade.Body).setVelocityX(
+          direction * repelForce
+        );
         (this.body as Phaser.Physics.Arcade.Body).setVelocityY(-200); // Pequeño salto hacia arriba
       }
     }

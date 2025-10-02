@@ -15,11 +15,11 @@ export class SnowWall extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
     scene.add.existing(this);
-    
+
     // Asegurar que el container sea visible
     this.setDepth(50); // Por encima del mapa pero por debajo del player
     this.setVisible(true);
-    
+
     console.log(`🏗️ Creando SnowWall en posición (${x}, ${y})`);
 
     // Crear el muro visual (2 bloques de 64x64 apilados)
@@ -27,13 +27,15 @@ export class SnowWall extends Phaser.GameObjects.Container {
 
     // Crear hitbox física para colisión
     this.setupPhysics(surfaceLayer);
-    
-    console.log(`✅ SnowWall completado, visible: ${this.visible}, depth: ${this.depth}`);
+
+    console.log(
+      `✅ SnowWall completado, visible: ${this.visible}, depth: ${this.depth}`
+    );
   }
 
   private createSnowBlocks(): void {
     console.log("🎨 Dibujando bloques de nieve...");
-    
+
     // Bloque inferior (64x64)
     const lowerBlock = this.scene.add.graphics();
     this.drawSnowBlock(lowerBlock, 0, 0);
@@ -47,17 +49,21 @@ export class SnowWall extends Phaser.GameObjects.Container {
     this.add(upperBlock);
     this.snowBlocks.push(upperBlock);
     console.log("  ✅ Bloque superior creado");
-    
+
     // Agregar texto de debug temporalmente
     const debugText = this.scene.add.text(0, -80, "SNOW WALL", {
       fontSize: "12px",
       color: "#00ff00",
-      backgroundColor: "#000000"
+      backgroundColor: "#000000",
     });
     this.add(debugText);
   }
 
-  private drawSnowBlock(graphics: Phaser.GameObjects.Graphics, x: number, y: number): void {
+  private drawSnowBlock(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number
+  ): void {
     // Fondo blanco nieve
     graphics.fillStyle(0xffffff, 0.95);
     graphics.fillRect(x, y, 64, 64);
@@ -83,7 +89,11 @@ export class SnowWall extends Phaser.GameObjects.Container {
 
   private setupPhysics(surfaceLayer: Phaser.Tilemaps.TilemapLayer): void {
     // Crear un sprite invisible para física
-    const physicsSprite = this.scene.physics.add.sprite(this.x + 32, this.y - 32, "");
+    const physicsSprite = this.scene.physics.add.sprite(
+      this.x + 32,
+      this.y - 32,
+      ""
+    );
     physicsSprite.setVisible(false);
     physicsSprite.body.setSize(64, 128); // 2 bloques de altura
     physicsSprite.body.setImmovable(true);
@@ -118,7 +128,10 @@ export class SnowWall extends Phaser.GameObjects.Container {
         "snow_particle",
         {
           speed: { min: 100, max: 300 },
-          angle: { min: direction > 0 ? -30 : 150, max: direction > 0 ? 30 : 210 },
+          angle: {
+            min: direction > 0 ? -30 : 150,
+            max: direction > 0 ? 30 : 210,
+          },
           scale: { start: 1, end: 0 },
           alpha: { start: 1, end: 0 },
           lifespan: 800,
@@ -151,7 +164,11 @@ export class SnowWall extends Phaser.GameObjects.Container {
     }, 800);
   }
 
-  public isInRange(playerX: number, playerY: number, range: number = 100): boolean {
+  public isInRange(
+    playerX: number,
+    playerY: number,
+    range: number = 100
+  ): boolean {
     const distance = Phaser.Math.Distance.Between(
       playerX,
       playerY,

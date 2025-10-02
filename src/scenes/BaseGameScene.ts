@@ -1,6 +1,9 @@
+import { EnemySystem } from "../objects/enemies/EnemyManager";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 import { Player } from "../objects/player/Player";
 import { LifeSystem } from "../systems/LifeSystem";
+import { ProjectileSystem } from "../systems/ProjectileSystem";
+import { SnowParticleSystem } from "../systems/SnowParticleSystem";
 import { PlayerStateManager, setupTileMapSystem } from "../systems/tilemap";
 
 /**
@@ -38,6 +41,15 @@ export interface GameSceneConfig {
   };
   /** Clave de la música del nivel (opcional) */
   musicKey?: string;
+  /** Habilitar sistema de enemigos automático (opcional, default: false) */
+  enableEnemies?: boolean;
+  /** Configuración del sistema de enemigos (opcional) */
+  enemyConfig?: {
+    maxEnemies?: number;
+    minSurfaceWidth?: number;
+    patrolMargin?: number;
+    safeDistance?: number;
+  };
 }
 
 /**
@@ -74,7 +86,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }> = []; // Array para muros de nieve
   protected levelEndUI?: any; // UI de fin de nivel
   protected hasFinishedLevel: boolean = false;
-
+  protected snowParticleSystem?: SnowParticleSystem; // Sistema de partículas de nieve
+  protected enemySystem?: EnemySystem; // Sistema de enemigos
+  protected projectileSystem?: ProjectileSystem; // Sistema de proyectiles
   // Configuración
   protected config!: GameSceneConfig;
 
@@ -191,19 +205,30 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 8. Configurar la cámara
     this.setupCamera();
 
-    // 9. Posicionar el player basándose en el tile de inicio (después de que todo esté configurado)
+    // 10. Posicionar el player basándose en el tile de inicio (después de que todo esté configurado)
     this.positionPlayerAtStart();
 
-    // 10. Inicializar música del nivel
+    // 11. Inicializar música del nivel
     this.setupLevelMusic();
 
     // 11. Crear muros de nieve
     this.createSnowWalls();
 
-    // 12. Configurar detección de final de nivel
+    // 12. Crear sistema de partículas de nieve
+    this.createSnowParticleSystem();
+
+    // 13. Crear sistema de proyectiles
+    this.createProjectileSystem();
+
+    // 14. Crear sistema de enemigos (si está habilitado)
+    if (this.config.enableEnemies) {
+      this.createEnemySystem();
+    }
+
+    // 15. Configurar detección de final de nivel
     this.setupLevelEndDetection();
 
-    // 13. Escuchar evento de soplido para destruir muros de nieve
+    // 16. Escuchar evento de soplido para destruir muros de nieve
     this.events.on("playerBlowing", () => {
       this.checkSnowWallDestruction();
     });
@@ -216,6 +241,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.player && this.playerStateManager) {
       this.player.update();
       this.playerStateManager.update(); // Centraliza TODA la lógica de states
+    }
+
+    // Actualizar sistema de enemigos
+    if (this.enemySystem) {
+      this.enemySystem.update(this.time.now, this.game.loop.delta);
     }
   }
 
@@ -1043,23 +1073,18 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Usa la misma estrategia que createSpikesGroup - crear objetos inmediatamente
    */
   protected createSnowWalls(): void {
-    console.log("🔍 Iniciando búsqueda de muros de nieve...");
-    console.log("🔍 ObjectsLayer existe?", !!this.objectsLayer);
-    
     if (!this.objectsLayer) {
-      console.error("❌ No hay objectsLayer para crear muros de nieve");
       return;
     }
 
-    let tilesChecked = 0;
-    let snowTilesFound = 0;
-
     // Buscar tiles con propiedad snow INMEDIATAMENTE (como los spikes)
     this.objectsLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
-      tilesChecked++;
-      if (tile && tile.index !== -1 && tile.properties && tile.properties.snow === true) {
-        snowTilesFound++;
-
+      if (
+        tile &&
+        tile.index !== -1 &&
+        tile.properties &&
+        tile.properties.snow === true
+      ) {
         const centerX = tile.getCenterX();
         const centerY = tile.getCenterY();
 
@@ -1067,40 +1092,96 @@ export abstract class BaseGameScene extends Phaser.Scene {
         const wallContainer = this.add.container(centerX, centerY);
         wallContainer.setDepth(50);
 
-        // Bloque inferior: centrado en el tile
-        const lowerBlock = this.add.graphics();
-        lowerBlock.fillStyle(0xffffff, 0.95);
-        lowerBlock.fillRect(-32, -32, 64, 64);
-        
-        // Sombras para efecto 3D
-        lowerBlock.fillStyle(0xe8f4f8, 0.6);
-        lowerBlock.fillRect(-27, -27, 50, 12);
-        lowerBlock.fillRect(-27, -10, 30, 15);
-        
-        // Borde suave
-        lowerBlock.lineStyle(2, 0xccddee, 0.8);
-        lowerBlock.strokeRect(-32, -32, 64, 64);
-        wallContainer.add(lowerBlock);
+        // Crear montaña de nieve ACUMULADA (bolas de nieve apiladas de forma irregular)
+        const snowMountain = this.add.graphics();
 
-        // Bloque superior
-        const upperBlock = this.add.graphics();
-        upperBlock.fillStyle(0xffffff, 0.95);
-        upperBlock.fillRect(-32, -96, 64, 64);
-        
-        // Sombras para efecto 3D
-        upperBlock.fillStyle(0xe8f4f8, 0.6);
-        upperBlock.fillRect(-27, -91, 50, 12);
-        upperBlock.fillRect(-27, -74, 30, 15);
-        
-        // Borde suave
-        upperBlock.lineStyle(2, 0xccddee, 0.8);
-        upperBlock.strokeRect(-32, -96, 64, 64);
-        wallContainer.add(upperBlock);
+        // CAPA BASE - Fila inferior (las más grandes)
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(-18, 18, 19); // Izquierda base
+        snowMountain.fillCircle(0, 20, 21); // Centro base (la más grande)
+        snowMountain.fillCircle(19, 19, 18); // Derecha base
+        snowMountain.fillCircle(-8, 15, 16); // Extra izquierda
+        snowMountain.fillCircle(10, 16, 17); // Extra derecha
+
+        // Sombras debajo de las bolas base
+        snowMountain.fillStyle(0xd0e0f0, 0.7);
+        snowMountain.fillCircle(-18, 18, 15);
+        snowMountain.fillCircle(0, 20, 17);
+        snowMountain.fillCircle(19, 19, 14);
+
+        // SEGUNDA CAPA - Encima de la base (irregular)
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(-14, -2, 17); // Izquierda
+        snowMountain.fillCircle(3, 0, 18); // Centro
+        snowMountain.fillCircle(16, -1, 15); // Derecha
+        snowMountain.fillCircle(-5, -4, 14); // Extra centro-izq
+
+        // Sombras segunda capa
+        snowMountain.fillStyle(0xd8e8f5, 0.6);
+        snowMountain.fillCircle(-14, -2, 13);
+        snowMountain.fillCircle(3, 0, 14);
+
+        // TERCERA CAPA - Medianas (más irregular)
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(-9, -18, 15); // Izquierda
+        snowMountain.fillCircle(7, -20, 16); // Derecha
+        snowMountain.fillCircle(-1, -17, 14); // Centro
+        snowMountain.fillCircle(12, -15, 12); // Extra derecha
+
+        // Sombras tercera capa
+        snowMountain.fillStyle(0xe0edf7, 0.6);
+        snowMountain.fillCircle(-9, -18, 11);
+        snowMountain.fillCircle(7, -20, 12);
+
+        // CUARTA CAPA - Superior (menos picuda)
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(-5, -34, 13); // Izquierda
+        snowMountain.fillCircle(6, -36, 14); // Derecha
+        snowMountain.fillCircle(0, -32, 12); // Centro
+        snowMountain.fillCircle(-8, -30, 10); // Extra izquierda
+
+        // Sombras cuarta capa
+        snowMountain.fillStyle(0xe5f1f9, 0.6);
+        snowMountain.fillCircle(-5, -34, 10);
+        snowMountain.fillCircle(6, -36, 11);
+
+        // PICO - Bolas redondeadas arriba (no tan puntiagudo)
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(-2, -50, 11); // Izquierda
+        snowMountain.fillCircle(4, -52, 12); // Derecha
+        snowMountain.fillCircle(0, -48, 10); // Centro bajo
+
+        // Cima redondeada
+        snowMountain.fillStyle(0xffffff, 1);
+        snowMountain.fillCircle(1, -62, 10); // Bola superior
+
+        // Highlight sutil (brillo de nieve)
+        snowMountain.fillStyle(0xffffff, 0.7);
+        snowMountain.fillCircle(-1, -64, 5);
+        snowMountain.fillCircle(3, -60, 4);
+
+        // CONTORNOS SUTILES para dar definición
+        snowMountain.lineStyle(1.5, 0xc8dce8, 0.5);
+        snowMountain.strokeCircle(-18, 18, 19);
+        snowMountain.strokeCircle(0, 20, 21);
+        snowMountain.strokeCircle(19, 19, 18);
+        snowMountain.strokeCircle(3, 0, 18);
+        snowMountain.strokeCircle(7, -20, 16);
+        snowMountain.strokeCircle(6, -36, 14);
+        snowMountain.strokeCircle(4, -52, 12);
+        snowMountain.strokeCircle(1, -62, 10);
+
+        wallContainer.add(snowMountain);
 
         // Crear física para colisión (invisible)
-        const physicsSprite = this.physics.add.sprite(centerX, centerY - 32, "");
+        // La montaña tiene aproximadamente 64x120 (ancho x alto)
+        const physicsSprite = this.physics.add.sprite(
+          centerX,
+          centerY - 30,
+          ""
+        );
         physicsSprite.setVisible(false);
-        (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(64, 128);
+        (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(60, 120);
         (physicsSprite.body as Phaser.Physics.Arcade.Body).setImmovable(true);
         (physicsSprite.body as Phaser.Physics.Arcade.Body).moves = false;
         (physicsSprite as any).isSnowWall = true;
@@ -1108,11 +1189,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
         // Guardar referencias
         (wallContainer as any).physicsSprite = physicsSprite;
         (physicsSprite as any).wallContainer = wallContainer;
-        this.snowWalls.push({ 
-          container: wallContainer, 
-          sprite: physicsSprite, 
-          worldX: centerX, 
-          worldY: centerY 
+        this.snowWalls.push({
+          container: wallContainer,
+          sprite: physicsSprite,
+          worldX: centerX,
+          worldY: centerY,
         });
 
         // Configurar colisión
@@ -1124,9 +1205,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
         tile.setCollision(false);
       }
     });
-
-    console.log(`📊 Tiles revisados: ${tilesChecked}, Tiles con snow=true encontrados: ${snowTilesFound}`);
-    console.log(`📊 Total muros en array: ${this.snowWalls.length}`);
   }
 
   /**
@@ -1147,30 +1225,28 @@ export abstract class BaseGameScene extends Phaser.Scene {
           playerX,
           playerY,
           wall.worldX,
-          wall.worldY - 32
+          wall.worldY - 30 // Ajustado para el centro de la montaña
         );
-        
+
         if (distance <= 200) {
           // Reproducir sonido
           this.sound.play("blow_sound", { volume: 0.3 });
-          
-          // Crear explosión de partículas de nieve desde toda la superficie del muro
-          this.createSnowExplosion(wall.worldX, wall.worldY - 32, direction);
-          
-          // Fade out suave del muro con movimiento hacia el lado contrario del soplido
+
+          // Crear partículas de nieve dispersándose
+          this.createNaturalSnowParticles(wall.worldX, wall.worldY - 30);
+
+          // Fade out más lento de la montaña (dispersión)
           this.tweens.add({
             targets: wall.container,
             alpha: 0,
-            x: wall.container.x - direction * 30, // Movimiento suave hacia el lado contrario
-            y: wall.container.y + 10, // Ligero movimiento hacia abajo
-            duration: 400,
+            duration: 1200,
             ease: "Cubic.easeOut",
             onComplete: () => {
               wall.container.destroy();
               wall.sprite.destroy();
-            }
+            },
           });
-          
+
           // Remover del array
           this.snowWalls.splice(i, 1);
         }
@@ -1179,54 +1255,95 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
-   * Crear explosión de partículas de nieve estilo cartoon desde toda la superficie del muro
+   * Crear partículas de nieve dispersándose de la montaña
    */
-  private createSnowExplosion(x: number, y: number, direction: number): void {
-    // Crear partículas desde múltiples puntos de la superficie del muro (2 bloques de 64x64)
+  private createNaturalSnowParticles(x: number, y: number): void {
+    // Partículas desde diferentes alturas de la montaña (simulando dispersión)
     const emissionPoints = [
-      { x: x - 20, y: y - 60 }, // Superior izquierda del bloque superior
-      { x: x + 20, y: y - 60 }, // Superior derecha del bloque superior
-      { x: x, y: y - 40 },      // Centro del bloque superior
-      { x: x - 20, y: y + 5 },  // Superior izquierda del bloque inferior
-      { x: x + 20, y: y + 5 },  // Superior derecha del bloque inferior
-      { x: x, y: y + 25 },      // Centro del bloque inferior
+      { x: x, y: y - 62, quantity: 14 }, // Pico
+      { x: x - 8, y: y - 50, quantity: 12 }, // Superior izquierda
+      { x: x + 8, y: y - 50, quantity: 12 }, // Superior derecha
+      { x: x - 12, y: y - 35, quantity: 10 }, // Medio izquierda
+      { x: x + 12, y: y - 35, quantity: 10 }, // Medio derecha
+      { x: x - 18, y: y - 18, quantity: 8 }, // Inferior izquierda
+      { x: x + 18, y: y - 18, quantity: 8 }, // Inferior derecha
+      { x: x, y: y - 5, quantity: 10 }, // Base centro
+      { x: x - 10, y: y, quantity: 8 }, // Base izquierda
+      { x: x + 10, y: y, quantity: 8 }, // Base derecha
     ];
 
-    emissionPoints.forEach(point => {
-      // Partículas medianas desde cada punto
-      const particles = this.add.particles(point.x, point.y, "snow_particle", {
-        speed: { min: 80, max: 180 },
-        angle: { 
-          min: direction > 0 ? -50 : 130, 
-          max: direction > 0 ? 50 : 230 
-        },
-        scale: { start: 1.8, end: 0.2 },
-        alpha: { start: 0.95, end: 0 },
-        lifespan: 800,
-        quantity: 4,
-        gravityY: 200,
-        bounce: 0.3
+    emissionPoints.forEach((point, index) => {
+      // Delay escalonado para simular que se dispersa de arriba hacia abajo
+      this.time.delayedCall(index * 70, () => {
+        const particles = this.add.particles(
+          point.x,
+          point.y,
+          "snow_particle",
+          {
+            speed: { min: 40, max: 100 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 2.5, end: 0.3 }, // Partículas MÁS GRANDES
+            alpha: { start: 1, end: 0 },
+            lifespan: 1600,
+            quantity: point.quantity,
+            gravityY: 120,
+            rotate: { start: 0, end: 360 },
+            emitting: false,
+            tint: 0xffffff, // Asegurar que sean blancas
+          }
+        );
+
+        particles.explode(point.quantity, point.x, point.y);
+
+        this.time.delayedCall(1800, () => particles.destroy());
       });
-
-      this.time.delayedCall(1000, () => particles.destroy());
     });
+  }
 
-    // Partículas pequeñas volando (copos de nieve)
-    const smallSnowParticles = this.add.particles(x, y, "snow_particle", {
-      speed: { min: 100, max: 250 },
-      angle: { 
-        min: direction > 0 ? -60 : 120, 
-        max: direction > 0 ? 60 : 240 
-      },
-      scale: { start: 1.2, end: 0.1 },
-      alpha: { start: 0.8, end: 0 },
-      lifespan: 1000,
-      quantity: 20,
-      gravityY: 120,
-      rotate: { start: 0, end: 360 }
-    });
+  /**
+   * Crear sistema de partículas de nieve cayendo en el nivel
+   */
+  protected createSnowParticleSystem(): void {
+    // Crear el sistema de partículas pasando el layer de superficies para colisiones
+    this.snowParticleSystem = new SnowParticleSystem(this, this.surfaceLayer);
+  }
 
-    this.time.delayedCall(1200, () => smallSnowParticles.destroy());
+  /**
+   * Crear sistema de proyectiles (snowballs)
+   */
+  protected createProjectileSystem(): void {
+    this.projectileSystem = new ProjectileSystem(this);
+    console.log("✅ Sistema de proyectiles inicializado");
+  }
+
+  /**
+   * Crear sistema de enemigos automático
+   */
+  protected createEnemySystem(): void {
+    if (!this.player || !this.surfaceLayer) {
+      console.warn(
+        "⚠️ No se puede crear sistema de enemigos: faltan player o surfaceLayer"
+      );
+      return;
+    }
+
+    this.enemySystem = new EnemySystem(
+      this,
+      this.player,
+      this.surfaceLayer,
+      this.config.enemyConfig
+    );
+
+    this.enemySystem.initialize(this.config.playerStartPosition);
+
+    // Configurar colisiones con proyectiles si existe el sistema
+    if (this.projectileSystem) {
+      this.enemySystem.setupProjectileCollisions(
+        this.projectileSystem.getProjectileGroup()
+      );
+    }
+
+    console.log("✅ Sistema de enemigos inicializado");
   }
 
   /**
@@ -1240,7 +1357,12 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // Buscar tile con propiedad end=true INMEDIATAMENTE (como los spikes)
     this.objectsLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
-      if (tile && tile.index !== -1 && tile.properties && tile.properties.end === true) {
+      if (
+        tile &&
+        tile.index !== -1 &&
+        tile.properties &&
+        tile.properties.end === true
+      ) {
         // Crear zona de trigger centrada en el tile
         const worldX = tile.getCenterX();
         const worldY = tile.getCenterY();
@@ -1248,7 +1370,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
         // Crear sprite invisible para física (como los spikes)
         const endZone = this.add.rectangle(worldX, worldY, 64, 64);
         endZone.setVisible(false);
-        
+
         // Agregar física
         this.physics.add.existing(endZone);
         const body = endZone.body as Phaser.Physics.Arcade.Body;
@@ -1307,5 +1429,23 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   shutdown(): void {
     this.stopCurrentMusic();
+
+    // Destruir sistema de partículas de nieve
+    if (this.snowParticleSystem) {
+      this.snowParticleSystem.destroy();
+      this.snowParticleSystem = undefined;
+    }
+
+    // Destruir sistema de enemigos
+    if (this.enemySystem) {
+      this.enemySystem.destroy();
+      this.enemySystem = undefined;
+    }
+
+    // Destruir sistema de proyectiles
+    if (this.projectileSystem) {
+      this.projectileSystem.destroy();
+      this.projectileSystem = undefined;
+    }
   }
 }

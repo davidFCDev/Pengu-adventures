@@ -35,7 +35,11 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     this.add(this.background);
 
     // Sprite de celebración (4 frames)
-    this.celebrateSprite = this.scene.add.sprite(centerX, centerY - 80, "celebrate");
+    this.celebrateSprite = this.scene.add.sprite(
+      centerX,
+      centerY - 80,
+      "celebrate"
+    );
     this.celebrateSprite.setScale(2);
     this.celebrateSprite.setScrollFactor(0);
     this.add(this.celebrateSprite);
@@ -80,6 +84,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     // Efectos hover
     buttonBg.on("pointerover", () => {
+      console.log("👆 Hover sobre botón Next Level");
       buttonBg.setFillStyle(0x5fa0f2);
       buttonContainer.setScale(1.05);
     });
@@ -90,10 +95,12 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     });
 
     buttonBg.on("pointerdown", () => {
+      console.log("👆 Click DOWN en botón Next Level");
       buttonContainer.setScale(0.95);
     });
 
     buttonBg.on("pointerup", () => {
+      console.log("👆 Click UP en botón Next Level - Llamando onNextLevel()");
       buttonContainer.setScale(1.05);
       this.onNextLevel();
     });
@@ -104,10 +111,10 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
   private onNextLevel(): void {
     console.log("🎮 Reiniciando nivel...");
-    
+
     // Ocultar UI primero
     this.hide();
-    
+
     // Reiniciar la escena actual usando el Scene Manager correcto
     const currentScene = this.scene;
     currentScene.time.delayedCall(200, () => {

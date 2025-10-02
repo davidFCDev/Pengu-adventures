@@ -1,84 +1,239 @@
-# 📁 **TEMPLATES Y EJEMPLOS DE NIVELES**
+# 📁 Escenas del Proyecto
 
-Esta carpeta contiene los templates y ejemplos para crear nuevos niveles.
+## 🎯 Overview
+
+Esta carpeta contiene todas las escenas del juego. El proyecto usa una arquitectura centralizada donde **BaseGameScene** maneja toda la lógica automáticamente.
 
 ---
 
-## 📋 **ARCHIVOS DISPONIBLES**
+## � Archivos Principales
 
-### 🏗️ **LevelTemplate.ts**
+### ⭐ **BaseGameScene.ts**
 
-**🎯 TEMPLATE PRINCIPAL - Usar para crear nuevos niveles**
+**Clase base con toda la lógica del juego**
 
-- ✅ **Template actualizado** con todos los métodos helper
-- ✅ **Documentación completa** con instrucciones paso a paso
-- ✅ **Configuración moderna** usando `setupTilesets()` y `createStandardLayers()`
-- ✅ **Ejemplos comentados** de música, efectos, interactivos
-- ✅ **Checklist integrado** para verificar implementación
+Maneja automáticamente:
 
-**Cómo usar:**
+- ✅ Sistema de colisiones
+- ✅ Sistema de enemigos (opcional)
+- ✅ Sistema de proyectiles (snowballs)
+- ✅ Sistema de partículas de nieve
+- ✅ Sistema de vidas
+- ✅ Detección de tiles especiales
+- ✅ UI de fin de nivel
+- ✅ Muros de nieve destructibles
+- ✅ Música y sonidos
+
+**No edites este archivo a menos que necesites añadir funcionalidad global.**
+
+---
+
+### 📝 **TestingMapScene.ts**
+
+**TEMPLATE OFICIAL - Ejemplo minimalista para nuevos niveles**
+
+Este es el ejemplo perfecto de cómo debe ser un nuevo nivel: **SOLO CONFIGURACIÓN**.
+
+```typescript
+export class MiNuevoNivel extends BaseGameScene {
+  constructor() {
+    const config: GameSceneConfig = {
+      // Configuración del mapa
+      tilemapKey: "MiMapa",
+      surfaceLayerName: "superficies",
+      backgroundLayerName: "fondo",
+      objectsLayerName: "objects",
+
+      // Player
+      playerStartPosition: { x: 400, y: 900 },
+
+      // Cámara
+      cameraZoom: 1.0,
+      cameraFollow: { lerp: { x: 1, y: 1 }, offset: { x: 0, y: 0 } },
+
+      // Música
+      musicKey: "mi_musica",
+
+      // Enemigos automáticos
+      enableEnemies: true,
+      enemyConfig: {
+        maxEnemies: 8,
+        minSurfaceWidth: 5,
+        patrolMargin: 50,
+        safeDistance: 100,
+      },
+    };
+
+    super("MiNuevoNivel", config);
+  }
+
+  protected createMap(): void {
+    this.tilemap = this.add.tilemap("MiMapa");
+    this.setupTilesets();
+    this.createStandardLayers();
+    this.events.emit("scene-awake");
+  }
+
+  editorCreate(): void {
+    this.createMap();
+  }
+}
+```
+
+**Eso es todo. No necesitas más código. 🎉**
+
+---
+
+### 🎵 **PreloadScene.ts**
+
+Carga todos los assets del juego (imágenes, audio, tilemaps).
+
+---
+
+### 🔧 **LevelUtils.ts**
+
+Configuraciones y utilidades predefinidas para niveles.
+
+- Presets de cámara (NORMAL, SMOOTH, PLATFORMER, etc.)
+- Presets de tilesets
+- Posiciones de inicio predefinidas
+- Helpers de configuración
+
+---
+
+## 🚀 Cómo Crear un Nuevo Nivel
+
+### Opción 1: Copiar el Template (Recomendado)
 
 ```bash
-# 1. Copiar el template
-cp src/scenes/LevelTemplate.ts src/scenes/MiNuevoNivel.ts
+# 1. Copiar TestingMapScene.ts
+cp src/scenes/TestingMapScene.ts src/scenes/Level1Scene.ts
 
-# 2. Editar y personalizar
-# - Cambiar clase "LevelTemplate" → "MiNuevoNivel"
-# - Cambiar tilemapKey: "mi_mapa" → "mi_mapa_real"
-# - Ajustar configuración según necesidades
+# 2. Editar el archivo:
+# - Cambiar clase: TestingMapScene → Level1Scene
+# - Cambiar tilemapKey: "TestingMap" → "Level1"
+# - Ajustar configuración
 ```
 
-### 🎮 **TestingMapScene.ts**
+### Opción 2: Desde Cero
 
-**📚 EJEMPLO DE REFERENCIA - Nivel funcional completo**
-
-- ✅ **Ejemplo real** de implementación
-- ✅ **Nivel funcional** con todas las mecánicas
-- ✅ **Código optimizado** usando métodos helper
-- ✅ **Referencia práctica** para casos complejos
-
-**Usar como:**
-
-- 📖 Ejemplo de implementación correcta
-- 🔍 Referencia para debugging
-- 🎯 Inspiración para niveles complejos
+1. Crear nuevo archivo en `src/scenes/`
+2. Extender `BaseGameScene`
+3. Configurar en el constructor
+4. Implementar `createMap()` y `editorCreate()`
 
 ---
 
-## 🚀 **FLUJO RECOMENDADO**
+## ⚙️ Configuración de Nivel
 
-### Para crear un nuevo nivel:
+### Configuración Básica
 
-1. **Usar LevelTemplate.ts** como base
-2. **Consultar TestingMapScene.ts** si necesitas ejemplos específicos
-3. **Seguir LEVEL_CREATION_GUIDE.md** para documentación completa
-
-### Jerarquía de aprendizaje:
-
+```typescript
+const config: GameSceneConfig = {
+  tilemapKey: string, // Clave del tilemap
+  surfaceLayerName: string, // Layer de superficies
+  backgroundLayerName: string, // Layer de fondo (opcional)
+  objectsLayerName: string, // Layer de objetos (opcional)
+  playerStartPosition: { x, y }, // Posición inicial del player
+  cameraZoom: number, // Zoom de cámara (default: 1.0)
+  musicKey: string, // Clave de música (opcional)
+};
 ```
-LevelTemplate.ts        ← Empezar aquí (template limpio)
-     ↓
-TestingMapScene.ts      ← Consultar como ejemplo (código real)
-     ↓
-LEVEL_CREATION_GUIDE.md ← Documentación completa (guía detallada)
+
+### Configuración de Enemigos
+
+```typescript
+const config: GameSceneConfig = {
+  // ... configuración básica
+
+  enableEnemies: true, // Activar sistema de enemigos
+  enemyConfig: {
+    maxEnemies: 8, // Máximo de enemigos
+    minSurfaceWidth: 5, // Ancho mínimo de superficie (tiles)
+    patrolMargin: 50, // Margen para patrulla (px)
+    safeDistance: 100, // Distancia segura del player (px)
+  },
+};
+```
+
+### Configuración de Cámara
+
+```typescript
+cameraFollow: {
+  lerp: { x: 1, y: 1 },           // Suavidad (0-1)
+  offset: { x: 0, y: 0 },         // Offset (px)
+}
 ```
 
 ---
 
-## ✅ **TEMPLATES ELIMINADOS**
+## 📋 Checklist para Nuevo Nivel
 
-- ❌ **LevelTemplateSceneNew.ts** - Eliminado (obsoleto, no usaba helpers)
-- ❌ **TEMPLATE_LEVEL.ts** - Eliminado (reemplazado por LevelTemplate.ts)
-
-**Razón:** Consolidación para evitar confusión y mantener solo el template más actualizado.
+- [ ] Crear archivo extendiendo `BaseGameScene`
+- [ ] Configurar `GameSceneConfig` en constructor
+- [ ] Implementar `createMap()`
+- [ ] Implementar `editorCreate()` para compatibilidad con editor
+- [ ] Añadir tilemap al `PreloadScene`
+- [ ] Probar el nivel
 
 ---
 
-## 🎯 **RECOMENDACIONES**
+## 🎯 Sistemas Disponibles
 
-- **Siempre usar LevelTemplate.ts** como punto de partida
-- **Nunca modificar BaseGameScene.ts** (es la clase base universal)
-- **Consultar TestingMapScene.ts** solo como referencia
-- **Seguir la guía LEVEL_CREATION_GUIDE.md** para casos complejos
+Todos estos sistemas están disponibles automáticamente en `BaseGameScene`:
 
-¡Happy Level Creation! 🎮✨
+| Sistema                | Descripción          | Activación            |
+| ---------------------- | -------------------- | --------------------- |
+| **EnemySystem**        | Gestión de enemigos  | `enableEnemies: true` |
+| **ProjectileSystem**   | Gestión de snowballs | Automático            |
+| **SnowParticleSystem** | Partículas de nieve  | Automático            |
+| **LifeSystem**         | Sistema de vidas     | Automático            |
+| **PlayerStateManager** | Estados del player   | Automático            |
+| **TileMapManager**     | Gestión de tilemap   | Automático            |
+
+---
+
+## ❌ Qué NO Hacer
+
+1. **No crear enemigos manualmente** → Usa `enableEnemies: true`
+2. **No gestionar proyectiles manualmente** → El sistema lo hace
+3. **No duplicar lógica de BaseGameScene** → Extiende cuando sea necesario
+4. **No hardcodear valores** → Usa configuración
+
+---
+
+## ✅ Mejores Prácticas
+
+1. **Mantén las escenas simples**: Solo configuración
+2. **Usa sistemas existentes**: No reinventes la rueda
+3. **Override solo cuando sea necesario**: La mayoría de lógica está en BaseGameScene
+4. **Documenta cambios específicos**: Si añades lógica especial
+
+---
+
+## 📚 Documentación Adicional
+
+Para más información sobre la arquitectura del proyecto, consulta:
+
+- [`/ARCHITECTURE.md`](../../ARCHITECTURE.md) - Documentación completa de la arquitectura
+- [`/src/systems/`](../systems/) - Documentación de sistemas individuales
+
+---
+
+## 🔍 Debugging
+
+```typescript
+// Ver enemigos activos
+console.log(this.enemySystem?.getEnemyCount());
+
+// Ver proyectiles activos
+console.log(this.projectileSystem?.getProjectileCount());
+
+// Ver superficies detectadas
+const surfaces = SurfaceDetector.findValidSurfaces(this.surfaceLayer);
+console.log(surfaces);
+```
+
+---
+
+¡Feliz desarrollo! 🎮✨
