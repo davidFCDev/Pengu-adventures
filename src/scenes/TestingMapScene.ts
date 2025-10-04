@@ -47,6 +47,7 @@ export class TestingMapScene extends BaseGameScene {
         minSurfaceWidth: 5,
         patrolMargin: 50,
         safeDistance: 100,
+        enemyTypeRatio: { basic: 0, freezable: 1 }, // Solo enemigos congelables para test
       },
     };
 

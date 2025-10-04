@@ -6,7 +6,6 @@ export class SnowWall extends Phaser.GameObjects.Container {
   private snowBlocks: Phaser.GameObjects.Graphics[] = [];
   private isDestroyed: boolean = false;
   private collider?: Phaser.Physics.Arcade.Collider;
-
   constructor(
     scene: Phaser.Scene,
     x: number,
@@ -15,110 +14,162 @@ export class SnowWall extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
     scene.add.existing(this);
-
     // Asegurar que el container sea visible
     this.setDepth(50); // Por encima del mapa pero por debajo del player
     this.setVisible(true);
-
-    console.log(`🏗️ Creando SnowWall en posición (${x}, ${y})`);
-
     // Crear el muro visual (2 bloques de 64x64 apilados)
     this.createSnowBlocks();
-
     // Crear hitbox física para colisión
     this.setupPhysics(surfaceLayer);
-
-    console.log(
-      `✅ SnowWall completado, visible: ${this.visible}, depth: ${this.depth}`
-    );
   }
-
   private createSnowBlocks(): void {
-    console.log("🎨 Dibujando bloques de nieve...");
-
-    // Bloque inferior (64x64)
-    const lowerBlock = this.scene.add.graphics();
-    this.drawSnowBlock(lowerBlock, 0, 0);
-    this.add(lowerBlock);
-    this.snowBlocks.push(lowerBlock);
-    console.log("  ✅ Bloque inferior creado");
-
-    // Bloque superior (64x64)
-    const upperBlock = this.scene.add.graphics();
-    this.drawSnowBlock(upperBlock, 0, -64);
-    this.add(upperBlock);
-    this.snowBlocks.push(upperBlock);
-    console.log("  ✅ Bloque superior creado");
-
-    // Agregar texto de debug temporalmente
-    const debugText = this.scene.add.text(0, -80, "SNOW WALL", {
-      fontSize: "12px",
-      color: "#00ff00",
-      backgroundColor: "#000000",
-    });
-    this.add(debugText);
+    // Crear una única acumulación de nieve redondeada
+    const snowMound = this.scene.add.graphics();
+    this.drawSnowMound(snowMound, 0, 0);
+    this.add(snowMound);
+    this.snowBlocks.push(snowMound);
   }
-
-  private drawSnowBlock(
+  private drawSnowMound(
     graphics: Phaser.GameObjects.Graphics,
     x: number,
     y: number
   ): void {
-    // Fondo blanco nieve
+    const width = 64;
+    const baseHeight = 50; // Altura base más baja
+    const topHeight = 25; // Altura adicional en el pico
+
+    // Crear forma de montículo usando path con curvas suaves
     graphics.fillStyle(0xffffff, 0.95);
-    graphics.fillRect(x, y, 64, 64);
+    graphics.beginPath();
 
-    // Sombras y detalles para efecto de nieve
-    graphics.fillStyle(0xe8f4f8, 0.6);
-    graphics.fillRect(x + 5, y + 5, 54, 10);
-    graphics.fillRect(x + 5, y + 25, 30, 15);
-    graphics.fillRect(x + 40, y + 45, 20, 15);
+    // Base
+    graphics.moveTo(x, y);
 
-    // Borde oscuro para definición
-    graphics.lineStyle(2, 0xccddee, 0.8);
-    graphics.strokeRect(x, y, 64, 64);
+    // Crear forma de montículo con múltiples puntos para suavidad
+    const segments = 20;
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const px = x + t * width;
 
-    // Puntos de nieve para textura
-    graphics.fillStyle(0xd0e8f0, 0.5);
-    for (let i = 0; i < 8; i++) {
-      const px = x + Math.random() * 60 + 2;
-      const py = y + Math.random() * 60 + 2;
-      graphics.fillCircle(px, py, 2);
+      // Función seno para crear forma redondeada natural
+      const heightMultiplier = Math.sin(t * Math.PI);
+      const py =
+        y -
+        (baseHeight * heightMultiplier +
+          topHeight * Math.pow(heightMultiplier, 2));
+
+      graphics.lineTo(px, py);
+    }
+
+    graphics.lineTo(x + width, y);
+    graphics.closePath();
+    graphics.fillPath();
+
+    // Sombra en el lado derecho
+    graphics.fillStyle(0xe0e8f0, 0.6);
+    graphics.beginPath();
+    graphics.moveTo(x + width * 0.5, y - baseHeight * 0.8);
+    for (let i = 10; i <= segments; i++) {
+      const t = i / segments;
+      const px = x + t * width;
+      const heightMultiplier = Math.sin(t * Math.PI);
+      const py =
+        y -
+        (baseHeight * heightMultiplier +
+          topHeight * Math.pow(heightMultiplier, 2));
+      graphics.lineTo(px, py);
+    }
+    graphics.lineTo(x + width, y);
+    graphics.lineTo(x + width * 0.5, y);
+    graphics.closePath();
+    graphics.fillPath();
+
+    // Highlight en el lado izquierdo
+    graphics.fillStyle(0xffffff, 0.4);
+    graphics.beginPath();
+    graphics.moveTo(x, y);
+    for (let i = 0; i <= 10; i++) {
+      const t = i / segments;
+      const px = x + t * width;
+      const heightMultiplier = Math.sin(t * Math.PI);
+      const py =
+        y -
+        (baseHeight * heightMultiplier +
+          topHeight * Math.pow(heightMultiplier, 2));
+      graphics.lineTo(px, py);
+    }
+    graphics.lineTo(x + width * 0.5, y - baseHeight * 0.8);
+    graphics.lineTo(x + width * 0.5, y);
+    graphics.closePath();
+    graphics.fillPath();
+
+    // Contorno superior
+    graphics.lineStyle(2, 0xd0e8f0, 0.7);
+    graphics.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const px = x + t * width;
+      const heightMultiplier = Math.sin(t * Math.PI);
+      const py =
+        y -
+        (baseHeight * heightMultiplier +
+          topHeight * Math.pow(heightMultiplier, 2));
+      if (i === 0) {
+        graphics.moveTo(px, py);
+      } else {
+        graphics.lineTo(px, py);
+      }
+    }
+    graphics.strokePath();
+
+    // Detalles de nieve - pequeños círculos
+    graphics.fillStyle(0xf0f5f8, 0.8);
+    graphics.fillCircle(x + width * 0.25, y - baseHeight * 0.6, 6);
+    graphics.fillCircle(
+      x + width * 0.5,
+      y - (baseHeight + topHeight) * 0.85,
+      8
+    );
+    graphics.fillCircle(x + width * 0.75, y - baseHeight * 0.5, 5);
+
+    // Textura de nieve
+    graphics.fillStyle(0xd5e5ef, 0.5);
+    for (let i = 0; i < 12; i++) {
+      const t = Math.random();
+      const px = x + t * width;
+      const heightMultiplier = Math.sin(t * Math.PI);
+      const maxHeight =
+        baseHeight * heightMultiplier +
+        topHeight * Math.pow(heightMultiplier, 2);
+      const py = y - Math.random() * maxHeight * 0.8;
+      graphics.fillCircle(px, py, 1.5);
     }
   }
-
   private setupPhysics(surfaceLayer: Phaser.Tilemaps.TilemapLayer): void {
     // Crear un sprite invisible para física
     const physicsSprite = this.scene.physics.add.sprite(
       this.x + 32,
-      this.y - 32,
+      this.y - 37, // Ajustado para la nueva altura de ~75px
       ""
     );
     physicsSprite.setVisible(false);
-    physicsSprite.body.setSize(64, 128); // 2 bloques de altura
+    physicsSprite.body.setSize(64, 75); // Altura reducida a 75px para coincidir con el montículo
     physicsSprite.body.setImmovable(true);
     physicsSprite.body.moves = false;
     (physicsSprite as any).isSnowWall = true;
     (physicsSprite as any).snowWallRef = this;
-
     // Guardar referencia para colisiones
     (this as any).physicsSprite = physicsSprite;
   }
-
   /**
    * Destruye el muro con una animación de dispersión
    * @param direction Dirección del soplido (-1 izquierda, 1 derecha)
    */
   public destroyWall(direction: number = 1): void {
     if (this.isDestroyed) return;
-
     this.isDestroyed = true;
-
-    console.log("❄️ Destruyendo muro de nieve en dirección:", direction);
-
     // Sonido de destrucción
     this.scene.sound.play("blow_sound", { volume: 0.3 });
-
     // Animar cada bloque dispersándose
     this.snowBlocks.forEach((block, index) => {
       // Partículas de nieve dispersándose
@@ -138,7 +189,6 @@ export class SnowWall extends Phaser.GameObjects.Container {
           quantity: 20,
         }
       );
-
       // Fade out del bloque
       this.scene.tweens.add({
         targets: block,
@@ -154,7 +204,6 @@ export class SnowWall extends Phaser.GameObjects.Container {
         },
       });
     });
-
     // Destruir física después de la animación
     setTimeout(() => {
       if ((this as any).physicsSprite) {
@@ -163,7 +212,6 @@ export class SnowWall extends Phaser.GameObjects.Container {
       super.destroy();
     }, 800);
   }
-
   public isInRange(
     playerX: number,
     playerY: number,
@@ -173,11 +221,10 @@ export class SnowWall extends Phaser.GameObjects.Container {
       playerX,
       playerY,
       this.x + 32,
-      this.y - 32
+      this.y - 37 // Ajustado para la nueva altura de ~75px
     );
     return distance <= range;
   }
-
   public getPhysicsSprite(): Phaser.Physics.Arcade.Sprite | undefined {
     return (this as any).physicsSprite;
   }

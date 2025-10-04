@@ -168,7 +168,7 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
         const touchingWall = body.blocked.left || body.blocked.right;
 
         if (touchingWall) {
-          console.log("🧱 Enemigo chocó con pared, cambiando dirección");
+
           body.setVelocityX(0);
           this.switchTarget();
           this.startIdlePhase();

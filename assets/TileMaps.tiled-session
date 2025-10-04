@@ -14,10 +14,20 @@
         "#spritesheet-tiles-default": {
             "scaleInDock": 0.75
         },
+        "TestingMap.json": {
+            "scale": 0.25,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 3244,
+                "y": 1022
+            }
+        },
         "TestingMap.json#spritesheet-backgrounds-default": {
+            "scaleInDock": 1,
             "scaleInEditor": 1
         },
         "TestingMap.json#spritesheet-tiles-default": {
+            "scaleInDock": 0.5,
             "scaleInEditor": 1
         },
         "TestingMap.tmx#spritesheet-tiles-default": {

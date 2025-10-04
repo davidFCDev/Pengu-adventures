@@ -49,6 +49,7 @@ export interface GameSceneConfig {
     minSurfaceWidth?: number;
     patrolMargin?: number;
     safeDistance?: number;
+    enemyTypeRatio?: { basic: number; freezable: number };
   };
 }
 
@@ -89,6 +90,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected snowParticleSystem?: SnowParticleSystem; // Sistema de partículas de nieve
   protected enemySystem?: EnemySystem; // Sistema de enemigos
   protected projectileSystem?: ProjectileSystem; // Sistema de proyectiles
+
   // Configuración
   protected config!: GameSceneConfig;
 
@@ -237,7 +239,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   /**
    * Update principal que maneja toda la lógica del juego
    */
-  update(): void {
+  update(time: number, delta: number): void {
     if (this.player && this.playerStateManager) {
       this.player.update();
       this.playerStateManager.update(); // Centraliza TODA la lógica de states
@@ -427,17 +429,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Verificar patrones en nombre del tile o tileset
     const textToCheck = `${tileName} ${tilesetName}`.toLowerCase();
 
-    // DEBUG: Mostrar información del tile
-    console.log(
-      `🔍 DEBUG: Verificando tile ${tile.index} - texto: "${textToCheck}"`
-    );
     const isSpike = spikePatterns.some((pattern) => pattern.test(textToCheck));
 
     if (isSpike) {
-      console.log(
-        `🔥 AUTO-CONFIGURACIÓN: Tile ${tile.index} detectado como spike (${textToCheck})`
-      );
-
       // Crear propiedades temporales para este tile
       if (!tile.properties) {
         tile.properties = {};
@@ -458,9 +452,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Crear grupo estático para los spikes
     this.spikesGroup = this.physics.add.staticGroup();
 
-    console.log("🔍 DEBUG: Iniciando createSpikesGroup...");
-    console.log(`🔍 DEBUG: objectsLayer existe: ${!!this.objectsLayer}`);
-    console.log(`🔍 DEBUG: objectsLayer nombre: ${this.objectsLayer?.name}`);
     let tilesChecked = 0;
     let spikesFound = 0;
 
@@ -478,9 +469,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
           if (hasKill) {
             spikesFound++;
-            console.log(
-              `🔥 SPIKE ENCONTRADO: Tile ${tile.index} en posición (${tile.x}, ${tile.y})`
-            );
           }
 
           if (hasKill) {
@@ -573,41 +561,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
           }
         }
       });
-
-      console.log(
-        `🔍 DEBUG: Tiles verificados: ${tilesChecked}, Spikes encontrados: ${spikesFound}`
-      );
-      console.log(
-        `🔍 DEBUG: Spikes en grupo: ${this.spikesGroup.children.size}`
-      );
-    } else {
-      console.warn("⚠️ DEBUG: objectsLayer no existe!");
     }
 
-    // 🔍 DEBUG ADICIONAL: Revisar TODOS los layers para encontrar los spikes
-    console.log("🔍 DEBUG: Revisando TODOS los layers...");
     if (this.tilemap) {
       this.tilemap.layers.forEach((layerData, index) => {
-        console.log(
-          `🔍 Layer ${index}: ${layerData.name} (${
-            layerData.tilemapLayer ? "activo" : "inactivo"
-          })`
-        );
-
         if (layerData.tilemapLayer) {
           let layerTiles = 0;
           layerData.tilemapLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
             if (tile) {
               layerTiles++;
-              // Solo verificar algunos tiles para no spam la consola
-              if (layerTiles <= 5) {
-                console.log(
-                  `🔍 Tile ejemplo en ${layerData.name}: index=${tile.index}, pos=(${tile.x},${tile.y})`
-                );
-              }
             }
           });
-          console.log(`🔍 Total tiles en ${layerData.name}: ${layerTiles}`);
         }
       });
     }
@@ -640,7 +604,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // Evento de click
     this.ghostToggleButton.on("pointerdown", () => {
-      console.log("🖱️ Click en botón ghost toggle");
       this.toggleGhostMode();
     });
 
@@ -693,12 +656,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // Redibujar botón con el nuevo estado
     this.drawButton(this.player.getIsGhost());
-
-    console.log(
-      `🔄 Botón actualizado: ${
-        this.player.getIsGhost() ? "GHOST (verde)" : "NORMAL (azul)"
-      }`
-    );
   }
 
   /**
@@ -843,26 +800,13 @@ export abstract class BaseGameScene extends Phaser.Scene {
     this.player.setOnHitCallback(() => {
       // Evitar múltiples activaciones si ya está en proceso de game over
       if (this.isGameOverInProgress || this.lifeSystem.isGameOver()) {
-        console.log(
-          "⚠️ Ya en Game Over o proceso en curso, ignorando daño adicional"
-        );
         return;
       }
 
-      console.log(
-        `💔 Jugador recibe daño. Vidas antes: ${this.lifeSystem.getCurrentLives()}`
-      );
-
       const hasLivesLeft = this.lifeSystem.loseLife();
-
-      console.log(
-        `💔 Vidas después: ${this.lifeSystem.getCurrentLives()}, ¿Vidas restantes? ${hasLivesLeft}`
-      );
 
       // Verificar tanto el retorno como el estado interno
       if (!hasLivesLeft || this.lifeSystem.isGameOver()) {
-        console.log("💀 GAME OVER - Iniciando reinicio de nivel");
-
         // Marcar que el game over está en proceso
         this.isGameOverInProgress = true;
 
@@ -905,17 +849,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Manejar colisiones con spikes personalizados
    */
   private handleSpikeCollision(player: any, spike: any): void {
-    console.log("💥 DEBUG: handleSpikeCollision ejecutado!");
-    console.log(
-      `💥 DEBUG: Player invulnerable: ${this.player.getIsInvulnerable()}`
-    );
-
     // Solo hacer daño si el player no es invulnerable
     if (!this.player.getIsInvulnerable()) {
-      console.log("💔 DEBUG: Ejecutando player.hit()");
       this.player.hit();
-    } else {
-      console.log("🛡️ DEBUG: Player invulnerable, no hace daño");
     }
   }
 
@@ -942,11 +878,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Reiniciar el nivel actual
    */
   private restartLevel(): void {
-    console.log("🔄 Reiniciando nivel - Game Over");
-
     // 0. CRÍTICO: Cancelar todos los timers pendientes para evitar callbacks retrasados
     this.time.removeAllEvents();
-    console.log("⏹️ Todos los timers cancelados");
 
     // 1. Resetear completamente el estado del jugador
     this.player.resetForRestart();
@@ -954,7 +887,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 2. Volver al jugador a modo normal
     if (this.player.getIsGhost()) {
       this.player.setGhostMode(false);
-      console.log("🐧 Jugador vuelto a modo normal");
     }
 
     // 3. Reiniciar sistema de vidas (después de limpiar timers)
@@ -985,9 +917,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
       onComplete: () => {
         // Resetear bandera de game over
         this.isGameOverInProgress = false;
-        console.log(
-          "✅ Reinicio de nivel completado - Game Over flag reseteado"
-        );
       },
     });
   }
@@ -1011,7 +940,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   private setupLevelMusic(): void {
     if (!this.config.musicKey) {
-      console.log("🎵 No hay música configurada para este nivel");
       return;
     }
 
@@ -1020,8 +948,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     // Verificar que el audio existe
     if (!this.sound.get(this.config.musicKey)) {
-      console.log(`🎵 Iniciando música del nivel: ${this.config.musicKey}`);
-
       this.currentMusic = this.sound.add(this.config.musicKey, {
         loop: true,
         volume: 0.3, // Volumen medio/bajo como solicitado
@@ -1038,7 +964,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   private stopCurrentMusic(): void {
     if (this.currentMusic && this.currentMusic.isPlaying) {
-      console.log("🎵 Deteniendo música actual");
       this.currentMusic.stop();
       this.currentMusic.destroy();
       this.currentMusic = undefined;
@@ -1060,10 +985,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.currentMusic) {
       if (this.currentMusic.isPlaying) {
         this.currentMusic.pause();
-        console.log("🎵 Música pausada");
       } else {
         this.currentMusic.resume();
-        console.log("🎵 Música reanudada");
       }
     }
   }
@@ -1092,84 +1015,79 @@ export abstract class BaseGameScene extends Phaser.Scene {
         const wallContainer = this.add.container(centerX, centerY);
         wallContainer.setDepth(50);
 
-        // Crear montaña de nieve ACUMULADA (bolas de nieve apiladas de forma irregular)
+        // Crear montaña de nieve ACUMULADA - forma más baja y redondeada
         const snowMountain = this.add.graphics();
 
-        // CAPA BASE - Fila inferior (las más grandes)
+        // CAPA BASE - Fila inferior (las más grandes) - más anchas
         snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(-18, 18, 19); // Izquierda base
-        snowMountain.fillCircle(0, 20, 21); // Centro base (la más grande)
-        snowMountain.fillCircle(19, 19, 18); // Derecha base
-        snowMountain.fillCircle(-8, 15, 16); // Extra izquierda
-        snowMountain.fillCircle(10, 16, 17); // Extra derecha
+        snowMountain.fillCircle(-20, 20, 22); // Izquierda base - más grande
+        snowMountain.fillCircle(0, 22, 24); // Centro base (la más grande)
+        snowMountain.fillCircle(21, 21, 21); // Derecha base
+        snowMountain.fillCircle(-10, 18, 19); // Extra izquierda
+        snowMountain.fillCircle(12, 19, 20); // Extra derecha
 
         // Sombras debajo de las bolas base
         snowMountain.fillStyle(0xd0e0f0, 0.7);
-        snowMountain.fillCircle(-18, 18, 15);
-        snowMountain.fillCircle(0, 20, 17);
-        snowMountain.fillCircle(19, 19, 14);
+        snowMountain.fillCircle(-20, 20, 18);
+        snowMountain.fillCircle(0, 22, 20);
+        snowMountain.fillCircle(21, 21, 17);
 
-        // SEGUNDA CAPA - Encima de la base (irregular)
+        // SEGUNDA CAPA - Más baja y más ancha
         snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(-14, -2, 17); // Izquierda
-        snowMountain.fillCircle(3, 0, 18); // Centro
-        snowMountain.fillCircle(16, -1, 15); // Derecha
-        snowMountain.fillCircle(-5, -4, 14); // Extra centro-izq
+        snowMountain.fillCircle(-16, 0, 19); // Izquierda
+        snowMountain.fillCircle(4, 2, 20); // Centro
+        snowMountain.fillCircle(18, 1, 17); // Derecha
+        snowMountain.fillCircle(-6, -2, 16); // Extra centro-izq
+        snowMountain.fillCircle(10, 0, 15); // Extra centro-der
 
         // Sombras segunda capa
         snowMountain.fillStyle(0xd8e8f5, 0.6);
-        snowMountain.fillCircle(-14, -2, 13);
-        snowMountain.fillCircle(3, 0, 14);
+        snowMountain.fillCircle(-16, 0, 15);
+        snowMountain.fillCircle(4, 2, 16);
 
-        // TERCERA CAPA - Medianas (más irregular)
+        // TERCERA CAPA - Menor altura (reducida)
         snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(-9, -18, 15); // Izquierda
-        snowMountain.fillCircle(7, -20, 16); // Derecha
-        snowMountain.fillCircle(-1, -17, 14); // Centro
-        snowMountain.fillCircle(12, -15, 12); // Extra derecha
+        snowMountain.fillCircle(-10, -16, 16); // Izquierda
+        snowMountain.fillCircle(8, -18, 17); // Derecha
+        snowMountain.fillCircle(-1, -15, 15); // Centro
+        snowMountain.fillCircle(14, -14, 13); // Extra derecha
 
         // Sombras tercera capa
         snowMountain.fillStyle(0xe0edf7, 0.6);
-        snowMountain.fillCircle(-9, -18, 11);
-        snowMountain.fillCircle(7, -20, 12);
+        snowMountain.fillCircle(-10, -16, 12);
+        snowMountain.fillCircle(8, -18, 13);
 
-        // CUARTA CAPA - Superior (menos picuda)
+        // PICO REDONDEADO - Mucho más bajo y suave
         snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(-5, -34, 13); // Izquierda
-        snowMountain.fillCircle(6, -36, 14); // Derecha
-        snowMountain.fillCircle(0, -32, 12); // Centro
-        snowMountain.fillCircle(-8, -30, 10); // Extra izquierda
+        snowMountain.fillCircle(-6, -30, 14); // Izquierda
+        snowMountain.fillCircle(7, -32, 15); // Derecha
+        snowMountain.fillCircle(0, -28, 13); // Centro
 
-        // Sombras cuarta capa
+        // Sombras pico
         snowMountain.fillStyle(0xe5f1f9, 0.6);
-        snowMountain.fillCircle(-5, -34, 10);
-        snowMountain.fillCircle(6, -36, 11);
+        snowMountain.fillCircle(-6, -30, 11);
+        snowMountain.fillCircle(7, -32, 12);
 
-        // PICO - Bolas redondeadas arriba (no tan puntiagudo)
+        // Cima muy redondeada (sin pico puntiagudo)
         snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(-2, -50, 11); // Izquierda
-        snowMountain.fillCircle(4, -52, 12); // Derecha
-        snowMountain.fillCircle(0, -48, 10); // Centro bajo
-
-        // Cima redondeada
-        snowMountain.fillStyle(0xffffff, 1);
-        snowMountain.fillCircle(1, -62, 10); // Bola superior
+        snowMountain.fillCircle(0, -42, 13); // Bola superior grande y suave
+        snowMountain.fillCircle(-4, -40, 10); // Lateral izquierdo
+        snowMountain.fillCircle(5, -41, 11); // Lateral derecho
 
         // Highlight sutil (brillo de nieve)
         snowMountain.fillStyle(0xffffff, 0.7);
-        snowMountain.fillCircle(-1, -64, 5);
-        snowMountain.fillCircle(3, -60, 4);
+        snowMountain.fillCircle(-2, -44, 6);
+        snowMountain.fillCircle(3, -43, 5);
 
         // CONTORNOS SUTILES para dar definición
         snowMountain.lineStyle(1.5, 0xc8dce8, 0.5);
-        snowMountain.strokeCircle(-18, 18, 19);
-        snowMountain.strokeCircle(0, 20, 21);
-        snowMountain.strokeCircle(19, 19, 18);
-        snowMountain.strokeCircle(3, 0, 18);
-        snowMountain.strokeCircle(7, -20, 16);
-        snowMountain.strokeCircle(6, -36, 14);
-        snowMountain.strokeCircle(4, -52, 12);
-        snowMountain.strokeCircle(1, -62, 10);
+        snowMountain.strokeCircle(-20, 20, 22);
+        snowMountain.strokeCircle(0, 22, 24);
+        snowMountain.strokeCircle(21, 21, 21);
+        snowMountain.strokeCircle(4, 2, 20);
+        snowMountain.strokeCircle(8, -18, 17);
+        snowMountain.strokeCircle(7, -32, 15);
+        snowMountain.strokeCircle(0, -42, 13);
 
         wallContainer.add(snowMountain);
 
@@ -1177,11 +1095,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
         // La montaña tiene aproximadamente 64x120 (ancho x alto)
         const physicsSprite = this.physics.add.sprite(
           centerX,
-          centerY - 30,
+          centerY - 10,
           ""
         );
         physicsSprite.setVisible(false);
-        (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(60, 120);
+        (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(60, 80);
         (physicsSprite.body as Phaser.Physics.Arcade.Body).setImmovable(true);
         (physicsSprite.body as Phaser.Physics.Arcade.Body).moves = false;
         (physicsSprite as any).isSnowWall = true;
@@ -1313,7 +1231,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   protected createProjectileSystem(): void {
     this.projectileSystem = new ProjectileSystem(this);
-    console.log("✅ Sistema de proyectiles inicializado");
   }
 
   /**
@@ -1342,8 +1259,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
         this.projectileSystem.getProjectileGroup()
       );
     }
-
-    console.log("✅ Sistema de enemigos inicializado");
   }
 
   /**

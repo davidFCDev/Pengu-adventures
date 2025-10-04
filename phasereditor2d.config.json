@@ -1,0 +1,6 @@
+{
+  "skipCodeGeneration": false,
+  "compilerOutputLanguage": "TYPE_SCRIPT",
+  "compilerInsertSpaces": true,
+  "compilerTabSize": 2
+}

@@ -21,7 +21,6 @@ export class ProjectileSystem {
     this.scene.events.on(
       "snowballCreated",
       (snowball: Phaser.GameObjects.GameObject) => {
-        console.log("Snowball creada, añadiendo al grupo...");
 
         const snowballSprite = snowball as Phaser.Physics.Arcade.Sprite;
 
@@ -38,10 +37,7 @@ export class ProjectileSystem {
             currentVelocityX,
             currentVelocityY
           );
-          console.log("Snowball añadida al grupo, velocidad restaurada:", {
-            x: currentVelocityX,
-            y: currentVelocityY,
-          });
+
         }
       }
     );

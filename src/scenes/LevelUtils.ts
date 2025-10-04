@@ -233,7 +233,6 @@ export class ${sceneClassName} extends BaseGameScene {
 
   create() {
     super.create();
-    console.log("🎮 ${sceneClassName} creado exitosamente!");
   }
 }`;
 }

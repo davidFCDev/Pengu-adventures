@@ -103,12 +103,6 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
     body.setVelocityY(-20); // Mucho menos para trayectoria casi horizontal
 
     // Debug: verificar que la velocidad se estableció correctamente
-    console.log("🏐 Snowball lanzada:", {
-      position: { x: this.x, y: this.y },
-      velocity: { x: body.velocity.x, y: body.velocity.y },
-      direction: this.direction,
-      speed: this.speed,
-    });
 
     // Crear partículas de nieve que siguen la bola
     this.createSnowParticles();
@@ -126,7 +120,7 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
   private checkTileCollision(obj1: any, obj2: any): boolean {
     // obj2 es el tile, verificar si tiene collision=true
     if (obj2 && obj2.properties) {
-      console.log("🔍 Verificando tile collision:", obj2.properties);
+
       return obj2.properties.collision === true;
     }
     // Si no tiene propiedades, no colisionar por defecto
