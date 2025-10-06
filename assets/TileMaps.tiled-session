@@ -8,7 +8,7 @@
     ],
     "fileStates": {
         "": {
-            "scaleInDock": 1,
+            "scaleInDock": 0.03125,
             "scaleInEditor": 1
         },
         "#spritesheet-tiles-default": {
@@ -76,7 +76,7 @@
         }
     },
     "last.exportedFilePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/05_10-pengu-adventures/assets",
-    "last.imagePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/pengu-test/assets",
+    "last.imagePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/05_10-pengu-adventures/assets",
     "map.height": 30,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
     "map.lastUsedFormat": "tmx",

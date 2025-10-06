@@ -99,7 +99,10 @@ export class CoinSystem {
       player,
       this.coins,
       (player: any, coin: any) => {
-        this.collectCoin(coin);
+        // Verificar que el sprite no haya sido destruido o esté en proceso de recolección
+        if (coin && coin.active) {
+          this.collectCoin(coin);
+        }
       },
       undefined,
       this
@@ -110,6 +113,15 @@ export class CoinSystem {
    * Recolectar una moneda
    */
   private collectCoin(coinSprite: Phaser.Physics.Arcade.Sprite): void {
+    // Verificar que no se haya recolectado ya (evitar colisiones múltiples)
+    if (!coinSprite.active) {
+      return;
+    }
+
+    // Desactivar inmediatamente para prevenir colisiones múltiples
+    coinSprite.setActive(false);
+    this.coins.remove(coinSprite, false, false);
+
     // Incrementar contador
     this.collectedCoins++;
 

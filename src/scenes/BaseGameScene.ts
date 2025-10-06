@@ -447,6 +447,18 @@ export abstract class BaseGameScene extends Phaser.Scene {
   /**
    * Crear grupo de spikes с colisiones personalizadas
    * ✅ AUTO-CONFIGURACIÓN: Detecta automáticamente tiles de spikes por nombre/ID y les asigna kill=true
+   *
+   * 📋 DETECCIÓN AUTOMÁTICA DE ORIENTACIÓN:
+   * - Bottom (default): Spike apuntando hacia arriba
+   * - Top: Tile volteado verticalmente (flipY) o rotado 180°
+   * - Right: Tile rotado 90° en sentido horario
+   * - Left: Tile rotado 270° o volteado horizontalmente (flipX)
+   *
+   * 🎯 MANUAL OVERRIDE:
+   * En Tiled, puedes añadir una propiedad personalizada al tile:
+   * - Nombre: "position"
+   * - Tipo: string
+   * - Valor: "top", "bottom", "left", o "right"
    */
   private createSpikesGroup(): void {
     // Crear grupo estático para los spikes
@@ -473,9 +485,16 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
           if (hasKill) {
             // Detectar orientación automáticamente basada en las transformaciones de Tiled
-            const isFlippedVertically = tile.rotation === Math.PI; // 180° rotation = volteado
-            const isRotated90 = tile.rotation === Math.PI / 2; // 90° rotation
-            const isRotated270 = tile.rotation === (3 * Math.PI) / 2; // 270° rotation
+            // Tiled usa propiedades flipped en lugar de rotation directa
+            const isFlippedVertically = tile.flipY; // Tile volteado verticalmente
+            const isFlippedHorizontally = tile.flipX; // Tile volteado horizontalmente
+            const isFlippedDiagonally = tile.rotation !== 0; // Rotación diagonal
+
+            // Verificar la rotación en radianes también por si acaso
+            const rotation = tile.rotation;
+            const isRotated90 = Math.abs(rotation - Math.PI / 2) < 0.1; // 90° rotation
+            const isRotated180 = Math.abs(rotation - Math.PI) < 0.1; // 180° rotation
+            const isRotated270 = Math.abs(rotation - (3 * Math.PI) / 2) < 0.1; // 270° rotation
 
             // También podemos usar las propiedades directas de Tiled si están disponibles
             const position =
@@ -487,11 +506,15 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
             // Auto-detectar si no se especifica posición manualmente
             if (position === "auto") {
-              if (isFlippedVertically) {
+              // Detectar basándose en flip y rotación
+              if (isFlippedVertically || isRotated180) {
                 detectedPosition = "top";
               } else if (isRotated90) {
                 detectedPosition = "right";
               } else if (isRotated270) {
+                detectedPosition = "left";
+              } else if (isFlippedHorizontally) {
+                // Si está volteado horizontalmente, podría ser left o right
                 detectedPosition = "left";
               } else {
                 detectedPosition = "bottom";
@@ -504,34 +527,34 @@ export abstract class BaseGameScene extends Phaser.Scene {
               case "top":
                 // Spike apuntando hacia abajo (parte superior del tile)
                 spikeX = tile.getCenterX();
-                spikeY = tile.getCenterY() - 16; // Mover hacia arriba 16px
-                spikeWidth = tile.width;
-                spikeHeight = 32;
+                spikeY = tile.pixelY + 16; // Hitbox en la parte superior (primeros 32px)
+                spikeWidth = tile.width; // Ancho completo del tile (64px)
+                spikeHeight = 32; // Alto reducido a la mitad (32px)
                 break;
 
               case "left":
-                // Spike apuntando hacia la derecha (parte izquierda del tile)
-                spikeX = tile.getCenterX() - 16; // Mover hacia la izquierda 16px
+                // Spike apuntando hacia la DERECHA (las puntas están en el lado DERECHO del tile)
+                spikeX = tile.pixelX + tile.width - 16; // Hitbox en el lado DERECHO (donde están las puntas)
                 spikeY = tile.getCenterY();
-                spikeWidth = 32;
-                spikeHeight = tile.height;
+                spikeWidth = 32; // Ancho reducido a la mitad (32px)
+                spikeHeight = tile.height; // Alto completo del tile (64px)
                 break;
 
               case "right":
-                // Spike apuntando hacia la izquierda (parte derecha del tile)
-                spikeX = tile.getCenterX() + 16; // Mover hacia la derecha 16px
+                // Spike apuntando hacia la IZQUIERDA (las puntas están en el lado IZQUIERDO del tile)
+                spikeX = tile.pixelX + 16; // Hitbox en el lado IZQUIERDO (donde están las puntas)
                 spikeY = tile.getCenterY();
-                spikeWidth = 32;
-                spikeHeight = tile.height;
+                spikeWidth = 32; // Ancho reducido a la mitad (32px)
+                spikeHeight = tile.height; // Alto completo del tile (64px)
                 break;
 
               case "bottom":
               default:
                 // Spike apuntando hacia arriba (parte inferior del tile) - DEFAULT
                 spikeX = tile.getCenterX();
-                spikeY = tile.getCenterY() + 16; // Mover hacia abajo 16px
-                spikeWidth = tile.width;
-                spikeHeight = 32;
+                spikeY = tile.pixelY + tile.height - 16; // Hitbox en la parte inferior (últimos 32px)
+                spikeWidth = tile.width; // Ancho completo del tile (64px)
+                spikeHeight = 32; // Alto reducido a la mitad (32px)
                 break;
             }
 
@@ -795,6 +818,45 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   private createLifeSystem(): void {
     this.lifeSystem = new LifeSystem(this, 0, 0);
+
+    // Inicializar contador de monedas en 0
+    this.lifeSystem.updateCoinCount(0);
+
+    // Inicializar contador de mini-pingüinos en 0
+    this.lifeSystem.updateMiniPinguCount(0);
+
+    // Inicializar contador de llaves en 0
+    this.lifeSystem.updateKeyCount(0);
+
+    // Escuchar evento de recolección de monedas (reutilizable para todos los niveles)
+    this.events.on(
+      "coinCollected",
+      (data: { collected: number; total: number }) => {
+        // Actualizar contador visual de monedas
+        this.lifeSystem.updateCoinCount(data.collected);
+      }
+    );
+
+    // Escuchar evento de recolección de mini-pingüinos (reutilizable para todos los niveles)
+    this.events.on(
+      "miniPinguCollected",
+      (data: { collected: number; total: number }) => {
+        // Actualizar contador visual de mini-pingüinos
+        this.lifeSystem.updateMiniPinguCount(data.collected);
+      }
+    );
+
+    // Escuchar evento de recolección de llaves (reutilizable para todos los niveles)
+    this.events.on("keyCollected", (count: number) => {
+      // Actualizar contador visual de llaves
+      this.lifeSystem.updateKeyCount(count);
+    });
+
+    // Escuchar evento de uso de llaves (cuando se abre una puerta)
+    this.events.on("keyUsed", (count: number) => {
+      // Actualizar contador visual de llaves
+      this.lifeSystem.updateKeyCount(count);
+    });
 
     // Configurar callback para cuando el player recibe daño
     this.player.setOnHitCallback(() => {

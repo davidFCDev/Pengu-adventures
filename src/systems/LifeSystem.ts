@@ -5,6 +5,22 @@ export class LifeSystem {
   private currentLives: number = 3;
   private maxLives: number = 3;
   private headerBackground: Phaser.GameObjects.Rectangle;
+
+  // Contador de monedas debajo del header
+  private coinCountContainer?: Phaser.GameObjects.Container;
+  private coinIcon?: Phaser.GameObjects.Image;
+  private coinCountText?: Phaser.GameObjects.Text;
+
+  // Contador de mini-pingüinos debajo del contador de monedas
+  private miniPinguCountContainer?: Phaser.GameObjects.Container;
+  private miniPinguIcon?: Phaser.GameObjects.Image;
+  private miniPinguCountText?: Phaser.GameObjects.Text;
+
+  // Contador de llaves debajo del contador de mini-pingüinos
+  private keyCountContainer?: Phaser.GameObjects.Container;
+  private keyIcon?: Phaser.GameObjects.Sprite;
+  private keyCountText?: Phaser.GameObjects.Text;
+
   constructor(scene: Phaser.Scene, x: number = 0, y: number = 0) {
     this.scene = scene;
     // Crear contenedor principal
@@ -24,6 +40,16 @@ export class LifeSystem {
     this.createHeartTexture();
     // Crear los corazones
     this.createHearts();
+
+    // Crear contador de monedas debajo del header
+    this.createCoinCounter();
+
+    // Crear contador de mini-pingüinos
+    this.createMiniPinguCounter();
+
+    // Crear contador de llaves
+    this.createKeyCounter();
+
     // Mantener el sistema de vidas fijo en la pantalla
     this.container.setScrollFactor(0);
     this.container.setDepth(1000); // Asegurar que esté por encima de todo
@@ -57,6 +83,158 @@ export class LifeSystem {
       this.container.add(heart);
     }
   }
+
+  /**
+   * Crear contador de monedas debajo del header (esquina superior izquierda)
+   */
+  private createCoinCounter(): void {
+    // Posición debajo del header con margen
+    const xPosition = 35; // Margen desde el borde izquierdo
+    const yPosition = 115; // Debajo del header (80px + 35px de margen)
+
+    // Crear contenedor para el contador de monedas
+    this.coinCountContainer = this.scene.add.container(xPosition, yPosition);
+    this.coinCountContainer.setScrollFactor(0);
+    this.coinCountContainer.setDepth(1000);
+
+    // Verificar si existe la textura de moneda
+    if (this.scene.textures.exists("PT_TOKEN_MASTER_001")) {
+      // Icono de moneda
+      this.coinIcon = this.scene.add.image(0, 0, "PT_TOKEN_MASTER_001");
+      this.coinIcon.setScale(0.025); // Tamaño apropiado
+      this.coinCountContainer.add(this.coinIcon);
+
+      // Texto contador "x0"
+      this.coinCountText = this.scene.add.text(25, 0, "x0", {
+        fontSize: "22px",
+        fontFamily: "Arial",
+        color: "#FFD700",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      });
+      this.coinCountText.setOrigin(0, 0.5);
+      this.coinCountContainer.add(this.coinCountText);
+    }
+  }
+
+  /**
+   * Actualizar el contador de monedas
+   */
+  public updateCoinCount(count: number): void {
+    if (this.coinCountText) {
+      this.coinCountText.setText(`x${count}`);
+    }
+  }
+
+  /**
+   * Crear contador de mini-pingüinos debajo del contador de monedas
+   */
+  private createMiniPinguCounter(): void {
+    // Posición debajo del contador de monedas
+    const xPosition = 35;
+    const yPosition = 160; // Debajo del contador de monedas (115 + 45)
+
+    // Crear contenedor para el contador de mini-pingüinos
+    this.miniPinguCountContainer = this.scene.add.container(
+      xPosition,
+      yPosition
+    );
+    this.miniPinguCountContainer.setScrollFactor(0);
+    this.miniPinguCountContainer.setDepth(1000);
+
+    // Verificar si existe la textura de mini-pingüino
+    if (this.scene.textures.exists("mini-pingu")) {
+      // Icono de mini-pingüino
+      this.miniPinguIcon = this.scene.add.image(0, 0, "mini-pingu");
+      this.miniPinguIcon.setScale(0.5); // Escala pequeña
+      this.miniPinguCountContainer.add(this.miniPinguIcon);
+
+      // Texto contador "x0"
+      this.miniPinguCountText = this.scene.add.text(25, 0, "x0", {
+        fontSize: "22px",
+        fontFamily: "Arial",
+        color: "#00D4FF",
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      });
+      this.miniPinguCountText.setOrigin(0, 0.5);
+      this.miniPinguCountContainer.add(this.miniPinguCountText);
+    }
+  }
+
+  /**
+   * Actualizar el contador de mini-pingüinos
+   */
+  public updateMiniPinguCount(count: number): void {
+    if (this.miniPinguCountText) {
+      this.miniPinguCountText.setText(`x${count}`);
+    }
+  }
+
+  /**
+   * Crear contador de llaves debajo del contador de mini-pingüinos
+   */
+  private createKeyCounter(): void {
+    // Posición debajo del contador de mini-pingüinos
+    const xPosition = 35;
+    const yPosition = 205; // Debajo del contador de mini-pingüinos (160 + 45)
+
+    // Crear contenedor para el contador de llaves
+    this.keyCountContainer = this.scene.add.container(xPosition, yPosition);
+    this.keyCountContainer.setScrollFactor(0);
+    this.keyCountContainer.setDepth(1000);
+
+    // Verificar si existe el spritesheet con frames
+    if (this.scene.textures.exists("spritesheet-tiles-frames")) {
+      // Calcular el frame de la llave: fila 12, columna 12
+      // El spritesheet tiene tiles de 64x64
+      const texture = this.scene.textures.get("spritesheet-tiles-frames");
+      const tileWidth = 64;
+      const imageWidth = texture.source[0].width;
+      const columnsPerRow = Math.floor(imageWidth / tileWidth);
+
+      // Frame index = (fila × columnas_por_fila) + columna
+      const keyFrame = 12 * columnsPerRow + 12;
+
+      console.log(
+        `🗝️ LifeSystem: Usando frame ${keyFrame} para la llave (${columnsPerRow} columnas por fila)`
+      );
+
+      // Crear icono de llave usando el frame calculado del spritesheet
+      this.keyIcon = this.scene.add.sprite(
+        0,
+        0,
+        "spritesheet-tiles-frames",
+        keyFrame
+      );
+      this.keyIcon.setScale(0.8); // Escala más grande para mejor visibilidad
+      this.keyCountContainer.add(this.keyIcon);
+
+      // Texto contador "x0"
+      this.keyCountText = this.scene.add.text(25, 0, "x0", {
+        fontSize: "22px",
+        fontFamily: "Arial",
+        color: "#FFD700", // Color dorado para las llaves
+        fontStyle: "bold",
+        stroke: "#000000",
+        strokeThickness: 3,
+      });
+      this.keyCountText.setOrigin(0, 0.5);
+      this.keyCountContainer.add(this.keyCountText);
+    }
+  }
+
+  /**
+   * Actualizar el contador de llaves
+   */
+  public updateKeyCount(count: number): void {
+    if (this.keyCountText) {
+      this.keyCountText.setText(`x${count}`);
+    }
+  }
+
   public loseLife(): boolean {
     if (this.currentLives <= 0) {
       return false; // Ya no hay vidas

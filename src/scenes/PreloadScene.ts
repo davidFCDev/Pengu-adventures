@@ -20,7 +20,7 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar el mapa Level1
     this.load.tilemapTiledJSON("Level1", "assets/Level1.json");
 
-    // Cargar los tilesets
+    // Cargar los tilesets como imágenes (necesario para el tilemap)
     this.load.image(
       "spritesheet-tiles-default",
       "assets/spritesheet-tiles-default.png"
@@ -28,6 +28,17 @@ export class PreloadScene extends Phaser.Scene {
     this.load.image(
       "spritesheet-backgrounds-default",
       "assets/spritesheet-backgrounds-default.png"
+    );
+
+    // Cargar el tileset también como spritesheet para poder acceder a frames individuales
+    // (usado por KeySystem, DoorSystem, etc.)
+    this.load.spritesheet(
+      "spritesheet-tiles-frames",
+      "assets/spritesheet-tiles-default.png",
+      {
+        frameWidth: 64,
+        frameHeight: 64,
+      }
     );
 
     // Cargar imagen de coleccionables/tokens
@@ -59,6 +70,12 @@ export class PreloadScene extends Phaser.Scene {
         frameHeight: 32,
         endFrame: 2, // Solo necesitamos frames 0 (lleno) y 2 (vacío)
       }
+    );
+
+    // Cargar imagen de mini-pingüino coleccionable desde URL
+    this.load.image(
+      "mini-pingu",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/mini-pingu-HWHUQtqEI7XZnAKAhRmOCBTyH4ESAm.png?5ZyM"
     );
 
     // Cargar el spritesheet de celebración (4 frames de 128x128)
