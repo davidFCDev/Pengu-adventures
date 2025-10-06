@@ -14,12 +14,41 @@
         "#spritesheet-tiles-default": {
             "scaleInDock": 0.75
         },
+        "Level1.tmx": {
+            "scale": 0.33,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 4128.787878787879,
+                "y": 1087.8787878787878
+            }
+        },
+        "Level1.tmx#spritesheet-backgrounds-default": {
+            "scaleInDock": 0.33
+        },
+        "Level1.tmx#spritesheet-tiles-default": {
+            "scaleInDock": 0.5,
+            "scaleInEditor": 0.75
+        },
+        "LevelBase.tmx": {
+            "scale": 0.20595703124999998,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2558.7861545756286,
+                "y": 961.3655761024181
+            }
+        },
+        "LevelBase.tmx#spritesheet-backgrounds-default": {
+            "scaleInDock": 1
+        },
+        "LevelBase.tmx#spritesheet-tiles-default": {
+            "scaleInDock": 1
+        },
         "TestingMap.json": {
             "scale": 0.25,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 3244,
-                "y": 1022
+                "x": 2400,
+                "y": 1020
             }
         },
         "TestingMap.json#spritesheet-backgrounds-default": {
@@ -30,11 +59,23 @@
             "scaleInDock": 0.5,
             "scaleInEditor": 1
         },
+        "TestingMap.tmx": {
+            "scale": 0.33,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 5007.575757575758,
+                "y": 1075.7575757575758
+            }
+        },
+        "TestingMap.tmx#spritesheet-backgrounds-default": {
+            "scaleInDock": 1
+        },
         "TestingMap.tmx#spritesheet-tiles-default": {
+            "scaleInDock": 0.5,
             "scaleInEditor": 0.5
         }
     },
-    "last.exportedFilePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/pengu-test/assets",
+    "last.exportedFilePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/05_10-pengu-adventures/assets",
     "last.imagePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/pengu-test/assets",
     "map.height": 30,
     "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
@@ -46,6 +87,9 @@
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "TestingMap.tmx",
+        "LevelBase.tmx",
+        "TestingMap.json"
     ],
     "tileset.embedInMap": true,
     "tileset.tileSize": {

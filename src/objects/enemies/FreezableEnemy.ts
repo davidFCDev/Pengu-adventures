@@ -13,7 +13,7 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
   private frozenTimer: number = 0;
   private moveSpeed: number = 80; // Más rápido que BasicEnemy (80 vs 50)
   private collisionLayer: Phaser.Tilemaps.TilemapLayer;
-  private iceBlock?: Phaser.GameObjects.Image;
+  private iceBlock?: Phaser.Physics.Arcade.Image; // ← Cambiado de Image a Physics.Arcade.Image
   private originalTint: number;
 
   // Identificador único para encontrar este enemigo
@@ -137,13 +137,25 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     this.setDisplaySize(84, 84);
   }
 
+  /**
+   * Obtener el bloque de hielo (para configurar colisiones)
+   */
+  public getIceBlock(): Phaser.Physics.Arcade.Image | undefined {
+    return this.iceBlock;
+  }
+
   private createIceBlock(): void {
     if (this.iceBlock) {
       this.iceBlock.destroy();
     }
 
     // Verificar que la escena está disponible Y que el enemigo está activo
-    if (!this.scene || !this.scene.add || !this.scene.textures || !this.active) {
+    if (
+      !this.scene ||
+      !this.scene.add ||
+      !this.scene.textures ||
+      !this.active
+    ) {
       console.error("Scene is not available for creating ice block");
       return;
     }
@@ -176,10 +188,22 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
       graphics.destroy();
     }
 
-    // Crear la imagen del bloque de hielo
-    this.iceBlock = this.scene.add.image(this.x, this.y, "iceBlockTexture");
+    // Crear la imagen del bloque de hielo con FÍSICA
+    this.iceBlock = this.scene.physics.add.image(
+      this.x,
+      this.y,
+      "iceBlockTexture"
+    );
     this.iceBlock.setDepth(this.depth + 1);
     this.iceBlock.setAlpha(0);
+
+    // Configurar física del bloque de hielo
+    const iceBody = this.iceBlock.body as Phaser.Physics.Arcade.Body;
+    if (iceBody) {
+      iceBody.setImmovable(true); // No se mueve al chocar
+      iceBody.setAllowGravity(false); // No cae por gravedad
+      iceBody.setSize(100, 100); // Tamaño de colisión
+    }
 
     // Animación de aparición (solo si tweens está disponible)
     if (this.scene.tweens) {
@@ -334,6 +358,11 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
         // Contar tiempo congelado
         this.frozenTimer -= delta;
 
+        // Mantener el bloque de hielo sincronizado con la posición del enemigo
+        if (this.iceBlock && this.iceBlock.active) {
+          this.iceBlock.setPosition(this.x, this.y);
+        }
+
         if (this.frozenTimer <= 0) {
           // Descongelar
           this.unfreeze();
@@ -348,40 +377,12 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
       return; // Ya está congelado
     }
 
-    // Debug: verificar estado antes de congelar
-    console.log("FreezableEnemy takeDamageFromSnowball:", {
-      hasScene: !!this.scene,
-      isActive: this.active,
-      state: this.enemyState,
-      enemyId: this.enemyId
-    });
-
     this.freeze();
   }
 
   private freeze(): void {
-    // Debug detallado
-    console.log("Attempting to freeze enemy:", {
-      hasScene: !!this.scene,
-      sceneType: this.scene ? typeof this.scene : 'undefined',
-      isActive: this.active,
-      hasBody: !!this.body,
-      enemyId: this.enemyId
-    });
-
     // Verificar que la escena está disponible
-    if (!this.scene) {
-      console.error("Cannot freeze enemy: scene is null/undefined", {
-        enemyId: this.enemyId,
-        isActive: this.active
-      });
-      return;
-    }
-
-    if (!this.active) {
-      console.warn("Cannot freeze enemy: enemy is inactive", {
-        enemyId: this.enemyId
-      });
+    if (!this.scene || !this.active) {
       return;
     }
 
@@ -396,14 +397,10 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     // Cambiar tinte a azul claro (efecto congelado)
     this.setTint(0xaaddff);
 
-    console.log("About to create ice block...");
-
     // Crear bloque de hielo visual
     this.createIceBlock();
 
-    console.log("Ice block created, adding shake tween...");
-
-    // Efecto de temblor al congelarse (solo si la escena está disponible)
+    // Efecto de temblor al congelarse
     if (this.scene && this.scene.tweens) {
       this.scene.tweens.add({
         targets: this,
@@ -414,8 +411,6 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
         ease: "Sine.easeInOut",
       });
     }
-
-    console.log("Freeze complete!");
   }
 
   private unfreeze(): void {
@@ -450,6 +445,17 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   destroy(fromScene?: boolean): void {
+    // ⚠️ CRÍTICO: FreezableEnemy NO debe ser destruido por colisiones
+    // Solo puede ser destruido cuando se limpia la escena o explícitamente
+    const stack = new Error().stack || "";
+    const isFromCollision =
+      stack.includes("overlap") || stack.includes("collide");
+
+    if (isFromCollision && !fromScene) {
+      // Bloquear destrucción desde colisiones
+      return;
+    }
+
     // Limpiar el bloque de hielo si existe
     if (this.iceBlock) {
       this.iceBlock.destroy();

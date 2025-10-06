@@ -17,6 +17,9 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar el mapa de prueba
     this.load.tilemapTiledJSON("TestingMap", "assets/TestingMap.json");
 
+    // Cargar el mapa Level1
+    this.load.tilemapTiledJSON("Level1", "assets/Level1.json");
+
     // Cargar los tilesets
     this.load.image(
       "spritesheet-tiles-default",
@@ -26,6 +29,9 @@ export class PreloadScene extends Phaser.Scene {
       "spritesheet-backgrounds-default",
       "assets/spritesheet-backgrounds-default.png"
     );
+
+    // Cargar imagen de coleccionables/tokens
+    this.load.image("PT_TOKEN_MASTER_001", "assets/PT_TOKEN_MASTER_001.png");
 
     // Cargar todos los sprites del pingüino
     PenguinSprites.loadSprites(this);
@@ -63,6 +69,28 @@ export class PreloadScene extends Phaser.Scene {
         frameWidth: 128,
         frameHeight: 128,
         endFrame: 3, // 4 frames (0-3)
+      }
+    );
+
+    // Cargar el spritesheet del pez ángler (16 frames en grid 4x4, 622x451 cada frame)
+    this.load.spritesheet(
+      "angler_fish_swim",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/angler_fish_swim-ROKFvXFKEyzeSIAJhMeUXYJOo6hMv6.png?5wHZ",
+      {
+        frameWidth: 622,
+        frameHeight: 451,
+        endFrame: 15, // 16 frames (0-15)
+      }
+    );
+
+    // Cargar el spritesheet del pez ángler idle (16 frames en grid 4x4, 622x451 cada frame)
+    this.load.spritesheet(
+      "angler_fish_idle",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/angler_fish_idle-fqfn6cEh6Ryrr4u1qqLxktpn5FbQ0F.png?tLoX",
+      {
+        frameWidth: 622,
+        frameHeight: 451,
+        endFrame: 15, // 16 frames (0-15)
       }
     );
 
@@ -302,7 +330,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    this.scene.start("TestingMapScene");
+    // Iniciar Level1 por defecto (cambiar a "TestingMapScene" para pruebas)
+    this.scene.start("Level1");
   }
 
   private loadingComplete(): void {

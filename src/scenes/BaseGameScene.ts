@@ -1315,11 +1315,21 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     this.hasFinishedLevel = true;
 
-    // Detener al player
+    // Detener al player completamente
     if (this.player && this.player.body) {
       const body = this.player.body as Phaser.Physics.Arcade.Body;
       body.setVelocity(0, 0);
       body.setAllowGravity(false);
+
+      // Poner animación de standing (quieto)
+      if (typeof (this.player as any).playAnimation === "function") {
+        (this.player as any).playAnimation("penguin_standing");
+      }
+
+      // Desactivar controles del jugador
+      if (typeof (this.player as any).setControlsActive === "function") {
+        (this.player as any).setControlsActive(false);
+      }
     }
 
     // Reproducir sonido de finalización

@@ -7,7 +7,7 @@ export enum EnemyState {
 }
 
 export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
-  private state: EnemyState = EnemyState.IDLE;
+  private enemyState: EnemyState = EnemyState.IDLE;
   private pointA: { x: number; y: number };
   private pointB: { x: number; y: number };
   private currentTarget: { x: number; y: number };
@@ -125,7 +125,7 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   private startIdlePhase(): void {
-    this.state = EnemyState.IDLE;
+    this.enemyState = EnemyState.IDLE;
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
     }
@@ -133,7 +133,7 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   private startMovingToTarget(): void {
-    this.state = EnemyState.MOVING;
+    this.enemyState = EnemyState.MOVING;
 
     if (this.body) {
       const direction = this.currentTarget.x > this.x ? 1 : -1;
@@ -149,13 +149,13 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   update(time: number, delta: number): void {
-    if (this.state === EnemyState.DEAD || !this.body) {
+    if (this.enemyState === EnemyState.DEAD || !this.body) {
       return;
     }
 
     const body = this.body as Phaser.Physics.Arcade.Body;
 
-    switch (this.state) {
+    switch (this.enemyState) {
       case EnemyState.IDLE:
         this.idleTimer -= delta;
         if (this.idleTimer <= 0) {
@@ -168,7 +168,6 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
         const touchingWall = body.blocked.left || body.blocked.right;
 
         if (touchingWall) {
-
           body.setVelocityX(0);
           this.switchTarget();
           this.startIdlePhase();
@@ -187,7 +186,7 @@ export class BasicEnemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   public takeDamageFromSnowball(): void {
-    this.state = EnemyState.DEAD;
+    this.enemyState = EnemyState.DEAD;
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
     }
