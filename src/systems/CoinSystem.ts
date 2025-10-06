@@ -43,7 +43,7 @@ export class CoinSystem {
     // Configuración por defecto
     this.config = {
       textureKey: config.textureKey,
-      scale: config.scale ?? 0.03,
+      scale: config.scale ?? 1.0, // Escala por defecto para monedas (50x53px base)
       depth: config.depth ?? 10,
       collectSoundKey: config.collectSoundKey ?? "",
       soundVolume: config.soundVolume ?? 0.3,
@@ -65,7 +65,12 @@ export class CoinSystem {
     this.totalCoins = positions.length;
 
     positions.forEach((pos) => {
-      const coin = this.scene.add.sprite(pos.x, pos.y, this.config.textureKey);
+      // Usar add.image() en lugar de add.sprite() ya que PT_TOKEN_MASTER_001 se carga como image
+      const coin = this.scene.add.image(
+        pos.x,
+        pos.y,
+        this.config.textureKey
+      ) as any;
 
       coin.setScale(this.config.scale);
       coin.setDepth(this.config.depth);

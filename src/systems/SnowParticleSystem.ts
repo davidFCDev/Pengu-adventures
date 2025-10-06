@@ -16,7 +16,7 @@ export class SnowParticleSystem {
   private surfaceLayer?: Phaser.Tilemaps.TilemapLayer;
   private mapWidth: number = 0;
   private mapHeight: number = 0;
-  private maxSnowflakes: number = 200; // Cantidad total de copos en el mapa
+  private maxSnowflakes: number = 350; // Cantidad total de copos en el mapa (aumentado de 200 a 350)
 
   constructor(
     scene: Phaser.Scene,

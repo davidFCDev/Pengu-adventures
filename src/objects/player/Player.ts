@@ -25,6 +25,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private canJump: boolean = true;
   private hasDoubleJump: boolean = false; // Si ya usó el doble salto
   private wasJumpPressed: boolean = false; // Para detectar nuevo tap de salto
+  private lastJumpTime: number = 0; // Timestamp del último salto
+  private minJumpDelay: number = 150; // Mínimo 150ms entre saltos para evitar doble tap accidental
   private isCrouching: boolean = false;
   private canThrow: boolean = true;
   private throwCooldown: number = 500;
@@ -176,6 +178,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // No cambiar animación si está ejecutando THROW o BLOW, excepto para animaciones especiales
     const isSpecialAnimation =
       animationKey === "penguin_climb" || animationKey === "penguin_swing";
+
     if (
       !isSpecialAnimation &&
       ((this.isPlayingThrow && animationKey !== "penguin_throw") ||
@@ -183,6 +186,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     ) {
       return;
     }
+
+    // 🏊 FIX: Si está nadando, proteger la animación de natación
+    // No permitir que se cambie a standing u otras animaciones terrestres
+    if (this.isSwimming && this.currentAnimation === "penguin_swing") {
+      // Solo permitir cambiar a penguin_swing de nuevo (mismo estado)
+      // Esto evita que otras animaciones la interrumpan mientras nada
+      if (animationKey !== "penguin_swing") {
+        return;
+      }
+    }
+
     if (this.currentAnimation !== animationKey) {
       this.currentAnimation = animationKey;
       this.play(animationKey);
@@ -368,12 +382,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       // Detectar si la tecla de salto fue presionada (nuevo tap)
       const jumpJustPressed = this.jumpKey.isDown && !this.wasJumpPressed;
+      const currentTime = this.scene.time.now;
+      const enoughTimePassed =
+        currentTime - this.lastJumpTime > this.minJumpDelay;
 
       // Primer salto (desde el suelo)
-      if (jumpJustPressed && this.isOnGround && this.canJump) {
+      if (
+        jumpJustPressed &&
+        this.isOnGround &&
+        this.canJump &&
+        enoughTimePassed
+      ) {
         body.setVelocityY(this.jumpVelocity);
         this.canJump = false;
         this.hasDoubleJump = false; // Resetear el doble salto al saltar
+        this.lastJumpTime = currentTime; // Registrar tiempo del salto
         this.playAnimation("penguin_jump");
 
         // Reproducir sonido de salto
@@ -388,9 +411,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }, 200); // Cooldown del salto
       }
       // Doble salto (en el aire) - detectar nuevo tap mientras está en el aire
-      else if (jumpJustPressed && !this.isOnGround && !this.hasDoubleJump) {
+      else if (
+        jumpJustPressed &&
+        !this.isOnGround &&
+        !this.hasDoubleJump &&
+        enoughTimePassed
+      ) {
         body.setVelocityY(this.doubleJumpVelocity); // Salto más pequeño
         this.hasDoubleJump = true; // Marcar que ya usó el doble salto
+        this.lastJumpTime = currentTime; // Registrar tiempo del segundo salto
         this.playAnimation("penguin_jump");
 
         // Reproducir sonido de salto

@@ -136,10 +136,12 @@ protected createMap(): void {
 private createCoins(): void {
 	this.coinSystem = new CoinSystem(this, {
 		textureKey: "PT_TOKEN_MASTER_001",
-		scale: 0.03,
+		scale: 1.0, // Escala recomendada (imagen base: 50x53px)
 		depth: 10,
 		floatDistance: 5,
 		floatDuration: 1000,
+		collectSoundKey: "coin_collect_sound",
+		soundVolume: 0.5,
 	});
 
 	// Extraer posiciones de las monedas del editorCreate()

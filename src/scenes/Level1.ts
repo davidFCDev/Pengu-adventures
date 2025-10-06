@@ -267,6 +267,12 @@ class Level1 extends BaseGameScene {
     // Llamar al create de BaseGameScene (esto ya llama a createMap() internamente)
     super.create();
 
+    // Reproducir música de fondo en bucle
+    this.sound.play("level1_music", {
+      loop: true,
+      volume: 0.4,
+    });
+
     // Crear los coleccionables DESPUÉS de que BaseGameScene haya creado todo
     this.createCoins();
     this.createMiniPingus();
@@ -321,13 +327,15 @@ class Level1 extends BaseGameScene {
    * Crear sistema de monedas
    */
   private createCoins(): void {
-    // Inicializar sistema de monedas
+    // Inicializar sistema de monedas con sonido
     this.coinSystem = new CoinSystem(this, {
       textureKey: "PT_TOKEN_MASTER_001",
-      scale: 0.03,
+      scale: 1.0,
       depth: 10,
       floatDistance: 5,
       floatDuration: 1000,
+      collectSoundKey: "coin_collect_sound",
+      soundVolume: 0.5,
     });
 
     // Posiciones de las monedas (extraídas del editorCreate)
@@ -378,13 +386,15 @@ class Level1 extends BaseGameScene {
    * Crear sistema de mini-pingüinos
    */
   private createMiniPingus(): void {
-    // Inicializar sistema de mini-pingüinos
+    // Inicializar sistema de mini-pingüinos con sonido
     this.miniPinguSystem = new MiniPinguSystem(this, {
       textureKey: "mini-pingu",
       scale: 1.0,
       depth: 10,
       bounceDistance: 10,
       bounceDuration: 800,
+      collectSoundKey: "minipingu_collect_sound",
+      soundVolume: 0.6,
     });
 
     // Posiciones de los mini-pingüinos (extraídas del editorCreate)
@@ -412,6 +422,8 @@ class Level1 extends BaseGameScene {
     this.keySystem = new KeySystem(this, {
       tilemap: this.tilemap,
       keyTileIds: [229], // GID de la llave en el tileset
+      collectSoundKey: "coin_collect_sound", // Mismo sonido que las monedas (pop)
+      soundVolume: 0.5,
     });
 
     this.keySystem.createKeys();
@@ -432,6 +444,8 @@ class Level1 extends BaseGameScene {
       tilemap: this.tilemap,
       keySystem: this.keySystem,
       doorTileIds: [52, 70], // GIDs de las puertas (superior e inferior)
+      openSoundKey: "door_open_sound", // Sonido al abrir puerta
+      soundVolume: 0.6,
     });
 
     this.doorSystem.createDoors();

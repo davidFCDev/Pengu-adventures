@@ -49,7 +49,7 @@ export interface GameSceneConfig {
     minSurfaceWidth?: number;
     patrolMargin?: number;
     safeDistance?: number;
-    enemyTypeRatio?: { basic: number; freezable: number };
+    enemyTypeRatio?: { basic: number; freezable: number; aquatic: number };
   };
 }
 

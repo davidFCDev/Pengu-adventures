@@ -89,10 +89,14 @@ export class DoorSystem {
     doorSprite.setOrigin(0.5, 0.5);
     doorSprite.setDepth(this.config.depth);
 
-    // Añadir física estática
+    // Añadir física estática - Los cuerpos estáticos NO se mueven bajo ninguna circunstancia
     this.scene.physics.add.existing(doorSprite, true);
     const body = doorSprite.body as Phaser.Physics.Arcade.StaticBody;
     body.setSize(doorSprite.width, doorSprite.height);
+
+    // CRÍTICO: Los cuerpos estáticos tienen immovable = true por defecto
+    // pero debemos asegurarnos de que pushable está en false
+    body.pushable = false;
 
     // Añadir al grupo
     this.doors.add(doorSprite);
@@ -206,17 +210,7 @@ export class DoorSystem {
         doorPart.sprite.setActive(true);
       });
 
-      // Mostrar feedback visual de que no hay llaves
-      doorParts.forEach((doorPart) => {
-        this.scene.tweens.add({
-          targets: doorPart.sprite,
-          x: doorPart.sprite.x - 5,
-          duration: 50,
-          yoyo: true,
-          repeat: 3,
-          ease: "Sine.easeInOut",
-        });
-      });
+      // No hay feedback visual - la puerta permanece completamente estática
     }
   }
 

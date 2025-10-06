@@ -27,11 +27,11 @@ export class MiNivel extends BaseGameScene {
     // 1. Crear el sistema
     this.coinSystem = new CoinSystem(this, {
       textureKey: "PT_TOKEN_MASTER_001",
-      scale: 0.03,
+      scale: 1.0, // Escala recomendada (imagen base: 50x53px)
       depth: 10,
       // Opcional: sonido de recolección
-      collectSoundKey: "coin_sound",
-      soundVolume: 0.3,
+      collectSoundKey: "coin_collect_sound",
+      soundVolume: 0.5,
     });
 
     // 2. Definir posiciones de las monedas
@@ -73,7 +73,7 @@ export class MiNivel extends BaseGameScene {
   textureKey: string;           // Clave de la textura de la moneda
 
   // Opcional
-  scale?: number;               // Escala de la moneda (default: 0.03)
+  scale?: number;               // Escala de la moneda (default: 1.0 para 50x53px)
   depth?: number;               // Profundidad de renderizado (default: 10)
   collectSoundKey?: string;     // Clave del sonido de recolección
   soundVolume?: number;         // Volumen del sonido (default: 0.3)

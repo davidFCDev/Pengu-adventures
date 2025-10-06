@@ -14,35 +14,35 @@ export class PreloadScene extends Phaser.Scene {
     );
 
     // ========== PRELOAD GAME ASSETS HERE ==========
-    // Cargar el mapa de prueba
-    this.load.tilemapTiledJSON("TestingMap", "assets/TestingMap.json");
-
     // Cargar el mapa Level1
     this.load.tilemapTiledJSON("Level1", "assets/Level1.json");
 
-    // Cargar los tilesets como imágenes (necesario para el tilemap)
+    // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
       "spritesheet-tiles-default",
-      "assets/spritesheet-tiles-default.png"
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/spritesheet-tiles-default-VGxRqX4iMQmNE6wqP0jFWEtZxi521V.png?XcMs"
     );
     this.load.image(
       "spritesheet-backgrounds-default",
-      "assets/spritesheet-backgrounds-default.png"
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/spritesheet-backgrounds-default-YVhyThkCAlbUEbQtWieth2aP35NEdu.png?XCQc"
     );
 
     // Cargar el tileset también como spritesheet para poder acceder a frames individuales
-    // (usado por KeySystem, DoorSystem, etc.)
+    // (usado por KeySystem, DoorSystem, etc.) - DESDE VERCEL
     this.load.spritesheet(
       "spritesheet-tiles-frames",
-      "assets/spritesheet-tiles-default.png",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/spritesheet-tiles-default-VGxRqX4iMQmNE6wqP0jFWEtZxi521V.png?XcMs",
       {
         frameWidth: 64,
         frameHeight: 64,
       }
     );
 
-    // Cargar imagen de coleccionables/tokens
-    this.load.image("PT_TOKEN_MASTER_001", "assets/PT_TOKEN_MASTER_001.png");
+    // Cargar imagen de coleccionables/tokens - Moneda Pengu
+    this.load.image(
+      "PT_TOKEN_MASTER_001",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/pengu_coin-r3nN1TppT4jbx7JEGzQzuql8jGACq7.png?oCKD"
+    );
 
     // Cargar todos los sprites del pingüino
     PenguinSprites.loadSprites(this);
@@ -153,6 +153,33 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "blow_sound",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/blow-4zYjtNIREJ7SWiPLYM6lOSwk3thCAi.mp3?IWs8"
+    );
+
+    // ========== SONIDOS DE COLECCIONABLES ==========
+    // Sonido al recoger moneda y llave (pop)
+    this.load.audio(
+      "coin_collect_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/pop-aGrlCVlQJeHEptLFGFa8Rrxeh7yTDA.mp3?lewT"
+    );
+
+    // Sonido al recoger mini-pingüino
+    this.load.audio(
+      "minipingu_collect_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/yuhu-y2NRnaCo9kkGxUYapknIPeqNf90F42.mp3?MQ5S"
+    );
+
+    // ========== MÚSICA DE NIVEL ==========
+    // Música de fondo para Level1
+    this.load.audio(
+      "level1_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-V1uFKODckgpJTx5QhnfpfC80ElhEEm.mp3?AAC8"
+    );
+
+    // ========== SONIDOS DE PUERTAS ==========
+    // Sonido al abrir/desaparecer puerta con llave
+    this.load.audio(
+      "door_open_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/door-fGm8Vz3bRA004JBgZzE0w5CHkIXggR.mp3?W5hb"
     );
 
     // Handle loading completion
@@ -347,7 +374,7 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level1 por defecto (cambiar a "TestingMapScene" para pruebas)
+    // Iniciar Level1
     this.scene.start("Level1");
   }
 
