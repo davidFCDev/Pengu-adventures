@@ -1,6 +1,7 @@
 import { initializeSDKMock } from "../.remix/mocks/RemixSDKMock";
 import GameSettings from "./config/GameSettings";
 import { Level1 } from "./scenes/Level1";
+import { Level2 } from "./scenes/Level2";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
@@ -17,8 +18,8 @@ const config: Phaser.Types.Core.GameConfig = {
     height: GameSettings.canvas.height,
   },
   backgroundColor: "#1a1a1a",
-  // Scene order: PreloadScene -> Level1
-  scene: [PreloadScene, Level1],
+  // Scene order: PreloadScene -> Level1 -> Level2
+  scene: [PreloadScene, Level1, Level2],
   physics: {
     default: "arcade",
     arcade: {

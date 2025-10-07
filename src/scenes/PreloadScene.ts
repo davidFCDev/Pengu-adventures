@@ -14,8 +14,14 @@ export class PreloadScene extends Phaser.Scene {
     );
 
     // ========== PRELOAD GAME ASSETS HERE ==========
-    // Cargar el mapa Level1
-    this.load.tilemapTiledJSON("Level1", "assets/Level1.json");
+    // Cargar el mapa Level1 desde GitHub
+    this.load.tilemapTiledJSON(
+      "Level1",
+      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level1.json"
+    );
+
+    // Cargar el mapa Level2 (local por ahora, cambiar a GitHub después)
+    this.load.tilemapTiledJSON("Level2", "assets/Level2.json");
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
@@ -168,11 +174,17 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/yuhu-y2NRnaCo9kkGxUYapknIPeqNf90F42.mp3?MQ5S"
     );
 
-    // ========== MÚSICA DE NIVEL ==========
+    // ========== MÚSICA DE NIVELES ==========
     // Música de fondo para Level1
     this.load.audio(
       "level1_music",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-V1uFKODckgpJTx5QhnfpfC80ElhEEm.mp3?AAC8"
+    );
+
+    // Música de fondo para Level2
+    this.load.audio(
+      "level2_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Level2-0LVHTXGqK32B0P41WqB0n10sKfVHiQ.mp3?UVgv"
     );
 
     // ========== SONIDOS DE PUERTAS ==========
@@ -374,8 +386,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level1
-    this.scene.start("Level1");
+    // Iniciar Level2 (desarrollo) - Cambiar a "Level1" en producción
+    this.scene.start("Level2");
   }
 
   private loadingComplete(): void {

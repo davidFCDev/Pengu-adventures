@@ -119,6 +119,7 @@
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "Level1.tmx",
         "LevelBaseToCopy.tmx",
         "TestingMap.tmx",
         "LevelBase.tmx",

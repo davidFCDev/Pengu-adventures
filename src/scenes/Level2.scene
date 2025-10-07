@@ -1,0 +1,544 @@
+{
+    "id": "6745faab-b3b9-44b9-8537-c8a209b93930",
+    "sceneType": "SCENE",
+    "settings": {
+        "snapEnabled": true,
+        "snapWidth": 32,
+        "snapHeight": 32,
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "Level2",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 5120,
+        "borderHeight": 1920
+    },
+    "displayList": [
+        {
+            "type": "TilemapLayer",
+            "id": "8021f09e-90e9-4c23-85ab-5401077d7e3c",
+            "label": "fondo_1",
+            "tilemapId": "a577ec3a-25b8-4d0a-acdb-2a31b376942f",
+            "layerName": "fondo",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
+        },
+        {
+            "type": "TilemapLayer",
+            "id": "94f30792-c47f-44e3-949e-1188a8119ac5",
+            "label": "superficies_1",
+            "tilemapId": "2368870b-ff91-4932-af3b-fa04f58eeeda",
+            "layerName": "superficies",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
+        },
+        {
+            "type": "TilemapLayer",
+            "id": "ad7462dc-df24-4264-b360-02aed91e5db3",
+            "label": "objects_1",
+            "tilemapId": "05657882-b4b7-4409-9828-d9c0fa3012c1",
+            "layerName": "objects",
+            "tilesets": [
+                "spritesheet-tiles-default",
+                "spritesheet-backgrounds-default"
+            ]
+        },
+        {
+            "type": "Image",
+            "id": "e0bbd52f-1c92-4e9c-a117-2c8193fc4783",
+            "label": "image_28",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 672,
+            "y": 1664,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "a10003a0-0885-4cbf-b74c-cfb8b2f2a649",
+            "label": "image",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1408,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "127129e8-392c-4f9f-8ee0-c59123225b19",
+            "label": "image_1",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1600,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "4e29baa7-176f-4834-9a76-fd38b0c6e8e1",
+            "label": "image_2",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1888,
+            "y": 1856,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "c3500375-879a-49ca-b67e-9074f119de59",
+            "label": "image_3",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 224,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "34bd71a0-f275-4e0f-9629-ec2637a74cf5",
+            "label": "image_4",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 96,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "80956648-fdf4-4016-ac3d-ca72b57f2b12",
+            "label": "image_5",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2240,
+            "y": 1696,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "9b647be8-3793-49e2-b457-bc8d96aff3de",
+            "label": "image_6",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2400,
+            "y": 1696,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "0ac9b737-f46e-4abc-9d65-6e9a5a1611bf",
+            "label": "image_7",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3008,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "707e38cf-15c1-4208-beb4-5e0ce36b87c9",
+            "label": "image_8",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3200,
+            "y": 1600,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "2c725e81-b002-4459-87dc-bd51f6699fbb",
+            "label": "image_9",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3552,
+            "y": 1824,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "048d2520-1652-4f3c-8d45-4c73dbb9b31d",
+            "label": "image_10",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 4064,
+            "y": 1824,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "f4e63392-044b-4c60-ab33-2e00211b71c5",
+            "label": "image_11",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 4608,
+            "y": 1792,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "265c8cb4-5613-4141-be9b-bcf2cc389757",
+            "label": "image_12",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 4928,
+            "y": 1472,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "96e74ce6-2e46-4c9e-ad2c-38d0ecb38c09",
+            "label": "image_13",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 4128,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "5ab45361-6b91-4cdb-a62d-f80e2a808130",
+            "label": "image_14",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3872,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "fa0881d7-fb46-47c8-8c17-edeb17e83135",
+            "label": "image_15",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3584,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "7c3f3150-3f9b-4a4c-a471-10f7b66818da",
+            "label": "image_16",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2976,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "6c596d07-0e74-4327-8c5d-5b6b90427970",
+            "label": "image_17",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2112,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "971a5a8a-55e7-49c0-9571-dca8fc8a7b51",
+            "label": "image_18",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1824,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "6b16d501-49a1-4d6d-b950-e6f00e5da1dc",
+            "label": "image_19",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1568,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "86d4fb87-dafd-4c30-8a01-c61747385aad",
+            "label": "image_20",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1312,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "36630473-cddc-4233-9648-cb9cbd9e15eb",
+            "label": "image_21",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 992,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "6b6b7e17-91af-4add-b690-fadb41031a3a",
+            "label": "image_22",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 672,
+            "y": 1152,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "f829d4f8-f2de-497a-9a9f-0fdd3486b2b1",
+            "label": "image_23",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 128,
+            "y": 1344,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "85b50362-2280-4608-b510-8215ddd447b1",
+            "label": "miniegg",
+            "texture": {
+                "key": "mini-pingu"
+            },
+            "x": 3008,
+            "y": 1920
+        },
+        {
+            "type": "Image",
+            "id": "7733a626-d96f-4e34-ae03-7a855ae859be",
+            "label": "miniegg_1",
+            "texture": {
+                "key": "mini-pingu"
+            },
+            "x": 2368,
+            "y": 1344
+        },
+        {
+            "type": "Image",
+            "id": "52f402e9-0921-4c5f-a774-33737e384fd3",
+            "label": "miniegg_2",
+            "texture": {
+                "key": "mini-pingu"
+            },
+            "x": 64,
+            "y": 544
+        },
+        {
+            "type": "Image",
+            "id": "ed33f837-22fa-4a85-840c-8bc5a6a874f1",
+            "label": "image_24",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 864,
+            "y": 640,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "05e2775a-3099-45a6-a694-a1676a49efcb",
+            "label": "image_25",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1760,
+            "y": 640,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "067dcbc8-95f4-471b-9c63-cd419a0ac408",
+            "label": "image_26",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2656,
+            "y": 640,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "043580a6-1bd4-4dcb-98f3-cc3858f58887",
+            "label": "image_27",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3232,
+            "y": 288,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "b909988b-bd21-4a6a-acd4-fc8a5ea022f9",
+            "label": "image_29",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 2528,
+            "y": 288,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "e4ba9464-20a6-4361-a1ab-8738559dc50d",
+            "label": "image_30",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 1568,
+            "y": 288,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "33d423e1-aab4-4302-b983-464bef24144c",
+            "label": "image_31",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 928,
+            "y": 288,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "22e5be15-5241-493c-8971-9ae92365c1af",
+            "label": "image_32",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 4192,
+            "y": 384,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        },
+        {
+            "type": "Image",
+            "id": "df913795-3135-4ee3-97e0-cbfdd0f09e79",
+            "label": "image_33",
+            "texture": {
+                "key": "PT_TOKEN_MASTER_001"
+            },
+            "x": 3904,
+            "y": 128,
+            "scaleX": 0.03,
+            "scaleY": 0.03
+        }
+    ],
+    "plainObjects": [
+        {
+            "id": "a577ec3a-25b8-4d0a-acdb-2a31b376942f",
+            "type": "Tilemap",
+            "label": "level2",
+            "key": "Level2",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        },
+        {
+            "id": "2368870b-ff91-4932-af3b-fa04f58eeeda",
+            "type": "Tilemap",
+            "label": "level",
+            "key": "Level2",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        },
+        {
+            "id": "05657882-b4b7-4409-9828-d9c0fa3012c1",
+            "type": "Tilemap",
+            "label": "level_1",
+            "key": "Level2",
+            "tilesets": [
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                },
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}
