@@ -505,7 +505,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       (!this.isClimbing &&
         (this.cursors!.down.isDown || this.wasdKeys!.S.isDown));
     const wasCrouching = this.isCrouching;
-    this.isCrouching = isCrouchPressed;
+
+    // 🏠 DETECCIÓN DE TECHO: Si hay techo encima, forzar crouch
+    const hasCeilingAbove = this.checkCeilingCollision();
+
+    this.isCrouching = isCrouchPressed || hasCeilingAbove;
+
     if (
       this.isCrouching &&
       this.isOnGround &&
@@ -555,6 +560,38 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setOffset(7, 5);
     }
   }
+
+  /**
+   * 🏠 Verificar si hay un techo (tile con colisión) encima del jugador
+   * Detecta si el jugador puede levantarse o debe permanecer agachado
+   */
+  private checkCeilingCollision(): boolean {
+    const surfaceLayer = (this.scene as any).surfaceLayer;
+    if (!surfaceLayer) return false;
+
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // Calcular la posición donde estaría la cabeza si se levanta (altura normal)
+    const normalHeight = 110;
+    const headY = this.y - normalHeight / 2; // Parte superior del hitbox normal
+
+    // Verificar tiles en 3 posiciones horizontales (izquierda, centro, derecha)
+    const checkPoints = [
+      { x: this.x - 30, y: headY }, // Izquierda
+      { x: this.x, y: headY }, // Centro
+      { x: this.x + 30, y: headY }, // Derecha
+    ];
+
+    for (const point of checkPoints) {
+      const tile = surfaceLayer.getTileAtWorldXY(point.x, point.y, true);
+      if (tile && tile.properties?.collision === true) {
+        return true; // Hay techo, debe permanecer agachado
+      }
+    }
+
+    return false; // No hay techo, puede levantarse
+  }
+
   private throwSnowball(): void {
     // Activar bandera para proteger la animación THROW
     this.isPlayingThrow = true;

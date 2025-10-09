@@ -121,6 +121,11 @@ export class PenguinSprites {
    * Crea todas las animaciones del pingüino
    */
   public static createAnimations(scene: Phaser.Scene): void {
+    // Verificar si las animaciones ya existen (solo crear una vez)
+    if (scene.anims.exists("penguin_standing")) {
+      return;
+    }
+
     // STANDING - Estado natural (1 frame, no animación)
     scene.anims.create({
       key: "penguin_standing",

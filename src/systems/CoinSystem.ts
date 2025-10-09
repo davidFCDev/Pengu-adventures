@@ -154,9 +154,6 @@ export class CoinSystem {
       collected: this.collectedCoins,
       total: this.totalCoins,
     });
-
-    // Log de debug
-    console.log(`Monedas recogidas: ${this.collectedCoins}/${this.totalCoins}`);
   }
 
   /**

@@ -49,8 +49,9 @@ export class SnowParticleSystem {
     for (let i = 0; i < this.maxSnowflakes; i++) {
       const graphic = this.scene.add.graphics();
 
-      // Depth menor que el UI (que está en 1000) pero mayor que el fondo
-      graphic.setDepth(90);
+      // ❄️ Depth en el fondo (menor que cualquier otra capa)
+      // Fondo: 0-5, Nieve: 3, Objetos/Player: 10+, UI: 1000
+      graphic.setDepth(3);
 
       // Las partículas siguen el mundo (no la cámara)
       graphic.setScrollFactor(1, 1);
@@ -138,14 +139,8 @@ export class SnowParticleSystem {
       snowflake.x += snowflake.velocityX * deltaSeconds;
       snowflake.y += snowflake.velocityY * deltaSeconds;
 
-      // Verificar colisión con tiles
-      const nextY = snowflake.y + snowflake.size;
-      if (this.checkTileCollision(snowflake.x, nextY)) {
-        // Reiniciar el copo cuando colisiona
-        this.resetSnowflake(snowflake);
-        snowflake.graphic.clear();
-        continue;
-      }
+      // ❄️ NIEVE INFINITA: Ya no verificamos colisiones con tiles
+      // Las partículas caen indefinidamente sin detenerse
 
       // Si sale por abajo del mapa, reiniciar arriba
       if (snowflake.y > this.mapHeight) {
@@ -215,7 +210,7 @@ export class SnowParticleSystem {
     // Si necesitamos más copos, crear nuevos
     while (this.snowflakes.length < newCount) {
       const graphic = this.scene.add.graphics();
-      graphic.setDepth(90);
+      graphic.setDepth(3); // Mismo depth que el resto de copos
       graphic.setScrollFactor(1, 1);
 
       this.snowflakes.push({

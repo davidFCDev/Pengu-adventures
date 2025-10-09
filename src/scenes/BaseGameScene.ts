@@ -4,6 +4,11 @@ import { Player } from "../objects/player/Player";
 import { LifeSystem } from "../systems/LifeSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
 import { SnowParticleSystem } from "../systems/SnowParticleSystem";
+import { SpikeBoxSystem } from "../systems/SpikeBoxSystem";
+import {
+  TemporaryPlatformConfig,
+  TemporaryPlatformSystem,
+} from "../systems/TemporaryPlatformSystem";
 import { PlayerStateManager, setupTileMapSystem } from "../systems/tilemap";
 
 /**
@@ -51,6 +56,20 @@ export interface GameSceneConfig {
     safeDistance?: number;
     enemyTypeRatio?: { basic: number; freezable: number; aquatic: number };
   };
+  /** Habilitar sistema de cajas con pinchos (opcional, default: false) */
+  enableSpikeBoxes?: boolean;
+  /** Configuración del sistema de cajas con pinchos (opcional) */
+  spikeBoxConfig?: {
+    spikeBoxTileIds?: number[]; // GIDs de las cajas (default: buscar tiles con smash=true)
+    moveInterval?: number; // Intervalo de movimiento en ms (default: 2000)
+    moveSpeed?: number; // Velocidad de movimiento (default: 100)
+    damage?: number; // Daño al jugador (default: 1)
+    knockbackForce?: number; // Fuerza de repulsión (default: 300)
+  };
+  /** Habilitar sistema de plataformas temporales (opcional, default: false) */
+  enableTemporaryPlatforms?: boolean;
+  /** Configuración del sistema de plataformas temporales (opcional) */
+  temporaryPlatformConfig?: Partial<TemporaryPlatformConfig>;
 }
 
 /**
@@ -90,6 +109,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected snowParticleSystem?: SnowParticleSystem; // Sistema de partículas de nieve
   protected enemySystem?: EnemySystem; // Sistema de enemigos
   protected projectileSystem?: ProjectileSystem; // Sistema de proyectiles
+  protected spikeBoxSystem?: SpikeBoxSystem; // Sistema de cajas con pinchos
+  protected temporaryPlatformSystem?: TemporaryPlatformSystem; // Sistema de plataformas temporales
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -177,6 +198,10 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * pero generalmente solo necesitarán implementar createMap()
    */
   create(): void {
+    // 0. IMPORTANTE: Resetear banderas de estado al inicio
+    this.isGameOverInProgress = false;
+    this.hasFinishedLevel = false;
+
     // 1. Crear el mapa específico (implementado por la escena hija)
     this.createMap();
 
@@ -222,15 +247,25 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 13. Crear sistema de proyectiles
     this.createProjectileSystem();
 
-    // 14. Crear sistema de enemigos (si está habilitado)
+    // 14. Crear sistema de cajas con pinchos (si está habilitado)
+    if (this.config.enableSpikeBoxes) {
+      this.createSpikeBoxSystem();
+    }
+
+    // 15. Crear sistema de plataformas temporales (si está habilitado)
+    if (this.config.enableTemporaryPlatforms) {
+      this.createTemporaryPlatformSystem();
+    }
+
+    // 16. Crear sistema de enemigos (si está habilitado)
     if (this.config.enableEnemies) {
       this.createEnemySystem();
     }
 
-    // 15. Configurar detección de final de nivel
+    // 17. Configurar detección de final de nivel
     this.setupLevelEndDetection();
 
-    // 16. Escuchar evento de soplido para destruir muros de nieve
+    // 18. Escuchar evento de soplido para destruir muros de nieve
     this.events.on("playerBlowing", () => {
       this.checkSnowWallDestruction();
     });
@@ -243,6 +278,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.player && this.playerStateManager) {
       this.player.update();
       this.playerStateManager.update(); // Centraliza TODA la lógica de states
+    }
+
+    // Actualizar sistema de cajas con pinchos
+    if (this.spikeBoxSystem) {
+      this.spikeBoxSystem.update();
     }
 
     // Actualizar sistema de enemigos
@@ -872,8 +912,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
         // Marcar que el game over está en proceso
         this.isGameOverInProgress = true;
 
-        // Pequeño delay para que se vea la última animación de pérdida de vida
-        this.time.delayedCall(1000, () => {
+        // Delay breve para que se vea la última animación de pérdida de vida
+        // y se reproduzca el sonido de game over
+        this.time.delayedCall(500, () => {
           this.restartLevel();
         });
       }
@@ -940,46 +981,31 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Reiniciar el nivel actual
    */
   private restartLevel(): void {
-    // 0. CRÍTICO: Cancelar todos los timers pendientes para evitar callbacks retrasados
+    // Reproducir sonido de game over
+    this.sound.play("game_over_sound", {
+      volume: 0.6,
+    });
+
+    // Detener toda la música actual antes de reiniciar
+    this.stopCurrentMusic();
+
+    // CRÍTICO: Cancelar todos los timers pendientes
     this.time.removeAllEvents();
 
-    // 1. Resetear completamente el estado del jugador
-    this.player.resetForRestart();
+    // CRÍTICO: Cancelar todos los tweens activos
+    this.tweens.killAll();
 
-    // 2. Volver al jugador a modo normal
-    if (this.player.getIsGhost()) {
-      this.player.setGhostMode(false);
-    }
-
-    // 3. Reiniciar sistema de vidas (después de limpiar timers)
-    this.lifeSystem.resetLivesImmediate();
-
-    // 4. Encontrar y mover a posición de inicio real
-    this.positionPlayerAtStart();
-
-    // 5. Detener velocidades y resetear estado
-    const body = this.player.body as Phaser.Physics.Arcade.Body;
-    body.setVelocity(0, 0);
-
-    // 6. Resetear estados del jugador
-    this.player.setSwimming(false);
-    this.player.setClimbing(false);
-
-    // 7. Efecto visual de respawn mejorado
-    this.player.setAlpha(0);
-    this.player.setScale(0.5);
-
-    this.tweens.add({
-      targets: this.player,
-      alpha: 1,
-      scaleX: 1,
-      scaleY: 1,
-      duration: 800,
-      ease: "Back.easeOut",
-      onComplete: () => {
-        // Resetear bandera de game over
-        this.isGameOverInProgress = false;
-      },
+    // Esperar un poco para que se escuche el sonido de game over
+    // antes de reiniciar la escena
+    this.time.delayedCall(1500, () => {
+      // REINICIO COMPLETO: Detener la escena y volverla a iniciar
+      // Esto es más limpio que scene.restart() porque:
+      // 1. Llama a shutdown() que limpia todos los recursos
+      // 2. Destruye completamente la escena
+      // 3. La vuelve a crear desde cero (como la primera vez)
+      const sceneName = this.scene.key;
+      this.scene.stop(sceneName);
+      this.scene.start(sceneName);
     });
   }
 
@@ -1025,11 +1051,24 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Detener música actual
    */
   private stopCurrentMusic(): void {
-    if (this.currentMusic && this.currentMusic.isPlaying) {
-      this.currentMusic.stop();
+    // Detener y destruir la música actual si existe
+    if (this.currentMusic) {
+      if (this.currentMusic.isPlaying) {
+        this.currentMusic.stop();
+      }
       this.currentMusic.destroy();
       this.currentMusic = undefined;
     }
+
+    // Seguridad adicional: detener TODOS los sonidos en loop
+    // Esto previene duplicación de música al reiniciar
+    this.sound.getAllPlaying().forEach((sound) => {
+      const webAudioSound = sound as Phaser.Sound.WebAudioSound;
+      if (webAudioSound.loop) {
+        sound.stop();
+        sound.destroy();
+      }
+    });
   }
 
   /**
@@ -1296,6 +1335,67 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
+   * Crear sistema de cajas con pinchos
+   */
+  protected createSpikeBoxSystem(): void {
+    if (!this.surfaceLayer) {
+      console.warn(
+        "⚠️ No se puede crear sistema de cajas con pinchos: falta surfaceLayer"
+      );
+      return;
+    }
+
+    const config = this.config.spikeBoxConfig || {};
+
+    this.spikeBoxSystem = new SpikeBoxSystem(this, {
+      tilemap: this.tilemap,
+      surfaceLayer: this.surfaceLayer,
+      spikeBoxTileIds: config.spikeBoxTileIds || [], // Se buscarán tiles con smash=true si está vacío
+      moveInterval: config.moveInterval,
+      moveSpeed: config.moveSpeed,
+      damage: config.damage,
+      knockbackForce: config.knockbackForce,
+    });
+
+    // Crear las cajas
+    this.spikeBoxSystem.createSpikeBoxes();
+
+    // Configurar colisión con el jugador
+    if (this.player) {
+      this.spikeBoxSystem.setupPlayerCollision(this.player);
+    }
+  }
+
+  /**
+   * Crear sistema de plataformas temporales
+   */
+  protected createTemporaryPlatformSystem(): void {
+    if (!this.tilemap || !this.player) {
+      console.warn(
+        "⚠️ No se puede crear sistema de plataformas temporales: falta tilemap o player"
+      );
+      return;
+    }
+
+    const config = this.config.temporaryPlatformConfig || {};
+
+    // El GID es obligatorio, si no se proporciona mostrar warning
+    if (!config.temporaryPlatformGID) {
+      console.warn(
+        "⚠️ No se puede crear sistema de plataformas temporales: falta temporaryPlatformGID en la configuración"
+      );
+      return;
+    }
+
+    this.temporaryPlatformSystem = new TemporaryPlatformSystem(
+      this,
+      this.tilemap,
+      this.player,
+      config as TemporaryPlatformConfig
+    );
+  }
+
+  /**
    * Crear sistema de enemigos automático
    */
   protected createEnemySystem(): void {
@@ -1415,12 +1515,45 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Cleanup cuando se destruye la escena
    */
   shutdown(): void {
+    // Detener toda la música
     this.stopCurrentMusic();
+
+    // CRÍTICO: Cancelar todos los timers pendientes
+    this.time.removeAllEvents();
+
+    // CRÍTICO: Cancelar todos los tweens activos
+    this.tweens.killAll();
+
+    // Remover todos los event listeners personalizados
+    this.events.removeAllListeners();
+
+    // Destruir el player completamente
+    if (this.player) {
+      this.player.destroy();
+      this.player = undefined as any;
+    }
+
+    // Limpiar todos los colliders de física
+    if (this.physics && this.physics.world) {
+      this.physics.world.colliders.destroy();
+    }
 
     // Destruir sistema de partículas de nieve
     if (this.snowParticleSystem) {
       this.snowParticleSystem.destroy();
       this.snowParticleSystem = undefined;
+    }
+
+    // Destruir sistema de cajas con pinchos
+    if (this.spikeBoxSystem) {
+      this.spikeBoxSystem.destroy();
+      this.spikeBoxSystem = undefined;
+    }
+
+    // Destruir sistema de plataformas temporales
+    if (this.temporaryPlatformSystem) {
+      this.temporaryPlatformSystem.destroy();
+      this.temporaryPlatformSystem = undefined;
     }
 
     // Destruir sistema de enemigos
@@ -1434,5 +1567,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.projectileSystem.destroy();
       this.projectileSystem = undefined;
     }
+
+    // Destruir sistema de vidas
+    if (this.lifeSystem) {
+      this.lifeSystem.destroy();
+      this.lifeSystem = undefined as any;
+    }
+
+    // Limpiar referencias del tilemap
+    this.tilemap = undefined as any;
+    this.surfaceLayer = undefined as any;
+    this.backgroundLayer = undefined as any;
+    this.objectsLayer = undefined as any;
   }
 }

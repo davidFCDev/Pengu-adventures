@@ -160,6 +160,19 @@
                 "key": "Level2"
             },
             {
+                "url": "assets/sprites/MediumSlime_Blue.png",
+                "frameConfig": {
+                    "frameWidth": 310,
+                    "frameHeight": 310,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "MediumSlime_Blue"
+            },
+            {
                 "url": "assets/mini-pingu.png",
                 "type": "image",
                 "key": "mini-pingu"

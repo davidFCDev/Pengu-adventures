@@ -5,15 +5,12 @@ export enum FreezableEnemyState {
 }
 
 export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
-  private enemyState: FreezableEnemyState = FreezableEnemyState.IDLE;
-  private pointA: { x: number; y: number };
-  private pointB: { x: number; y: number };
-  private currentTarget: { x: number; y: number };
-  private idleTimer: number = 0;
+  private enemyState: FreezableEnemyState = FreezableEnemyState.MOVING; // Comienza moviéndose
+  private moveDirection: number = 1; // 1 = derecha, -1 = izquierda
   private frozenTimer: number = 0;
-  private moveSpeed: number = 80; // Más rápido que BasicEnemy (80 vs 50)
+  private moveSpeed: number = 80; // Velocidad de patrullaje
   private collisionLayer: Phaser.Tilemaps.TilemapLayer;
-  private iceBlock?: Phaser.Physics.Arcade.Image; // ← Cambiado de Image a Physics.Arcade.Image
+  private iceBlock?: Phaser.Physics.Arcade.Image;
   private originalTint: number;
 
   // Identificador único para encontrar este enemigo
@@ -23,15 +20,12 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     scene: Phaser.Scene,
     x: number,
     y: number,
-    pointA: { x: number; y: number },
-    pointB: { x: number; y: number },
-    collisionLayer: Phaser.Tilemaps.TilemapLayer
+    collisionLayer: Phaser.Tilemaps.TilemapLayer,
+    initialDirection: number = 1 // Dirección inicial (1 o -1)
   ) {
-    super(scene, x, y, "");
+    super(scene, x, y, "MediumSlime_Blue", 0);
 
-    this.pointA = pointA;
-    this.pointB = pointB;
-    this.currentTarget = pointA;
+    this.moveDirection = initialDirection;
     this.collisionLayer = collisionLayer;
     this.enemyId = `freezable_enemy_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -42,99 +36,44 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     // Añadir referencia personalizada para colisiones
     (this as any).enemyRef = this;
 
-    // Configurar físicas (igual que BasicEnemy)
+    // Configurar físicas
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(70, 70);
-    body.setOffset(7, 7);
+    body.setSize(200, 200); // Ajustar hitbox al tamaño del slime
+    body.setOffset(55, 110); // Centrar hitbox (el sprite es 310x310 a escala 0.5)
     body.setCollideWorldBounds(true);
     body.setGravityY(800);
 
     // Configurar colisiones con el tilemap
     scene.physics.add.collider(this as any, collisionLayer);
 
-    // Crear visual del enemigo
-    this.createVisual();
+    // Configurar sprite
+    this.setScale(0.5); // El sprite es grande (310x310), reducir a la mitad
+    this.setOrigin(0.5, 0.5);
+
+    // Crear animación WALK si no existe
+    this.createWalkAnimation();
     this.originalTint = this.tintTopLeft;
 
-    // Iniciar el ciclo
-    this.startIdlePhase();
-
-    // Añadir animación de oscilación sutil para efecto cartoon
-    if (this.scene && this.scene.tweens) {
-      this.scene.tweens.add({
-        targets: this,
-        scaleY: 0.95,
-        duration: 800,
-        yoyo: true,
-        repeat: -1,
-        ease: "Sine.easeInOut",
-      });
-    }
+    // Iniciar el movimiento
+    this.startMoving();
   }
 
-  private createVisual(): void {
-    // Crear una textura única para este enemigo (azul en lugar de rojo)
-    if (!this.scene.textures.exists("freezableEnemyTexture")) {
-      const graphics = this.scene.add.graphics();
-
-      // Cuerpo principal (círculo azul)
-      graphics.fillStyle(0x3366ff);
-      graphics.fillCircle(42, 42, 36);
-
-      // Sombra/borde para efecto 3D
-      graphics.lineStyle(5, 0x0033cc);
-      graphics.strokeCircle(42, 42, 36);
-
-      // Ojos grandes y expresivos (blancos)
-      graphics.fillStyle(0xffffff);
-      graphics.fillCircle(30, 30, 10);
-      graphics.fillCircle(54, 30, 10);
-
-      // Borde de ojos
-      graphics.lineStyle(2, 0x000000);
-      graphics.strokeCircle(30, 30, 10);
-      graphics.strokeCircle(54, 30, 10);
-
-      // Pupilas grandes y animadas
-      graphics.fillStyle(0x000000);
-      graphics.fillCircle(32, 32, 5);
-      graphics.fillCircle(52, 32, 5);
-
-      // Reflejos en los ojos
-      graphics.fillStyle(0xffffff);
-      graphics.fillCircle(34, 30, 3);
-      graphics.fillCircle(50, 30, 3);
-
-      // Boca enojada (curva inversa)
-      graphics.lineStyle(4, 0x000000);
-      graphics.beginPath();
-      graphics.arc(42, 62, 12, Math.PI, 0, false);
-      graphics.strokePath();
-
-      // Cuernos pequeños para diferenciarlo
-      graphics.fillStyle(0x1a1aff);
-      graphics.beginPath();
-      graphics.moveTo(20, 15);
-      graphics.lineTo(15, 5);
-      graphics.lineTo(25, 10);
-      graphics.closePath();
-      graphics.fillPath();
-
-      graphics.beginPath();
-      graphics.moveTo(64, 15);
-      graphics.lineTo(69, 5);
-      graphics.lineTo(59, 10);
-      graphics.closePath();
-      graphics.fillPath();
-
-      // Generar textura
-      graphics.generateTexture("freezableEnemyTexture", 84, 84);
-      graphics.destroy();
+  private createWalkAnimation(): void {
+    // Crear animación WALK solo si no existe
+    if (!this.scene.anims.exists("slime_walk")) {
+      this.scene.anims.create({
+        key: "slime_walk",
+        frames: this.scene.anims.generateFrameNumbers("MediumSlime_Blue", {
+          start: 0,
+          end: 3, // Solo los 4 frames de la primera fila (0-3)
+        }),
+        frameRate: 8, // Velocidad de la animación
+        repeat: -1, // Loop infinito
+      });
     }
 
-    // Aplicar la textura al sprite
-    this.setTexture("freezableEnemyTexture");
-    this.setDisplaySize(84, 84);
+    // Reproducir la animación
+    this.play("slime_walk");
   }
 
   /**
@@ -165,26 +104,30 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
       const graphics = this.scene.add.graphics();
       graphics.setPosition(0, 0);
 
-      // Bloque de hielo con efecto cristalino (100x100)
-      graphics.fillStyle(0x88ccff, 0.4);
-      graphics.fillRoundedRect(0, 0, 100, 100, 8);
+      // Bloque de hielo MÁS GRANDE y MÁS VISIBLE (140x140)
+      graphics.fillStyle(0x88ccff, 0.7); // Más opaco (0.7 en lugar de 0.4)
+      graphics.fillRoundedRect(0, 0, 140, 140, 10);
 
-      graphics.lineStyle(4, 0xaaddff, 0.8);
-      graphics.strokeRoundedRect(0, 0, 100, 100, 8);
+      // Borde más grueso y visible
+      graphics.lineStyle(5, 0xaaddff, 1); // Completamente opaco
+      graphics.strokeRoundedRect(0, 0, 140, 140, 10);
 
-      graphics.lineStyle(2, 0xffffff, 0.6);
-      graphics.lineBetween(10, 20, 40, 10);
-      graphics.lineBetween(60, 15, 90, 30);
-      graphics.lineBetween(15, 70, 35, 85);
-      graphics.lineBetween(70, 60, 85, 90);
+      // Más detalles de hielo para mayor visibilidad
+      graphics.lineStyle(3, 0xffffff, 0.8);
+      graphics.lineBetween(15, 25, 50, 15);
+      graphics.lineBetween(80, 20, 125, 40);
+      graphics.lineBetween(20, 90, 45, 115);
+      graphics.lineBetween(90, 80, 120, 120);
 
-      graphics.fillStyle(0xffffff, 0.8);
-      graphics.fillCircle(25, 25, 3);
-      graphics.fillCircle(75, 35, 2);
-      graphics.fillCircle(30, 75, 2);
-      graphics.fillCircle(80, 80, 3);
+      // Reflejos más grandes y brillantes
+      graphics.fillStyle(0xffffff, 0.9);
+      graphics.fillCircle(30, 30, 5);
+      graphics.fillCircle(105, 45, 4);
+      graphics.fillCircle(40, 100, 4);
+      graphics.fillCircle(110, 110, 5);
 
-      graphics.generateTexture("iceBlockTexture", 100, 100);
+      // Generar textura más grande
+      graphics.generateTexture("iceBlockTexture", 140, 140);
       graphics.destroy();
     }
 
@@ -194,38 +137,46 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
       this.y,
       "iceBlockTexture"
     );
+
     this.iceBlock.setDepth(this.depth + 1);
     this.iceBlock.setAlpha(0);
 
-    // Configurar física del bloque de hielo
-    const iceBody = this.iceBlock.body as Phaser.Physics.Arcade.Body;
-    if (iceBody) {
+    // Usar nextTick para asegurar que el cuerpo físico esté completamente inicializado
+    this.scene.time.delayedCall(0, () => {
+      // Verificar que el bloque de hielo aún existe y tiene cuerpo físico
+      if (!this.iceBlock || !this.iceBlock.body) {
+        console.error("Failed to create ice block with physics body");
+        return;
+      }
+
+      // Configurar física del bloque de hielo
+      const iceBody = this.iceBlock.body as Phaser.Physics.Arcade.Body;
       iceBody.setImmovable(true); // No se mueve al chocar
       iceBody.setAllowGravity(false); // No cae por gravedad
-      iceBody.setSize(100, 100); // Tamaño de colisión
-    }
+      iceBody.setSize(140, 140); // Tamaño de colisión ajustado
+    });
 
     // Animación de aparición (solo si tweens está disponible)
     if (this.scene.tweens) {
       this.scene.tweens.add({
         targets: this.iceBlock,
-        alpha: 1,
+        alpha: 0.9, // MÁS VISIBLE (0.9 en lugar de 1)
         duration: 200,
         ease: "Cubic.easeOut",
       });
 
-      // Efecto de brillo pulsante
+      // Efecto de brillo pulsante MÁS VISIBLE
       this.scene.tweens.add({
         targets: this.iceBlock,
-        alpha: 0.7,
-        duration: 1000,
+        alpha: { from: 0.9, to: 0.75 }, // Rango más visible
+        duration: 800,
         yoyo: true,
         repeat: -1,
         ease: "Sine.easeInOut",
       });
     } else {
       // Si no hay tweens disponible, solo hacer visible
-      this.iceBlock.setAlpha(0.7);
+      this.iceBlock.setAlpha(0.85);
     }
   }
 
@@ -290,28 +241,27 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  private startIdlePhase(): void {
-    this.enemyState = FreezableEnemyState.IDLE;
-    if (this.body) {
-      (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
-    }
-    this.idleTimer = 1000; // 1 segundo (más rápido que BasicEnemy)
-  }
-
-  private startMovingToTarget(): void {
+  private startMoving(): void {
     this.enemyState = FreezableEnemyState.MOVING;
 
     if (this.body) {
-      const direction = this.currentTarget.x > this.x ? 1 : -1;
-      (this.body as Phaser.Physics.Arcade.Body).setVelocityX(
-        direction * this.moveSpeed
-      );
+      const body = this.body as Phaser.Physics.Arcade.Body;
+      body.setVelocityX(this.moveDirection * this.moveSpeed);
+    }
+
+    // Voltear sprite según dirección
+    this.setFlipX(this.moveDirection === -1);
+
+    // Reproducir animación walk
+    if (!this.anims.isPlaying || this.anims.currentAnim?.key !== "slime_walk") {
+      this.play("slime_walk");
     }
   }
 
-  private switchTarget(): void {
-    this.currentTarget =
-      this.currentTarget === this.pointA ? this.pointB : this.pointA;
+  private changeDirection(): void {
+    // Invertir dirección
+    this.moveDirection *= -1;
+    this.startMoving();
   }
 
   update(time: number, delta: number): void {
@@ -327,30 +277,14 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     switch (this.enemyState) {
-      case FreezableEnemyState.IDLE:
-        this.idleTimer -= delta;
-        if (this.idleTimer <= 0) {
-          this.startMovingToTarget();
-        }
-        break;
-
       case FreezableEnemyState.MOVING:
-        // Verificar colisión con paredes
+        // Verificar colisión con paredes o bordes
         const touchingWall = body.blocked.left || body.blocked.right;
 
         if (touchingWall) {
+          // Colisionó con una pared, cambiar de dirección
           body.setVelocityX(0);
-          this.switchTarget();
-          this.startIdlePhase();
-          break;
-        }
-
-        // Verificar si llegó al objetivo
-        const distanceToTarget = Math.abs(this.x - this.currentTarget.x);
-        if (distanceToTarget < 10) {
-          body.setVelocityX(0);
-          this.switchTarget();
-          this.startIdlePhase();
+          this.changeDirection();
         }
         break;
 
@@ -394,6 +328,9 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
       (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);
     }
 
+    // PAUSAR la animación del enemigo
+    this.anims.pause();
+
     // Cambiar tinte a azul claro (efecto congelado)
     this.setTint(0xaaddff);
 
@@ -415,23 +352,29 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
 
   private unfreeze(): void {
     // Restaurar estado normal
-    this.enemyState = FreezableEnemyState.IDLE;
+    this.enemyState = FreezableEnemyState.MOVING;
     this.clearTint();
 
     // Destruir bloque de hielo con animación
     this.destroyIceBlock();
 
-    // Resetear idle timer para que espere antes de moverse
-    this.idleTimer = 1000;
+    // REANUDAR la animación del enemigo
+    this.anims.resume();
+
+    // Retomar movimiento
+    this.startMoving();
 
     // Efecto visual de descongelamiento
     this.scene.tweens.add({
       targets: this,
-      scaleX: 1.1,
-      scaleY: 1.1,
+      scaleX: 0.55,
+      scaleY: 0.55,
       duration: 150,
       yoyo: true,
       ease: "Back.easeOut",
+      onComplete: () => {
+        this.setScale(0.5); // Restaurar escala original
+      },
     });
   }
 

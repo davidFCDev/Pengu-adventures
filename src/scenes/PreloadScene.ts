@@ -20,8 +20,11 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level1.json"
     );
 
-    // Cargar el mapa Level2 (local por ahora, cambiar a GitHub después)
-    this.load.tilemapTiledJSON("Level2", "assets/Level2.json");
+    // Cargar el mapa Level2 desde GitHub
+    this.load.tilemapTiledJSON(
+      "Level2",
+      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level2.json"
+    );
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
@@ -117,6 +120,17 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
+    // Cargar el spritesheet del MediumSlime_Blue (24 frames en grid 6x4, 310x310 cada frame)
+    this.load.spritesheet(
+      "MediumSlime_Blue",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/MediumSlime_Blue-u7FN2Asq7pBOwwSxKDSXaANgyt7ZRA.png?nBpS",
+      {
+        frameWidth: 310,
+        frameHeight: 310,
+        endFrame: 23, // 24 frames (0-23) en 6 filas x 4 columnas
+      }
+    );
+
     // ========== MÚSICA DE NIVELES ==========
     // Cargar música del nivel de test
     this.load.audio(
@@ -192,6 +206,20 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "door_open_sound",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/door-fGm8Vz3bRA004JBgZzE0w5CHkIXggR.mp3?W5hb"
+    );
+
+    // ========== SONIDOS DE CAJAS SMASH ==========
+    // Sonido de golpe de roca cuando las cajas smash colisionan
+    this.load.audio(
+      "rock_smash_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/rock_smash-8evX0vfTxeuibQVesVBjVVbOGAhBaH.mp3?VHea"
+    );
+
+    // ========== SONIDOS DE GAME OVER ==========
+    // Sonido cuando el jugador pierde las 3 vidas
+    this.load.audio(
+      "game_over_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fail-PEUUHmnYdukLaR1Lc66VbEMXV0RJMz.mp3?5I5G"
     );
 
     // Handle loading completion

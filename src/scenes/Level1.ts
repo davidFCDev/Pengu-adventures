@@ -265,13 +265,8 @@ class Level1 extends BaseGameScene {
    */
   create() {
     // Llamar al create de BaseGameScene (esto ya llama a createMap() internamente)
+    // BaseGameScene ya se encarga de reproducir la música según this.config.musicKey
     super.create();
-
-    // Reproducir música de fondo en bucle
-    this.sound.play("level1_music", {
-      loop: true,
-      volume: 0.4,
-    });
 
     // Crear los coleccionables DESPUÉS de que BaseGameScene haya creado todo
     this.createCoins();
@@ -456,6 +451,28 @@ class Level1 extends BaseGameScene {
         this.doorSystem.setupPlayerCollision(this.player);
       }
     });
+  }
+
+  /**
+   * Shutdown - Limpiar recursos antes de reiniciar o cambiar de escena
+   */
+  shutdown(): void {
+    // Limpiar sistemas de coleccionables
+    if (this.coinSystem) {
+      this.coinSystem.destroy();
+    }
+    if (this.keySystem) {
+      this.keySystem.destroy();
+    }
+    if (this.doorSystem) {
+      this.doorSystem.destroy();
+    }
+    if (this.miniPinguSystem) {
+      this.miniPinguSystem.destroy();
+    }
+
+    // Llamar al shutdown del padre (limpia música, partículas, etc.)
+    super.shutdown();
   }
 
   /* END-USER-CODE */
