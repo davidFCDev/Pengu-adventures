@@ -51,11 +51,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.25,
-            "selectedLayer": 1,
+            "scale": 0.125,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 3438,
-                "y": 532
+                "x": 2488,
+                "y": 88
             }
         },
         "Level3.tmx#spritesheet-backgrounds-default": {
@@ -64,6 +64,20 @@
         "Level3.tmx#spritesheet-tiles-default": {
             "scaleInDock": 0.5,
             "scaleInEditor": 1
+        },
+        "Level4.tmx": {
+            "scale": 0.25,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 4242,
+                "y": 1268
+            }
+        },
+        "Level4.tmx#spritesheet-backgrounds-default": {
+            "scaleInDock": 0.33
+        },
+        "Level4.tmx#spritesheet-tiles-default": {
+            "scaleInDock": 1
         },
         "LevelBase.tmx": {
             "scale": 0.20595703124999998,
