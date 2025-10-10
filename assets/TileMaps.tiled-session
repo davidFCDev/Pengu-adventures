@@ -21,7 +21,7 @@
             "scale": 0.25,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 3866,
+                "x": 3868,
                 "y": 1204
             }
         },
@@ -33,11 +33,11 @@
             "scaleInEditor": 0.75
         },
         "Level2.tmx": {
-            "scale": 1,
+            "scale": 0.33,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 4568.5,
-                "y": 1440
+                "x": 5204.545454545454,
+                "y": 1039.3939393939395
             }
         },
         "Level2.tmx#spritesheet-backgrounds-default": {
@@ -48,18 +48,22 @@
             "scaleInEditor": 1
         },
         "Level3.tmx": {
-            "scale": 0.20558593749999998,
-            "selectedLayer": 0,
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 0.25,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 2558.540756222687,
-                "y": 958.2367471024131
+                "x": 3438,
+                "y": 532
             }
         },
         "Level3.tmx#spritesheet-backgrounds-default": {
-            "scaleInDock": 1
+            "scaleInDock": 0.33
         },
         "Level3.tmx#spritesheet-tiles-default": {
-            "scaleInDock": 1
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
         },
         "LevelBase.tmx": {
             "scale": 0.20595703124999998,

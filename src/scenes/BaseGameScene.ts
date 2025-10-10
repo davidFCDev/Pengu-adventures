@@ -1,6 +1,8 @@
+import { AquaticEnemyManager } from "../objects/enemies/AquaticEnemyManager";
 import { EnemySystem } from "../objects/enemies/EnemyManager";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 import { Player } from "../objects/player/Player";
+import { ElevatorSystem } from "../systems/ElevatorSystem";
 import { LifeSystem } from "../systems/LifeSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
 import { SnowParticleSystem } from "../systems/SnowParticleSystem";
@@ -70,6 +72,23 @@ export interface GameSceneConfig {
   enableTemporaryPlatforms?: boolean;
   /** Configuración del sistema de plataformas temporales (opcional) */
   temporaryPlatformConfig?: Partial<TemporaryPlatformConfig>;
+  /** Habilitar sistema de elevadores/plataformas móviles (opcional, default: false) */
+  enableElevators?: boolean;
+  /** Configuración del sistema de elevadores (opcional) */
+  elevatorConfig?: {
+    leftTileGID: number; // GID del tile izquierdo del elevador
+    rightTileGID: number; // GID del tile derecho del elevador
+    moveSpeed?: number; // Velocidad de movimiento (default: 100)
+  };
+  /** Habilitar sistema de enemigos acuáticos (opcional, default: false) */
+  enableAquaticEnemies?: boolean;
+  /** Configuración del sistema de enemigos acuáticos (opcional) */
+  aquaticEnemyConfig?: {
+    aquaticEnemyGID?: number; // GID del tile del enemigo acuático (para detección automática)
+    manualPositions?: Array<{ x: number; y: number; direction: number }>; // Posiciones manuales
+    damage?: number; // Daño al jugador (default: 1)
+    speed?: number; // Velocidad de nado (default: 100)
+  };
 }
 
 /**
@@ -111,6 +130,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected projectileSystem?: ProjectileSystem; // Sistema de proyectiles
   protected spikeBoxSystem?: SpikeBoxSystem; // Sistema de cajas con pinchos
   protected temporaryPlatformSystem?: TemporaryPlatformSystem; // Sistema de plataformas temporales
+  protected elevatorSystem?: ElevatorSystem; // Sistema de elevadores/plataformas móviles
+  protected aquaticEnemyManager?: any; // Sistema de enemigos acuáticos (AquaticEnemyManager)
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -198,6 +219,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * pero generalmente solo necesitarán implementar createMap()
    */
   create(): void {
+    console.log("🎮 Iniciando escena desde CERO...");
+
     // 0. IMPORTANTE: Resetear banderas de estado al inicio
     this.isGameOverInProgress = false;
     this.hasFinishedLevel = false;
@@ -257,15 +280,25 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.createTemporaryPlatformSystem();
     }
 
-    // 16. Crear sistema de enemigos (si está habilitado)
+    // 16. Crear sistema de elevadores (si está habilitado)
+    if (this.config.enableElevators) {
+      this.createElevatorSystem();
+    }
+
+    // 17. Crear sistema de enemigos acuáticos (si está habilitado)
+    if (this.config.enableAquaticEnemies) {
+      this.createAquaticEnemySystem();
+    }
+
+    // 18. Crear sistema de enemigos (si está habilitado)
     if (this.config.enableEnemies) {
       this.createEnemySystem();
     }
 
-    // 17. Configurar detección de final de nivel
+    // 19. Configurar detección de final de nivel
     this.setupLevelEndDetection();
 
-    // 18. Escuchar evento de soplido para destruir muros de nieve
+    // 20. Escuchar evento de soplido para destruir muros de nieve
     this.events.on("playerBlowing", () => {
       this.checkSnowWallDestruction();
     });
@@ -288,6 +321,16 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Actualizar sistema de enemigos
     if (this.enemySystem) {
       this.enemySystem.update(this.time.now, this.game.loop.delta);
+    }
+
+    // Actualizar sistema de elevadores
+    if (this.elevatorSystem) {
+      this.elevatorSystem.update();
+    }
+
+    // Actualizar sistema de enemigos acuáticos
+    if (this.aquaticEnemyManager) {
+      this.aquaticEnemyManager.update();
     }
   }
 
@@ -998,14 +1041,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Esperar un poco para que se escuche el sonido de game over
     // antes de reiniciar la escena
     this.time.delayedCall(1500, () => {
-      // REINICIO COMPLETO: Detener la escena y volverla a iniciar
-      // Esto es más limpio que scene.restart() porque:
-      // 1. Llama a shutdown() que limpia todos los recursos
-      // 2. Destruye completamente la escena
-      // 3. La vuelve a crear desde cero (como la primera vez)
-      const sceneName = this.scene.key;
-      this.scene.stop(sceneName);
-      this.scene.start(sceneName);
+      // REINICIO DESDE CERO: scene.restart() llama automáticamente a shutdown() y create()
+      // No necesitamos llamar a shutdown() manualmente
+      this.scene.restart();
     });
   }
 
@@ -1396,6 +1434,75 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
+   * Crear sistema de elevadores/plataformas móviles
+   */
+  protected createElevatorSystem(): void {
+    if (!this.tilemap || !this.surfaceLayer || !this.player) {
+      console.warn(
+        "⚠️ No se puede crear sistema de elevadores: falta tilemap, surfaceLayer o player"
+      );
+      return;
+    }
+
+    const config = this.config.elevatorConfig;
+
+    if (!config || !config.leftTileGID || !config.rightTileGID) {
+      console.warn(
+        "⚠️ No se puede crear sistema de elevadores: faltan leftTileGID y rightTileGID en elevatorConfig"
+      );
+      return;
+    }
+
+    this.elevatorSystem = new ElevatorSystem(this, {
+      tilemap: this.tilemap,
+      surfaceLayer: this.surfaceLayer,
+      leftTileGID: config.leftTileGID,
+      rightTileGID: config.rightTileGID,
+      moveSpeed: config.moveSpeed,
+    });
+
+    this.elevatorSystem.createElevators();
+    this.elevatorSystem.setupPlayerCollision(this.player);
+  }
+
+  /**
+   * Crear sistema de enemigos acuáticos
+   */
+  protected createAquaticEnemySystem(): void {
+    if (!this.player || !this.surfaceLayer) {
+      console.warn(
+        "⚠️ No se puede crear sistema de enemigos acuáticos: faltan player o surfaceLayer"
+      );
+      return;
+    }
+
+    const config = this.config.aquaticEnemyConfig;
+
+    // Verificar que hay configuración (manual o GID)
+    if (
+      !config ||
+      (!config.manualPositions && (!this.tilemap || !config.aquaticEnemyGID))
+    ) {
+      console.warn(
+        "⚠️ No se puede crear sistema de enemigos acuáticos: falta configuración (manualPositions o aquaticEnemyGID)"
+      );
+      return;
+    }
+
+    this.aquaticEnemyManager = new AquaticEnemyManager(this, {
+      player: this.player,
+      surfaceLayer: this.surfaceLayer,
+      tilemap: this.tilemap,
+      aquaticEnemyGID: config.aquaticEnemyGID,
+      manualPositions: config.manualPositions,
+      damage: config.damage,
+      speed: config.speed,
+    });
+
+    this.aquaticEnemyManager.create();
+  }
+
+  /**
    * Crear sistema de enemigos automático
    */
   protected createEnemySystem(): void {
@@ -1515,6 +1622,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Cleanup cuando se destruye la escena
    */
   shutdown(): void {
+    console.log("🔄 Limpiando escena completamente...");
+
     // Detener toda la música
     this.stopCurrentMusic();
 
@@ -1533,9 +1642,13 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.player = undefined as any;
     }
 
-    // Limpiar todos los colliders de física
+    // Limpiar TODOS los colliders de física de forma agresiva
     if (this.physics && this.physics.world) {
+      // Destruir todos los colliders activos
       this.physics.world.colliders.destroy();
+      // Resetear el mundo de física
+      this.physics.world.bodies.clear();
+      this.physics.world.staticBodies.clear();
     }
 
     // Destruir sistema de partículas de nieve
@@ -1554,6 +1667,18 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.temporaryPlatformSystem) {
       this.temporaryPlatformSystem.destroy();
       this.temporaryPlatformSystem = undefined;
+    }
+
+    // Destruir sistema de elevadores
+    if (this.elevatorSystem) {
+      this.elevatorSystem.destroy();
+      this.elevatorSystem = undefined;
+    }
+
+    // Destruir sistema de enemigos acuáticos
+    if (this.aquaticEnemyManager) {
+      this.aquaticEnemyManager.destroy();
+      this.aquaticEnemyManager = undefined;
     }
 
     // Destruir sistema de enemigos
@@ -1579,5 +1704,10 @@ export abstract class BaseGameScene extends Phaser.Scene {
     this.surfaceLayer = undefined as any;
     this.backgroundLayer = undefined as any;
     this.objectsLayer = undefined as any;
+
+    // Resetear bandera de game over
+    this.isGameOverInProgress = false;
+
+    console.log("✅ Escena limpiada completamente");
   }
 }

@@ -26,6 +26,9 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level2.json"
     );
 
+    // Cargar el mapa Level3 (LOCAL - cambiar a GitHub después)
+    this.load.tilemapTiledJSON("Level3", "assets/Level3.json");
+
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
       "spritesheet-tiles-default",
@@ -201,6 +204,12 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Level2-0LVHTXGqK32B0P41WqB0n10sKfVHiQ.mp3?UVgv"
     );
 
+    // Música de fondo para Level3
+    this.load.audio(
+      "level3_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level3-DLjjuoN0wbyyUpLi1eIlS2pRqOWygZ.mp3?TNx1"
+    );
+
     // ========== SONIDOS DE PUERTAS ==========
     // Sonido al abrir/desaparecer puerta con llave
     this.load.audio(
@@ -220,6 +229,20 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "game_over_sound",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fail-PEUUHmnYdukLaR1Lc66VbEMXV0RJMz.mp3?5I5G"
+    );
+
+    // ========== SONIDOS DE ELECTROCUCIÓN ==========
+    // Sonido cuando el pez eléctrico electrocuta al jugador
+    this.load.audio(
+      "electrocute_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/electrocute-ISm1Olyb9dag0f5mlYJh6XPSXCrvdm.mp3?9igL"
+    );
+
+    // ========== SONIDOS DE COLECCIONABLES ==========
+    // Sonido cuando el jugador recoge una llave
+    this.load.audio(
+      "key_pickup_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/key-8mqVATOCyjy5r0AIOLjOkRhsRn3YiP.mp3?OZOe"
     );
 
     // Handle loading completion
@@ -414,8 +437,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level2 (desarrollo) - Cambiar a "Level1" en producción
-    this.scene.start("Level2");
+    // Iniciar Level3 (desarrollo) - Cambiar a "Level1" en producción
+    this.scene.start("Level3");
   }
 
   private loadingComplete(): void {

@@ -2,6 +2,19 @@
     "section1": {
         "files": [
             {
+                "url": "assets/sprites/__green_angler_fish_swim_snapping.png",
+                "frameConfig": {
+                    "frameWidth": 622,
+                    "frameHeight": 451,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "__green_angler_fish_swim_snapping"
+            },
+            {
                 "url": "assets/animations.json",
                 "type": "animation",
                 "key": "animations"
@@ -158,6 +171,11 @@
                 "url": "assets/Level2.json",
                 "type": "tilemapTiledJSON",
                 "key": "Level2"
+            },
+            {
+                "url": "assets/Level3.json",
+                "type": "tilemapTiledJSON",
+                "key": "Level3"
             },
             {
                 "url": "assets/sprites/MediumSlime_Blue.png",

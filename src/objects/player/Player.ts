@@ -121,7 +121,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   private setupSounds(): void {
     // Configurar sonidos con volumen bajo y suave
-    this.jumpSound = this.scene.sound.add("jump_sound", { volume: 0.25 });
+    this.jumpSound = this.scene.sound.add("jump_sound", { volume: 0.1 });
     this.swimSound = this.scene.sound.add("swim_sound", { volume: 0.3 });
     this.hurtSound = this.scene.sound.add("hurt_sound", { volume: 0.35 });
     this.blowSound = this.scene.sound.add("blow_sound", { volume: 0.5 });
@@ -265,10 +265,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         });
       } else {
         this.anims.stop(); // Parar cualquier animación actual
-        // Forzar la animación standing directamente sin pasar por playAnimation
-        // para evitar que isPlayingThrow bloquee el cambio
-        this.currentAnimation = "penguin_standing";
-        this.play("penguin_standing");
+        // Si está nadando, mantener animación de nado
+        if (this.isSwimming) {
+          this.currentAnimation = "penguin_swing";
+          this.play("penguin_swing");
+        } else {
+          // Forzar la animación standing directamente sin pasar por playAnimation
+          // para evitar que isPlayingThrow bloquee el cambio
+          this.currentAnimation = "penguin_standing";
+          this.play("penguin_standing");
+        }
       }
     }
     // Debug: mostrar información del estado cada cierto tiempo
@@ -321,12 +327,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       if (this.isGhost) {
         this.playAnimation("penguin_ghost_idle");
-      } else if (
-        !this.isCrouching &&
-        this.isOnGround &&
-        !this.isSwimming &&
-        !this.isClimbing
-      ) {
+      } else if (this.isSwimming) {
+        // Si está nadando, mantener la animación de nado aunque esté parado
+        this.playAnimation("penguin_swing");
+      } else if (!this.isCrouching && this.isOnGround && !this.isClimbing) {
         this.playAnimation("penguin_standing");
       }
     }
@@ -536,7 +540,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     } else if (!this.isCrouching && wasCrouching) {
       // Solo cuando deja de agacharse (cambio de estado)
-      this.playAnimation("penguin_standing");
+      // Si está nadando, mantener animación de nado
+      if (this.isSwimming) {
+        this.playAnimation("penguin_swing");
+      } else {
+        this.playAnimation("penguin_standing");
+      }
       // 🏃‍♂️ ALTURA NORMAL: Restaurar hitbox normal de 64px
       this.updateCrouchHitbox(false);
     }

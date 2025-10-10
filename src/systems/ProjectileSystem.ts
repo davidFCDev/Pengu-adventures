@@ -5,10 +5,16 @@
 export class ProjectileSystem {
   private scene: Phaser.Scene;
   private projectileGroup: Phaser.Physics.Arcade.Group;
+  private snowballListener: (snowball: Phaser.GameObjects.GameObject) => void;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.projectileGroup = scene.physics.add.group();
+
+    // Crear la función listener como propiedad para poder removerla después
+    this.snowballListener = (snowball: Phaser.GameObjects.GameObject) => {
+      this.handleSnowballCreated(snowball);
+    };
 
     // Escuchar eventos de creación de snowballs
     this.setupSnowballListener();
@@ -18,29 +24,43 @@ export class ProjectileSystem {
    * Configurar listener para cuando se crean snowballs
    */
   private setupSnowballListener(): void {
-    this.scene.events.on(
-      "snowballCreated",
-      (snowball: Phaser.GameObjects.GameObject) => {
+    this.scene.events.on("snowballCreated", this.snowballListener);
+  }
 
-        const snowballSprite = snowball as Phaser.Physics.Arcade.Sprite;
+  /**
+   * Manejar la creación de un snowball
+   */
+  private handleSnowballCreated(snowball: Phaser.GameObjects.GameObject): void {
+    // Verificar que el sistema siga activo y válido
+    if (
+      !this.projectileGroup ||
+      !this.projectileGroup.scene ||
+      !this.projectileGroup.scene.sys
+    ) {
+      console.warn("⚠️ ProjectileSystem ya fue destruido, ignorando snowball");
+      return;
+    }
 
-        // Guardar velocidad actual
-        const currentVelocityX = snowballSprite.body?.velocity.x || 0;
-        const currentVelocityY = snowballSprite.body?.velocity.y || 0;
+    try {
+      const snowballSprite = snowball as Phaser.Physics.Arcade.Sprite;
 
-        // Añadir al grupo
-        this.projectileGroup.add(snowballSprite);
+      // Guardar velocidad actual
+      const currentVelocityX = snowballSprite.body?.velocity.x || 0;
+      const currentVelocityY = snowballSprite.body?.velocity.y || 0;
 
-        // Restaurar velocidad
-        if (snowballSprite.body && "setVelocity" in snowballSprite.body) {
-          (snowballSprite.body as Phaser.Physics.Arcade.Body).setVelocity(
-            currentVelocityX,
-            currentVelocityY
-          );
+      // Añadir al grupo
+      this.projectileGroup.add(snowballSprite);
 
-        }
+      // Restaurar velocidad
+      if (snowballSprite.body && "setVelocity" in snowballSprite.body) {
+        (snowballSprite.body as Phaser.Physics.Arcade.Body).setVelocity(
+          currentVelocityX,
+          currentVelocityY
+        );
       }
-    );
+    } catch (error) {
+      console.error("❌ Error al añadir snowball al grupo:", error);
+    }
   }
 
   /**
@@ -106,7 +126,20 @@ export class ProjectileSystem {
    * Destruir el sistema
    */
   destroy(): void {
-    this.scene.events.off("snowballCreated");
-    this.destroyAll();
+    // 1. PRIMERO remover el listener para que no se procesen más eventos
+    if (this.snowballListener) {
+      this.scene.events.off("snowballCreated", this.snowballListener);
+      this.snowballListener = undefined as any;
+    }
+
+    // 2. Destruir todos los proyectiles si el grupo aún existe
+    if (this.projectileGroup) {
+      this.projectileGroup.clear(true, true);
+      this.projectileGroup.destroy();
+    }
+
+    // 3. Limpiar referencias
+    this.projectileGroup = undefined as any;
+    this.scene = undefined as any;
   }
 }
