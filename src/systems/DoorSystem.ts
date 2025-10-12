@@ -80,8 +80,8 @@ export class DoorSystem {
     const localTileId = obj.gid - tileset.firstgid;
 
     const doorSprite = this.scene.add.sprite(
-      obj.x,
-      obj.y - 32,
+      obj.x + 32, // Centrar en X (mitad del objeto 64x64)
+      obj.y - 32, // Centrar en Y (mitad del objeto 64x64)
       this.config.spritesheetKey,
       localTileId
     );

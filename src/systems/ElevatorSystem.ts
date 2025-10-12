@@ -185,8 +185,8 @@ export class ElevatorSystem {
 
     // Crear sprite izquierdo
     const leftSprite = this.scene.add.sprite(
-      leftTile.x,
-      leftTile.y - 32, // Ajuste de posición (Tiled usa esquina inferior)
+      leftTile.x + 32, // Centrar en X (mitad del objeto 64x64)
+      leftTile.y - 32, // Centrar en Y (mitad del objeto 64x64)
       this.config.spritesheetKey,
       leftLocalId
     );
@@ -195,8 +195,8 @@ export class ElevatorSystem {
 
     // Crear sprite derecho
     const rightSprite = this.scene.add.sprite(
-      rightTile.x,
-      rightTile.y - 32, // Ajuste de posición (Tiled usa esquina inferior)
+      rightTile.x + 32, // Centrar en X (mitad del objeto 64x64)
+      rightTile.y - 32, // Centrar en Y (mitad del objeto 64x64)
       this.config.spritesheetKey,
       rightLocalId
     );

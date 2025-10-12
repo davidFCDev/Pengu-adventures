@@ -200,26 +200,13 @@ export class Level4 extends BaseGameScene {
   private createKeys(): void {
     this.keySystem = new KeySystem(this, {
       tilemap: this.tilemap,
-      keyTileIds: [229],
+      keyTileIds: [229], // GID de la llave en el tileset
       collectSoundKey: "key_pickup_sound",
       soundVolume: 0.5,
-      // yOffset por defecto es -32 (ajuste estándar de Tiled)
-      // Puedes cambiarlo si es necesario: yOffset: -16, yOffset: -64, etc.
     });
 
-    // Crear llaves desde el tilemap (si existen en el mapa)
+    // Crear llaves desde el tilemap
     this.keySystem.createKeys();
-
-    // Crear llaves manualmente en posiciones específicas (si el mapa no tiene llaves)
-    // Posiciones de ejemplo - puedes ajustarlas según necesites
-    const manualKeyPositions = [
-      { x: 2400, y: 1800 }, // Llave 1 - zona central
-      { x: 4400, y: 400 }, // Llave 2 - zona alta derecha
-    ];
-
-    manualKeyPositions.forEach((pos) => {
-      this.keySystem.createManualKey(pos.x, pos.y);
-    });
 
     this.time.delayedCall(100, () => {
       if (this.player) this.keySystem.setupPlayerCollision(this.player);
@@ -230,7 +217,7 @@ export class Level4 extends BaseGameScene {
     this.doorSystem = new DoorSystem(this, {
       tilemap: this.tilemap,
       keySystem: this.keySystem,
-      doorTileIds: [230],
+      doorTileIds: [52, 70], // GIDs de las puertas (igual que Level3)
       openSoundKey: "door_open_sound",
       soundVolume: 0.5,
     });

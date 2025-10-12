@@ -32,11 +32,8 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level3.json"
     );
 
-    // Cargar el mapa Level4 (desde GitHub)
-    this.load.tilemapTiledJSON(
-      "Level4",
-      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level4.json"
-    );
+    // Cargar el mapa Level4 (desde archivo local para desarrollo rápido)
+    this.load.tilemapTiledJSON("Level4", "assets/Level4.json");
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(

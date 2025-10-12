@@ -1,5 +1,19 @@
 /**
- * KeySystem - Sistema de llaves coleccionables
+ * KeySystem - Sistema d    // Configuración por defecto
+    this.config = {
+      tilemap: config.tilemap,
+      keyTileIds: config.keyTileIds,
+      tilesetName:
+        config.tilesetName ??
+        config.tilemap.tilesets[0]?.name ??
+        "spritesheet-tiles",
+      spritesheetKey: config.spritesheetKey ?? "spritesheet-tiles-frames",
+      depth: config.depth ?? 10,
+      collectSoundKey: config.collectSoundKey ?? "",
+      soundVolume: config.soundVolume ?? 0.3,
+      xOffset: config.xOffset ?? 16, // Por defecto 16 (centrar tile 32x32 en X)
+      yOffset: config.yOffset ?? -16, // Por defecto -16 (centrar tile 32x32 en Y)
+    };cionables
  *
  * Gestiona las llaves que el jugador puede recoger del mapa.
  * Detecta automáticamente llaves en objetos de Tiled por sus GIDs.
@@ -13,7 +27,8 @@ export interface KeySystemConfig {
   depth?: number;
   collectSoundKey?: string;
   soundVolume?: number;
-  yOffset?: number; // Offset en Y para ajustar la posición (default: -32)
+  xOffset?: number; // Offset en X para ajustar la posición (default: 16 para centrar tile 32x32)
+  yOffset?: number; // Offset en Y para ajustar la posición (default: -32 ajuste estándar de Tiled)
 }
 
 export class KeySystem {
@@ -38,7 +53,8 @@ export class KeySystem {
       depth: config.depth ?? 10,
       collectSoundKey: config.collectSoundKey ?? "",
       soundVolume: config.soundVolume ?? 0.3,
-      yOffset: config.yOffset ?? -32, // Por defecto -32 (ajuste para coordenadas de Tiled)
+      xOffset: config.xOffset ?? 32, // Por defecto 32 (centrar objeto 64x64 en X)
+      yOffset: config.yOffset ?? -32, // Por defecto -32 (centrar objeto 64x64 en Y)
     };
 
     // Crear grupo de física para las llaves
@@ -120,8 +136,8 @@ export class KeySystem {
     const localTileId = obj.gid - tileset.firstgid;
 
     const key = this.scene.add.sprite(
-      obj.x,
-      obj.y + this.config.yOffset, // Usar el offset configurable
+      obj.x + this.config.xOffset, // Ajustar X para centrar
+      obj.y + this.config.yOffset, // Ajustar Y para centrar
       this.config.spritesheetKey,
       localTileId
     );
