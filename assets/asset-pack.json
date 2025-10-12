@@ -178,6 +178,11 @@
                 "key": "Level3"
             },
             {
+                "url": "assets/Level4.json",
+                "type": "tilemapTiledJSON",
+                "key": "Level4"
+            },
+            {
                 "url": "assets/sprites/MediumSlime_Blue.png",
                 "frameConfig": {
                     "frameWidth": 310,

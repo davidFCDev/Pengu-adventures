@@ -26,8 +26,11 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level2.json"
     );
 
-    // Cargar el mapa Level3 (LOCAL - cambiar a GitHub después)
-    this.load.tilemapTiledJSON("Level3", "assets/Level3.json");
+    // Cargar el mapa Level3 (desde GitHub)
+    this.load.tilemapTiledJSON(
+      "Level3",
+      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level3.json"
+    );
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
@@ -437,8 +440,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level3 (desarrollo) - Cambiar a "Level1" en producción
-    this.scene.start("Level3");
+    // Iniciar Level1 (producción)
+    this.scene.start("Level1");
   }
 
   private loadingComplete(): void {
