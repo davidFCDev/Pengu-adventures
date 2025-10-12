@@ -3,6 +3,7 @@ import GameSettings from "./config/GameSettings";
 import { Level1 } from "./scenes/Level1";
 import { Level2 } from "./scenes/Level2";
 import { Level3 } from "./scenes/Level3";
+import { Level4 } from "./scenes/Level4";
 import { PreloadScene } from "./scenes/PreloadScene";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
@@ -19,8 +20,8 @@ const config: Phaser.Types.Core.GameConfig = {
     height: GameSettings.canvas.height,
   },
   backgroundColor: "#1a1a1a",
-  // Scene order: PreloadScene -> Level1 -> Level2 -> Level3
-  scene: [PreloadScene, Level1, Level2, Level3],
+  // Scene order: PreloadScene -> Level1 -> Level2 -> Level3 -> Level4
+  scene: [PreloadScene, Level1, Level2, Level3, Level4],
   physics: {
     default: "arcade",
     arcade: {
