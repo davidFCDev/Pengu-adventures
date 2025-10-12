@@ -13,6 +13,7 @@ export interface KeySystemConfig {
   depth?: number;
   collectSoundKey?: string;
   soundVolume?: number;
+  yOffset?: number; // Offset en Y para ajustar la posición (default: -32)
 }
 
 export class KeySystem {
@@ -37,6 +38,7 @@ export class KeySystem {
       depth: config.depth ?? 10,
       collectSoundKey: config.collectSoundKey ?? "",
       soundVolume: config.soundVolume ?? 0.3,
+      yOffset: config.yOffset ?? 0, // Por defecto 0 (sin ajuste)
     };
 
     // Crear grupo de física para las llaves
@@ -62,6 +64,53 @@ export class KeySystem {
   }
 
   /**
+   * Crear una llave manualmente en una posición específica
+   * Útil para niveles que no tienen llaves en el tilemap
+   */
+  createManualKey(x: number, y: number): void {
+    const tileset = this.config.tilemap.getTileset(this.config.tilesetName);
+    if (!tileset) {
+      console.warn(
+        "KeySystem: No se encontró el tileset",
+        this.config.tilesetName
+      );
+      return;
+    }
+
+    // Calcular el frame local del sprite (GID - firstgid)
+    const localTileId = this.config.keyTileIds[0] - tileset.firstgid;
+
+    const key = this.scene.add.sprite(
+      x,
+      y,
+      this.config.spritesheetKey,
+      localTileId
+    );
+
+    key.setOrigin(0.5, 0.5);
+    key.setDepth(this.config.depth);
+
+    // Añadir física
+    this.scene.physics.add.existing(key);
+    const body = key.body as Phaser.Physics.Arcade.Body;
+    body.setSize(key.width * 0.8, key.height * 0.8);
+    body.setAllowGravity(false);
+
+    // Añadir al grupo
+    this.keys.add(key);
+
+    // Animación de flotación suave
+    this.scene.tweens.add({
+      targets: key,
+      y: key.y - 10,
+      duration: 1000,
+      ease: "Sine.easeInOut",
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+
+  /**
    * Crear una llave individual
    */
   private createKey(obj: any): void {
@@ -72,7 +121,7 @@ export class KeySystem {
 
     const key = this.scene.add.sprite(
       obj.x,
-      obj.y - 32, // Ajustar Y porque Tiled usa bottom-left como origen
+      obj.y + this.config.yOffset, // Usar el offset configurable
       this.config.spritesheetKey,
       localTileId
     );

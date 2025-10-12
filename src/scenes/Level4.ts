@@ -19,8 +19,14 @@ export class Level4 extends BaseGameScene {
       backgroundLayerName: "fondo",
       objectsLayerName: "objects",
       tilesets: [
-        { name: "spritesheet-tiles-default", imageKey: "spritesheet-tiles-default" },
-        { name: "spritesheet-backgrounds-default", imageKey: "spritesheet-backgrounds-default" }
+        {
+          name: "spritesheet-tiles-default",
+          imageKey: "spritesheet-tiles-default",
+        },
+        {
+          name: "spritesheet-backgrounds-default",
+          imageKey: "spritesheet-backgrounds-default",
+        },
       ],
       playerStartPosition: { x: 100, y: 2080 },
       musicKey: "level4_music",
@@ -57,11 +63,11 @@ export class Level4 extends BaseGameScene {
       aquaticEnemyConfig: {
         manualPositions: [
           { x: 1344, y: 2048, direction: 1 },
-          { x: 4032, y: 2048, direction: -1 }
+          { x: 4032, y: 2048, direction: -1 },
         ],
         damage: 1,
-        speed: 100
-      }
+        speed: 100,
+      },
     };
     super("Level4", config);
   }
@@ -123,61 +129,133 @@ export class Level4 extends BaseGameScene {
 
   private createCoins(): void {
     this.coinSystem = new CoinSystem(this, {
-      textureKey: "PT_TOKEN_MASTER_001", scale: 1.0, depth: 10,
-      floatDistance: 5, floatDuration: 1000,
-      collectSoundKey: "coin_collect_sound", soundVolume: 0.5
+      textureKey: "PT_TOKEN_MASTER_001",
+      scale: 1.0,
+      depth: 10,
+      floatDistance: 5,
+      floatDuration: 1000,
+      collectSoundKey: "coin_collect_sound",
+      soundVolume: 0.5,
     });
     const coinPositions = [
-      { x: 1696, y: 1824 }, { x: 1376, y: 1824 }, { x: 1056, y: 1824 },
-      { x: 2080, y: 1824 }, { x: 2208, y: 1824 }, { x: 2528, y: 1824 },
-      { x: 2848, y: 1824 }, { x: 864, y: 2048 }, { x: 1216, y: 2048 },
-      { x: 1536, y: 2048 }, { x: 1888, y: 2048 }, { x: 2336, y: 2048 },
-      { x: 3008, y: 2080 }, { x: 3168, y: 1824 }, { x: 3552, y: 1824 },
-      { x: 3872, y: 1824 }, { x: 4192, y: 1824 }, { x: 3360, y: 2048 },
-      { x: 3712, y: 2048 }, { x: 4352, y: 2048 }, { x: 4032, y: 2048 },
-      { x: 3360, y: 224 }, { x: 3616, y: 384 }, { x: 3488, y: 608 },
-      { x: 192, y: 1312 }, { x: 192, y: 672 }, { x: 192, y: 352 },
-      { x: 576, y: 192 }, { x: 4064, y: 448 }, { x: 4352, y: 384 }, { x: 4608, y: 288 }
+      { x: 1696, y: 1824 },
+      { x: 1376, y: 1824 },
+      { x: 1056, y: 1824 },
+      { x: 2080, y: 1824 },
+      { x: 2208, y: 1824 },
+      { x: 2528, y: 1824 },
+      { x: 2848, y: 1824 },
+      { x: 864, y: 2048 },
+      { x: 1216, y: 2048 },
+      { x: 1536, y: 2048 },
+      { x: 1888, y: 2048 },
+      { x: 2336, y: 2048 },
+      { x: 3008, y: 2080 },
+      { x: 3168, y: 1824 },
+      { x: 3552, y: 1824 },
+      { x: 3872, y: 1824 },
+      { x: 4192, y: 1824 },
+      { x: 3360, y: 2048 },
+      { x: 3712, y: 2048 },
+      { x: 4352, y: 2048 },
+      { x: 4032, y: 2048 },
+      { x: 3360, y: 224 },
+      { x: 3616, y: 384 },
+      { x: 3488, y: 608 },
+      { x: 192, y: 1312 },
+      { x: 192, y: 672 },
+      { x: 192, y: 352 },
+      { x: 576, y: 192 },
+      { x: 4064, y: 448 },
+      { x: 4352, y: 384 },
+      { x: 4608, y: 288 },
     ];
     this.coinSystem.createCoins(coinPositions);
-    this.time.delayedCall(100, () => { if (this.player) this.coinSystem.setupPlayerCollision(this.player); });
+    this.time.delayedCall(100, () => {
+      if (this.player) this.coinSystem.setupPlayerCollision(this.player);
+    });
   }
 
   private createMiniPingus(): void {
     this.miniPinguSystem = new MiniPinguSystem(this, {
-      textureKey: "mini-pingu", scale: 1.0, depth: 10,
-      bounceDistance: 10, bounceDuration: 800,
-      collectSoundKey: "minipingu_collect_sound", soundVolume: 0.6
+      textureKey: "mini-pingu",
+      scale: 1.0,
+      depth: 10,
+      bounceDistance: 10,
+      bounceDuration: 800,
+      collectSoundKey: "minipingu_collect_sound",
+      soundVolume: 0.6,
     });
-    const miniPinguPositions = [{ x: 3872, y: 128 }, { x: 2688, y: 2080 }, { x: 2848, y: 128 }];
+    const miniPinguPositions = [
+      { x: 3872, y: 128 },
+      { x: 2688, y: 2080 },
+      { x: 2848, y: 128 },
+    ];
     this.miniPinguSystem.createMiniPingus(miniPinguPositions);
-    this.time.delayedCall(100, () => { if (this.player) this.miniPinguSystem.setupPlayerCollision(this.player); });
+    this.time.delayedCall(100, () => {
+      if (this.player) this.miniPinguSystem.setupPlayerCollision(this.player);
+    });
   }
 
   private createKeys(): void {
     this.keySystem = new KeySystem(this, {
-      tilemap: this.tilemap, keyTileIds: [229],
-      collectSoundKey: "key_pickup_sound", soundVolume: 0.5
+      tilemap: this.tilemap,
+      keyTileIds: [229],
+      collectSoundKey: "key_pickup_sound",
+      soundVolume: 0.5,
+      yOffset: 0, // Ajusta este valor si las llaves no están en la posición correcta
+      // yOffset: -32 si están muy abajo
+      // yOffset: 32 si están muy arriba
     });
+
+    // Crear llaves desde el tilemap (si existen en el mapa)
     this.keySystem.createKeys();
-    this.time.delayedCall(100, () => { if (this.player) this.keySystem.setupPlayerCollision(this.player); });
+
+    // Crear llaves manualmente en posiciones específicas (si el mapa no tiene llaves)
+    // Posiciones de ejemplo - puedes ajustarlas según necesites
+    const manualKeyPositions = [
+      { x: 2400, y: 1800 }, // Llave 1 - zona central
+      { x: 4400, y: 400 }, // Llave 2 - zona alta derecha
+    ];
+
+    manualKeyPositions.forEach((pos) => {
+      this.keySystem.createManualKey(pos.x, pos.y);
+    });
+
+    this.time.delayedCall(100, () => {
+      if (this.player) this.keySystem.setupPlayerCollision(this.player);
+    });
   }
 
   private createDoors(): void {
     this.doorSystem = new DoorSystem(this, {
-      tilemap: this.tilemap, keySystem: this.keySystem, doorTileIds: [230],
-      openSoundKey: "door_open_sound", soundVolume: 0.5
+      tilemap: this.tilemap,
+      keySystem: this.keySystem,
+      doorTileIds: [230],
+      openSoundKey: "door_open_sound",
+      soundVolume: 0.5,
     });
     this.doorSystem.createDoors();
-    this.time.delayedCall(100, () => { if (this.player) this.doorSystem.setupPlayerCollision(this.player); });
+    this.time.delayedCall(100, () => {
+      if (this.player) this.doorSystem.setupPlayerCollision(this.player);
+    });
   }
 
   private createFreezableEnemies(): void {
     const enemyPositions = [
-      { x: 3136, y: 1152 }, { x: 3680, y: 1152 }, { x: 2592, y: 1152 }, { x: 4224, y: 1152 }
+      { x: 3136, y: 1152 },
+      { x: 3680, y: 1152 },
+      { x: 2592, y: 1152 },
+      { x: 4224, y: 1152 },
     ];
     enemyPositions.forEach((pos, index) => {
-      const enemy = new FreezableEnemy(this, pos.x, pos.y, this.surfaceLayer, index % 2 === 0 ? 1 : -1);
+      const enemy = new FreezableEnemy(
+        this,
+        pos.x,
+        pos.y,
+        this.surfaceLayer,
+        index % 2 === 0 ? 1 : -1
+      );
       this.freezableEnemies.push(enemy);
 
       // Configurar colisión con el player
@@ -187,8 +265,12 @@ export class Level4 extends BaseGameScene {
             this.player,
             enemy,
             (player, enemySprite) => {
-              const freezableEnemy = (enemySprite as any).enemyRef || enemySprite;
-              if (freezableEnemy && typeof freezableEnemy.damagePlayer === "function") {
+              const freezableEnemy =
+                (enemySprite as any).enemyRef || enemySprite;
+              if (
+                freezableEnemy &&
+                typeof freezableEnemy.damagePlayer === "function"
+              ) {
                 freezableEnemy.damagePlayer(player);
               }
             },
@@ -215,7 +297,10 @@ export class Level4 extends BaseGameScene {
           enemy,
           (proj, enemySprite) => {
             const freezableEnemy = (enemySprite as any).enemyRef || enemySprite;
-            if (freezableEnemy && typeof freezableEnemy.takeDamageFromSnowball === "function") {
+            if (
+              freezableEnemy &&
+              typeof freezableEnemy.takeDamageFromSnowball === "function"
+            ) {
               freezableEnemy.takeDamageFromSnowball();
               (proj as any).destroy();
             }
@@ -229,11 +314,13 @@ export class Level4 extends BaseGameScene {
 
   update(time: number, delta: number): void {
     super.update(time, delta);
-    this.freezableEnemies.forEach(enemy => enemy.update(time, delta));
+    this.freezableEnemies.forEach((enemy) => enemy.update(time, delta));
   }
 
   shutdown(): void {
-    this.freezableEnemies.forEach(enemy => { if (enemy && enemy.active) enemy.destroy(); });
+    this.freezableEnemies.forEach((enemy) => {
+      if (enemy && enemy.active) enemy.destroy();
+    });
     this.freezableEnemies = [];
     if (this.coinSystem) this.coinSystem.destroy();
     if (this.miniPinguSystem) this.miniPinguSystem.destroy();
