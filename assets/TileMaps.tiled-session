@@ -51,11 +51,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.125,
+            "scale": 0.25,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 2488,
-                "y": 88
+                "x": 2486,
+                "y": 1012
             }
         },
         "Level3.tmx#spritesheet-backgrounds-default": {
@@ -66,18 +66,21 @@
             "scaleInEditor": 1
         },
         "Level4.tmx": {
-            "scale": 0.25,
-            "selectedLayer": 2,
+            "expandedObjectLayers": [
+                4
+            ],
+            "scale": 0.33,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 4242,
-                "y": 1268
+                "x": 1362.121212121212,
+                "y": 1124.2424242424242
             }
         },
         "Level4.tmx#spritesheet-backgrounds-default": {
             "scaleInDock": 0.33
         },
         "Level4.tmx#spritesheet-tiles-default": {
-            "scaleInDock": 1
+            "scaleInDock": 0.5
         },
         "LevelBase.tmx": {
             "scale": 0.20595703124999998,
@@ -97,7 +100,7 @@
             "scale": 0.230078125,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 2560.0000000000005,
+                "x": 2562.173174872665,
                 "y": 960.5432937181664
             }
         },
@@ -151,10 +154,10 @@
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "LevelBaseToCopy.tmx",
         "Level3.tmx",
         "Level2.tmx",
         "Level1.tmx",
-        "LevelBaseToCopy.tmx",
         "TestingMap.tmx",
         "LevelBase.tmx",
         "TestingMap.json"

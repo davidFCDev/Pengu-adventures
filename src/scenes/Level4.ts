@@ -203,9 +203,8 @@ export class Level4 extends BaseGameScene {
       keyTileIds: [229],
       collectSoundKey: "key_pickup_sound",
       soundVolume: 0.5,
-      yOffset: 0, // Ajusta este valor si las llaves no están en la posición correcta
-      // yOffset: -32 si están muy abajo
-      // yOffset: 32 si están muy arriba
+      // yOffset por defecto es -32 (ajuste estándar de Tiled)
+      // Puedes cambiarlo si es necesario: yOffset: -16, yOffset: -64, etc.
     });
 
     // Crear llaves desde el tilemap (si existen en el mapa)

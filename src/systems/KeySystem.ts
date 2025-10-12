@@ -38,7 +38,7 @@ export class KeySystem {
       depth: config.depth ?? 10,
       collectSoundKey: config.collectSoundKey ?? "",
       soundVolume: config.soundVolume ?? 0.3,
-      yOffset: config.yOffset ?? 0, // Por defecto 0 (sin ajuste)
+      yOffset: config.yOffset ?? -32, // Por defecto -32 (ajuste para coordenadas de Tiled)
     };
 
     // Crear grupo de física para las llaves
