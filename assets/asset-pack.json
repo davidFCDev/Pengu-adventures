@@ -183,6 +183,11 @@
                 "key": "Level4"
             },
             {
+                "url": "assets/Level5.json",
+                "type": "tilemapTiledJSON",
+                "key": "Level5"
+            },
+            {
                 "url": "assets/sprites/MediumSlime_Blue.png",
                 "frameConfig": {
                     "frameWidth": 310,
@@ -217,6 +222,19 @@
                 "url": "assets/PT_TOKEN_MASTER_001.png",
                 "type": "image",
                 "key": "PT_TOKEN_MASTER_001"
+            },
+            {
+                "url": "assets/sprites/snowman-spritesheet.png",
+                "frameConfig": {
+                    "frameWidth": 155,
+                    "frameHeight": 150,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "snowman-spritesheet"
             },
             {
                 "url": "assets/spritesheet-backgrounds-default.png",

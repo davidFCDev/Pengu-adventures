@@ -32,8 +32,14 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level3.json"
     );
 
-    // Cargar el mapa Level4 (desde archivo local para desarrollo rápido)
-    this.load.tilemapTiledJSON("Level4", "assets/Level4.json");
+    // Cargar el mapa Level4 (desde GitHub)
+    this.load.tilemapTiledJSON(
+      "Level4",
+      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level4.json"
+    );
+
+    // Cargar el mapa Level5 (desde LOCAL - assets)
+    this.load.tilemapTiledJSON("Level5", "assets/Level5.json");
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
@@ -220,6 +226,12 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "level4_music",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level4-iuK3YADEvREOfYhxREOFsBExNCT7vv.mp3?4xQd"
+    );
+
+    // Música de fondo para Level5
+    this.load.audio(
+      "level5_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level5-8173QPSZmk28WxNRr9LLVuXaseEBm8.mp3?ipax"
     );
 
     // ========== SONIDOS DE PUERTAS ==========
@@ -449,8 +461,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level4 por defecto
-    this.scene.start("Level4");
+    // Iniciar Level5 por defecto
+    this.scene.start("Level5");
   }
 
   private loadingComplete(): void {

@@ -72,8 +72,8 @@
             "scale": 0.33,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2993.939393939394,
-                "y": 1124.2424242424242
+                "x": 3142.424242424242,
+                "y": 1021.2121212121212
             }
         },
         "Level4.tmx#spritesheet-backgrounds-default": {
@@ -81,6 +81,9 @@
         },
         "Level4.tmx#spritesheet-tiles-default": {
             "scaleInDock": 0.5
+        },
+        "Level5.tmx#spritesheet-tiles-default": {
+            "scaleInEditor": 0.75
         },
         "LevelBase.tmx": {
             "scale": 0.20595703124999998,
@@ -154,8 +157,9 @@
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
-        "LevelBaseToCopy.tmx",
+        "Level4.tmx",
         "Level3.tmx",
+        "LevelBaseToCopy.tmx",
         "Level2.tmx",
         "Level1.tmx",
         "TestingMap.tmx",

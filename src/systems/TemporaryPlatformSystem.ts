@@ -44,7 +44,6 @@ export class TemporaryPlatformSystem {
 
   private platformStates: Map<string, PlatformState> = new Map();
   private detectionTimer?: Phaser.Time.TimerEvent;
-  private lastDebugLog: number = 0; // Para debug temporal
 
   constructor(
     scene: Phaser.Scene,
@@ -158,17 +157,6 @@ export class TemporaryPlatformSystem {
       (this.player as any).isCrouching === true ||
       (this.player as any).currentAnimation === "penguin_crouch";
 
-    // 🐛 DEBUG: Log cada segundo para ver el estado
-    if (!this.lastDebugLog || Date.now() - this.lastDebugLog > 1000) {
-      console.log("🔍 TemporaryPlatform Debug:", {
-        isCrouching,
-        playerIsCrouching: (this.player as any).isCrouching,
-        currentAnimation: (this.player as any).currentAnimation,
-        platformCount: this.platformStates.size,
-      });
-      this.lastDebugLog = Date.now();
-    }
-
     this.platformStates.forEach((state, key) => {
       if (!state.sprite || !state.isVisible) return;
 
@@ -204,20 +192,6 @@ export class TemporaryPlatformSystem {
 
       const isOnPlatform =
         isHorizontallyAligned && (isLanding || isCrouchingOnPlatform);
-
-      // 🐛 DEBUG: Log cuando está agachado Y horizontalmente alineado
-      if (isCrouching && isHorizontallyAligned) {
-        console.log("🎯 Sobre plataforma en CROUCH:", {
-          playerBottom: playerBottom.toFixed(1),
-          platformTop: platformTop.toFixed(1),
-          diff: (playerBottom - platformTop).toFixed(1),
-          isOnTopOfPlatform,
-          isLanding,
-          blockedDown: playerBody.blocked.down,
-          isCrouchingOnPlatform,
-          isOnPlatform,
-        });
-      }
 
       if (isOnPlatform && !state.timer) {
         this.activatePlatform(state, sprite);
