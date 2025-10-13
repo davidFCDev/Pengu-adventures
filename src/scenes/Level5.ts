@@ -1,4 +1,5 @@
 import { FreezableEnemy } from "../objects/enemies/FreezableEnemy";
+import { SnowmanEnemyManager } from "../objects/enemies/SnowmanEnemyManager";
 import { CoinSystem } from "../systems/CoinSystem";
 import { DoorSystem } from "../systems/DoorSystem";
 import { KeySystem } from "../systems/KeySystem";
@@ -11,6 +12,7 @@ export class Level5 extends BaseGameScene {
   private doorSystem!: DoorSystem;
   private miniPinguSystem!: MiniPinguSystem;
   private freezableEnemies: FreezableEnemy[] = [];
+  private snowmanManager!: SnowmanEnemyManager;
 
   constructor() {
     const config: GameSceneConfig = {
@@ -58,19 +60,71 @@ export class Level5 extends BaseGameScene {
         rightTileGID: 2, // GID = firstgid(1) + tileID(1)
         moveSpeed: 100, // Velocidad de movimiento vertical continuo (píxeles/segundo)
       },
+      // 🚀 Habilitar sistema de trampolines
+      enableJumpButtons: true,
+      jumpButtonConfig: {
+        unpressedGID: 137, // ID 136 + 1
+        pressedGID: 119, // ID 118 + 1
+        superJumpVelocity: -800, // Potencia del super salto
+        resetDelay: 500, // Tiempo antes de resetear
+      },
+      // 🔴 Habilitar sistema de botones rojos y cadenas
+      enableRedButtons: true,
+      redButtonConfig: {
+        unpressedGID: 11, // ID 10 + 1
+        pressedGID: 316, // ID 315 + 1
+        chainGID: 214, // ID 213 + 1
+      },
     };
     super("Level5", config);
+  }
+
+  /**
+   * Método generado por Phaser Editor para crear los elementos visuales
+   */
+  editorCreate(): void {
+    // Crear sprites de Snowman desde el editor
+    // Estos serán convertidos a enemigos funcionales en createSnowmanEnemies()
+    // Todos miran a la izquierda por defecto (direction = -1)
+
+    // Snowman 1
+    const snowman1 = this.add
+      .sprite(1696, 480, "snowman-spritesheet", 0)
+      .setScale(1.5);
+    snowman1.setData("direction", -1);
+
+    // Snowman 2
+    const snowman2 = this.add
+      .sprite(1952, 352, "snowman-spritesheet", 0)
+      .setScale(1.5);
+    snowman2.setData("direction", -1);
+
+    // Snowman 3
+    const snowman3 = this.add
+      .sprite(3040, 288, "snowman-spritesheet", 0)
+      .setScale(1.5);
+    snowman3.setData("direction", -1);
+
+    // Snowman 4
+    const snowman4 = this.add
+      .sprite(3616, 608, "snowman-spritesheet", 0)
+      .setScale(1.5);
+    snowman4.setData("direction", -1);
   }
 
   create() {
     this.freezableEnemies = [];
     super.create();
+
+    // Crear elementos del editor ANTES de los sistemas
+    this.editorCreate();
+
     this.createCoins();
     this.createMiniPingus();
     this.createKeys();
     this.createDoors();
     this.createFreezableEnemies();
-    this.setupJumpButtons();
+    this.createSnowmanEnemies();
   }
 
   /**
@@ -266,6 +320,21 @@ export class Level5 extends BaseGameScene {
     this.setupPlayerIceBlockCollisions();
   }
 
+  private createSnowmanEnemies(): void {
+    // Crear manager de Snowman
+    this.snowmanManager = new SnowmanEnemyManager(this);
+
+    // Detectar y crear enemigos desde el editor
+    this.snowmanManager.createSnowmenFromEditor();
+
+    // Configurar colisiones con el jugador
+    this.time.delayedCall(100, () => {
+      if (this.player) {
+        this.snowmanManager.setupPlayerCollision(this.player);
+      }
+    });
+  }
+
   /**
    * Configurar colisiones entre enemigos y proyectiles
    */
@@ -330,6 +399,7 @@ export class Level5 extends BaseGameScene {
   update(time: number, delta: number): void {
     super.update(time, delta);
     this.freezableEnemies.forEach((enemy) => enemy.update(time, delta));
+    this.snowmanManager?.update(time, delta);
   }
 
   shutdown(): void {
@@ -337,6 +407,7 @@ export class Level5 extends BaseGameScene {
       if (enemy && enemy.active) enemy.destroy();
     });
     this.freezableEnemies = [];
+    if (this.snowmanManager) this.snowmanManager.destroy();
     if (this.coinSystem) this.coinSystem.destroy();
     if (this.miniPinguSystem) this.miniPinguSystem.destroy();
     if (this.keySystem) this.keySystem.destroy();

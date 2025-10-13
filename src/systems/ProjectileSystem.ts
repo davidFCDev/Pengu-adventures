@@ -25,6 +25,8 @@ export class ProjectileSystem {
    */
   private setupSnowballListener(): void {
     this.scene.events.on("snowballCreated", this.snowballListener);
+    // También escuchar snowballs de enemigos
+    this.scene.events.on("enemySnowballCreated", this.snowballListener);
   }
 
   /**
@@ -129,6 +131,7 @@ export class ProjectileSystem {
     // 1. PRIMERO remover el listener para que no se procesen más eventos
     if (this.snowballListener) {
       this.scene.events.off("snowballCreated", this.snowballListener);
+      this.scene.events.off("enemySnowballCreated", this.snowballListener);
       this.snowballListener = undefined as any;
     }
 

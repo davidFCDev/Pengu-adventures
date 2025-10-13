@@ -3,8 +3,10 @@ import { EnemySystem } from "../objects/enemies/EnemyManager";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 import { Player } from "../objects/player/Player";
 import { ElevatorSystem } from "../systems/ElevatorSystem";
+import { JumpButtonSystem } from "../systems/JumpButtonSystem";
 import { LifeSystem } from "../systems/LifeSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
+import { RedButtonSystem } from "../systems/RedButtonSystem";
 import { SnowParticleSystem } from "../systems/SnowParticleSystem";
 import { SpikeBoxSystem } from "../systems/SpikeBoxSystem";
 import {
@@ -89,6 +91,23 @@ export interface GameSceneConfig {
     damage?: number; // Daño al jugador (default: 1)
     speed?: number; // Velocidad de nado (default: 100)
   };
+  /** Habilitar sistema de trampolines/jump buttons (opcional, default: false) */
+  enableJumpButtons?: boolean;
+  /** Configuración del sistema de jump buttons (opcional) */
+  jumpButtonConfig?: {
+    unpressedGID?: number; // GID del trampolín sin presionar (default: 137)
+    pressedGID?: number; // GID del trampolín presionado (default: 119)
+    superJumpVelocity?: number; // Velocidad del super salto (default: -800)
+    resetDelay?: number; // Tiempo antes de resetear (default: 500ms)
+  };
+  /** Habilitar sistema de botones rojos y cadenas (opcional, default: false) */
+  enableRedButtons?: boolean;
+  /** Configuración del sistema de botones rojos (opcional) */
+  redButtonConfig?: {
+    unpressedGID?: number; // GID del botón sin presionar (default: 11)
+    pressedGID?: number; // GID del botón presionado (default: 316)
+    chainGID?: number; // GID de las cadenas (default: 214)
+  };
 }
 
 /**
@@ -114,7 +133,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected playerCollider!: Phaser.Physics.Arcade.Collider;
   protected lifeSystem!: LifeSystem;
   protected spikesGroup!: Phaser.Physics.Arcade.StaticGroup;
-  protected ghostToggleButton!: Phaser.GameObjects.Graphics;
   protected isGameOverInProgress: boolean = false;
   protected currentMusic?: Phaser.Sound.BaseSound;
   protected snowWalls: Array<{
@@ -131,7 +149,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected spikeBoxSystem?: SpikeBoxSystem; // Sistema de cajas con pinchos
   protected temporaryPlatformSystem?: TemporaryPlatformSystem; // Sistema de plataformas temporales
   protected elevatorSystem?: ElevatorSystem; // Sistema de elevadores/plataformas móviles
+  protected jumpButtonSystem?: JumpButtonSystem; // Sistema de trampolines/jump buttons
   protected aquaticEnemyManager?: any; // Sistema de enemigos acuáticos (AquaticEnemyManager)
+  protected redButtonSystem?: any; // Sistema de botones rojos y cadenas (RedButtonSystem)
 
   // Configuración
   protected config!: GameSceneConfig;
@@ -237,10 +257,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 4. Crear sistema de vidas
     this.createLifeSystem();
 
-    // 5. Crear botón de prueba fantasma
-    this.createGhostToggleButton();
-
-    // 6. Configurar sistema de tilemap automático
+    // 5. Configurar sistema de tilemap automático
     this.setupTileMapSystem();
 
     // 6. Crear grupo de spikes
@@ -285,20 +302,30 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.createElevatorSystem();
     }
 
-    // 17. Crear sistema de enemigos acuáticos (si está habilitado)
+    // 17. Crear sistema de trampolines/jump buttons (si está habilitado)
+    if (this.config.enableJumpButtons) {
+      this.createJumpButtonSystem();
+    }
+
+    // 18. Crear sistema de botones rojos y cadenas (si está habilitado)
+    if (this.config.enableRedButtons) {
+      this.createRedButtonSystem();
+    }
+
+    // 19. Crear sistema de enemigos acuáticos (si está habilitado)
     if (this.config.enableAquaticEnemies) {
       this.createAquaticEnemySystem();
     }
 
-    // 18. Crear sistema de enemigos (si está habilitado)
+    // 20. Crear sistema de enemigos (si está habilitado)
     if (this.config.enableEnemies) {
       this.createEnemySystem();
     }
 
-    // 19. Configurar detección de final de nivel
+    // 21. Configurar detección de final de nivel
     this.setupLevelEndDetection();
 
-    // 20. Escuchar evento de soplido para destruir muros de nieve
+    // 22. Escuchar evento de soplido para destruir muros de nieve
     this.events.on("playerBlowing", () => {
       this.checkSnowWallDestruction();
     });
@@ -686,84 +713,6 @@ export abstract class BaseGameScene extends Phaser.Scene {
   /**
    * Crear botón redondo para alternar modo fantasma
    */
-  private createGhostToggleButton(): void {
-    const buttonRadius = 30;
-    const margin = 25;
-
-    // Posicionar en la esquina inferior derecha
-    const buttonX = this.cameras.main.width - buttonRadius - margin;
-    const buttonY = this.cameras.main.height - buttonRadius - margin;
-
-    // Crear botón usando Graphics (más confiable)
-    this.ghostToggleButton = this.add.graphics();
-    this.ghostToggleButton.x = buttonX;
-    this.ghostToggleButton.y = buttonY;
-
-    // Dibujar círculo inicial (modo normal)
-    this.drawButton(false);
-
-    // Hacer interactivo
-    this.ghostToggleButton.setInteractive(
-      new Phaser.Geom.Circle(0, 0, buttonRadius),
-      Phaser.Geom.Circle.Contains
-    );
-
-    // Evento de click
-    this.ghostToggleButton.on("pointerdown", () => {
-      this.toggleGhostMode();
-    });
-
-    // Efectos hover
-    this.ghostToggleButton.on("pointerover", () => {
-      this.ghostToggleButton.setScale(1.1);
-    });
-
-    this.ghostToggleButton.on("pointerout", () => {
-      this.ghostToggleButton.setScale(1.0);
-    });
-
-    // Mantener fijo en pantalla
-    this.ghostToggleButton.setScrollFactor(0);
-    this.ghostToggleButton.setDepth(1000);
-  }
-
-  /**
-   * Dibujar el botón según el estado
-   */
-  private drawButton(isGhost: boolean): void {
-    this.ghostToggleButton.clear();
-
-    const radius = 30;
-
-    if (isGhost) {
-      // Modo ghost: círculo verde con "G"
-      this.ghostToggleButton.fillStyle(0x4caf50); // Verde
-      this.ghostToggleButton.lineStyle(3, 0xffffff); // Borde blanco
-      this.ghostToggleButton.fillCircle(0, 0, radius);
-      this.ghostToggleButton.strokeCircle(0, 0, radius);
-    } else {
-      // Modo normal: círculo azul con "N"
-      this.ghostToggleButton.fillStyle(0x2196f3); // Azul
-      this.ghostToggleButton.lineStyle(3, 0xffffff); // Borde blanco
-      this.ghostToggleButton.fillCircle(0, 0, radius);
-      this.ghostToggleButton.strokeCircle(0, 0, radius);
-    }
-  }
-
-  /**
-   * Alternar modo fantasma del player
-   */
-  private toggleGhostMode(): void {
-    const isCurrentlyGhost = this.player.getIsGhost();
-    this.player.setGhostMode(!isCurrentlyGhost);
-
-    // Actualizar colisiones de tiles cross
-    this.updateCrossCollisions();
-
-    // Redibujar botón con el nuevo estado
-    this.drawButton(this.player.getIsGhost());
-  }
-
   /**
    * Configurar la cámara
    */
@@ -1466,6 +1415,53 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
+   * Crear sistema de trampolines/jump buttons
+   */
+  protected createJumpButtonSystem(): void {
+    if (!this.tilemap || !this.player) {
+      console.warn(
+        "⚠️ No se puede crear sistema de jump buttons: falta tilemap o player"
+      );
+      return;
+    }
+
+    const config = this.config.jumpButtonConfig || {};
+
+    this.jumpButtonSystem = new JumpButtonSystem({
+      tilemap: this.tilemap,
+      scene: this,
+      player: this.player,
+      unpressedGID: config.unpressedGID ?? 137,
+      pressedGID: config.pressedGID ?? 119,
+      superJumpVelocity: config.superJumpVelocity ?? -800,
+      resetDelay: config.resetDelay ?? 500,
+    });
+  }
+
+  /**
+   * Crear sistema de botones rojos y cadenas
+   */
+  protected createRedButtonSystem(): void {
+    if (!this.tilemap || !this.player) {
+      console.warn(
+        "⚠️ No se puede crear sistema de botones rojos: falta tilemap o player"
+      );
+      return;
+    }
+
+    const config = this.config.redButtonConfig || {};
+
+    this.redButtonSystem = new RedButtonSystem({
+      tilemap: this.tilemap,
+      scene: this,
+      player: this.player,
+      unpressedGID: config.unpressedGID ?? 11, // ID 10 + 1
+      pressedGID: config.pressedGID ?? 316, // ID 315 + 1
+      chainGID: config.chainGID ?? 214, // ID 213 + 1
+    });
+  }
+
+  /**
    * Crear sistema de enemigos acuáticos
    */
   protected createAquaticEnemySystem(): void {
@@ -1673,6 +1669,18 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.elevatorSystem) {
       this.elevatorSystem.destroy();
       this.elevatorSystem = undefined;
+    }
+
+    // Destruir sistema de trampolines/jump buttons
+    if (this.jumpButtonSystem) {
+      this.jumpButtonSystem.destroy();
+      this.jumpButtonSystem = undefined;
+    }
+
+    // Destruir sistema de botones rojos y cadenas
+    if (this.redButtonSystem) {
+      this.redButtonSystem.destroy();
+      this.redButtonSystem = undefined;
     }
 
     // Destruir sistema de enemigos acuáticos

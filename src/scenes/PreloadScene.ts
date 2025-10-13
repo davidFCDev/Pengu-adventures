@@ -146,6 +146,20 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
+    // Cargar el spritesheet del Snowman
+    // Dimensiones totales: 3100x300 (20 columnas x 2 filas = 40 frames)
+    // Frame size: 155x150 cada uno
+    // Fila 1 (frames 0-19): IDLE (20 frames)
+    // Fila 2 (frames 20-26): ATTACK (7 frames), resto vacío
+    this.load.spritesheet(
+      "snowman-spritesheet",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/snowman-spritesheet-PtmlhPtEZOqgFKT4znwNuUF8LOxvjn.png?2eg6",
+      {
+        frameWidth: 155,
+        frameHeight: 150,
+      }
+    );
+
     // ========== MÚSICA DE NIVELES ==========
     // Cargar música del nivel de test
     this.load.audio(
