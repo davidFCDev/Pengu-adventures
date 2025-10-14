@@ -14,7 +14,7 @@ export interface RedButtonConfig {
   tilesetName?: string; // Nombre del tileset (default: "spritesheet-tiles-default")
   spritesheetKey?: string; // Clave del spritesheet con frames (default: "spritesheet-tiles-frames")
   depth?: number; // Profundidad visual (default: 10)
-  soundKey?: string; // Sonido al activar (default: "unlock_sound")
+  soundKey?: string; // Sonido al activar (default: "red_button_sound")
   soundVolume?: number; // Volumen del sonido (default: 1.0)
 }
 
@@ -36,7 +36,7 @@ export class RedButtonSystem {
       tilesetName: config.tilesetName ?? "spritesheet-tiles-default",
       spritesheetKey: config.spritesheetKey ?? "spritesheet-tiles-frames",
       depth: config.depth ?? 10,
-      soundKey: config.soundKey ?? "unlock_sound",
+      soundKey: config.soundKey ?? "red_button_sound",
       soundVolume: config.soundVolume ?? 1.0,
     };
 
@@ -140,15 +140,18 @@ export class RedButtonSystem {
     let isPressed = false;
 
     // Añadir colisión sólida con el jugador (para que no lo atraviese)
+    // Y detectar cuando se presiona usando el callback del collider
     this.config.scene.physics.add.collider(
       this.config.player,
       buttonSprite,
       () => {
+        if (isPressed) return; // Ya está presionado
+
         const playerBody = this.config.player
           .body as Phaser.Physics.Arcade.Body;
 
-        // Solo activar si el jugador está cayendo Y no está presionado
-        if (playerBody.velocity.y > 0 && !isPressed) {
+        // Solo activar si el jugador está tocando desde abajo (parado sobre el botón)
+        if (playerBody.touching.down) {
           // Marcar como presionado permanentemente
           isPressed = true;
 
@@ -156,15 +159,19 @@ export class RedButtonSystem {
           const pressedLocalId = this.config.pressedGID - tileset.firstgid;
           buttonSprite.setFrame(pressedLocalId);
 
+          // Reducir el hitbox a la mitad para que parezca más real (botón presionado)
+          const newHeight = buttonSprite.height / 2;
+          buttonBody.setSize(buttonSprite.width, newHeight);
+          // Ajustar el offset para mantener el hitbox en la parte inferior
+          buttonBody.setOffset(0, buttonSprite.height - newHeight);
+
           // Desbloquear todas las cadenas
           this.unlockAllChains();
 
           // Reproducir sonido de desbloqueo
-          if (this.config.scene.sound.get(this.config.soundKey)) {
-            this.config.scene.sound.play(this.config.soundKey, {
-              volume: this.config.soundVolume,
-            });
-          }
+          this.config.scene.sound.play(this.config.soundKey, {
+            volume: this.config.soundVolume,
+          });
         }
       },
       undefined,

@@ -108,6 +108,12 @@ export interface GameSceneConfig {
     pressedGID?: number; // GID del botón presionado (default: 316)
     chainGID?: number; // GID de las cadenas (default: 214)
   };
+  /** Habilitar sistema de partículas de nieve (opcional, default: true) */
+  enableSnow?: boolean;
+  /** Mostrar contadores de UI en el header (monedas, llaves, mini-pingus) (opcional, default: true) */
+  showUICounters?: boolean;
+  /** Nombre del boss para mostrar en la barra de salud (opcional, solo para niveles de boss) */
+  bossName?: string;
 }
 
 /**
@@ -849,16 +855,26 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Crear sistema de vidas
    */
   private createLifeSystem(): void {
-    this.lifeSystem = new LifeSystem(this, 0, 0);
+    // Determinar si se muestran los contadores (por defecto true)
+    const showCounters = this.config.showUICounters !== false;
+    const bossName = this.config.bossName; // Nombre del boss (opcional)
 
-    // Inicializar contador de monedas en 0
-    this.lifeSystem.updateCoinCount(0);
+    this.lifeSystem = new LifeSystem(this, 0, 0, showCounters, bossName);
 
-    // Inicializar contador de mini-pingüinos en 0
-    this.lifeSystem.updateMiniPinguCount(0);
+    // Inicializar contador de monedas en 0 (solo si los contadores están activos)
+    if (showCounters) {
+      this.lifeSystem.updateCoinCount(0);
+    }
 
-    // Inicializar contador de llaves en 0
-    this.lifeSystem.updateKeyCount(0);
+    // Inicializar contador de mini-pingüinos en 0 (solo si los contadores están activos)
+    if (showCounters) {
+      this.lifeSystem.updateMiniPinguCount(0);
+    }
+
+    // Inicializar contador de llaves en 0 (solo si los contadores están activos)
+    if (showCounters) {
+      this.lifeSystem.updateKeyCount(0);
+    }
 
     // Escuchar evento de recolección de monedas (reutilizable para todos los niveles)
     this.events.on(
@@ -1310,6 +1326,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Crear sistema de partículas de nieve cayendo en el nivel
    */
   protected createSnowParticleSystem(): void {
+    // Solo crear el sistema si está habilitado (por defecto true)
+    if (this.config.enableSnow === false) {
+      return;
+    }
+
     // Crear el sistema de partículas pasando el layer de superficies para colisiones
     this.snowParticleSystem = new SnowParticleSystem(this, this.surfaceLayer);
   }

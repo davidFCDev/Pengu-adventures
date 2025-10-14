@@ -1076,7 +1076,7 @@
          "y":0
         }],
  "nextlayerid":5,
- "nextobjectid":337,
+ "nextobjectid":338,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.2",
@@ -3066,6 +3066,19 @@
          "name":"spritesheet-backgrounds-default",
          "spacing":0,
          "tilecount":256,
+         "tileheight":64,
+         "tilewidth":64
+        }, 
+        {
+         "columns":18,
+         "firstgid":581,
+         "image":"spritesheet-tiles-default.png",
+         "imageheight":1152,
+         "imagewidth":1152,
+         "margin":0,
+         "name":"spritesheet-tiles-default",
+         "spacing":0,
+         "tilecount":324,
          "tileheight":64,
          "tilewidth":64
         }],

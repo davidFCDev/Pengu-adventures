@@ -1,0 +1,93 @@
+{
+    "id": "c579b23c-8bae-4f4a-a86f-1ab69b43ddb1",
+    "sceneType": "SCENE",
+    "settings": {
+        "snapEnabled": true,
+        "snapWidth": 32,
+        "snapHeight": 32,
+        "preloadPackFiles": [],
+        "createMethodName": "editorCreate",
+        "sceneKey": "FirstBoss",
+        "compilerOutputLanguage": "TYPE_SCRIPT",
+        "borderWidth": 768,
+        "borderHeight": 1024
+    },
+    "displayList": [
+        {
+            "type": "Image",
+            "id": "46d4624f-b8d5-4ffe-acd9-ee61441d7ac0",
+            "label": "image_1",
+            "texture": {
+                "key": "fondo-boss1"
+            },
+            "x": 384,
+            "y": 608,
+            "scaleX": 0.7647556467941317,
+            "scaleY": 0.8734482395347102
+        },
+        {
+            "type": "TilemapLayer",
+            "id": "09cc854f-fb22-4b30-880e-af725230fc10",
+            "label": "superficies_1",
+            "tilemapId": "89802afc-acde-4132-902a-6da78fcaf934",
+            "layerName": "superficies",
+            "tilesets": [
+                "spritesheet-backgrounds-default",
+                "spritesheet-tiles-default"
+            ]
+        },
+        {
+            "type": "Sprite",
+            "id": "60b997a3-6250-4b39-bcb5-97b527093c56",
+            "label": "sprite_1",
+            "texture": {
+                "key": "boss_bat",
+                "frame": 9
+            },
+            "x": 384,
+            "y": 192,
+            "scaleX": 0.65,
+            "scaleY": 0.65
+        }
+    ],
+    "plainObjects": [
+        {
+            "id": "bca1c26e-8dcb-415c-ac14-dba4e35209bb",
+            "type": "Tilemap",
+            "label": "firstBoss_1",
+            "key": "FirstBoss_1",
+            "tilesets": [
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                },
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                }
+            ]
+        },
+        {
+            "id": "89802afc-acde-4132-902a-6da78fcaf934",
+            "type": "Tilemap",
+            "label": "firstBoss",
+            "key": "FirstBoss_1",
+            "tilesets": [
+                {
+                    "name": "spritesheet-backgrounds-default",
+                    "imageKey": "spritesheet-backgrounds-default"
+                },
+                {
+                    "name": "spritesheet-tiles-default",
+                    "imageKey": "spritesheet-tiles-default"
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "app": "Phaser Editor - Scene Editor",
+        "url": "https://phaser.io/editor",
+        "contentType": "phasereditor2d.core.scene.SceneContentType",
+        "version": 5
+    }
+}

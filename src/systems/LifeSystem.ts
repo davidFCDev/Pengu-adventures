@@ -19,8 +19,26 @@ export class LifeSystem {
   private keyIcon?: Phaser.GameObjects.Sprite;
   private keyCountText?: Phaser.GameObjects.Text;
 
-  constructor(scene: Phaser.Scene, x: number = 0, y: number = 0) {
+  private showCounters: boolean = true; // Controla si se muestran los contadores
+
+  // Barra de salud del boss
+  private bossHealthContainer?: Phaser.GameObjects.Container;
+  private bossHealthBarBackground?: Phaser.GameObjects.Graphics;
+  private bossHealthBarFill?: Phaser.GameObjects.Graphics;
+  private bossHealthBarBorder?: Phaser.GameObjects.Graphics;
+  private bossNameText?: Phaser.GameObjects.Text;
+  private currentBossHealth: number = 100;
+  private maxBossHealth: number = 100;
+
+  constructor(
+    scene: Phaser.Scene,
+    x: number = 0,
+    y: number = 0,
+    showCounters: boolean = true,
+    bossName?: string // Nombre del boss para mostrar en el header
+  ) {
     this.scene = scene;
+    this.showCounters = showCounters;
     // Crear contenedor principal
     this.container = scene.add.container(x, y);
     // Crear fondo del header (más oscuro)
@@ -38,10 +56,17 @@ export class LifeSystem {
     // Crear la textura del corazón si no existe
     this.createHeartTexture();
 
-    // Crear los 3 contadores en el header (mini-pingü, monedas, llaves)
-    this.createMiniPinguCounter();
-    this.createCoinCounter();
-    this.createKeyCounter();
+    // Crear los 3 contadores en el header (mini-pingü, monedas, llaves) solo si están habilitados
+    if (this.showCounters) {
+      this.createMiniPinguCounter();
+      this.createCoinCounter();
+      this.createKeyCounter();
+    }
+
+    // Crear barra de salud del boss si se proporciona un nombre
+    if (bossName) {
+      this.createBossHealthBar(bossName);
+    }
 
     // Crear los corazones FUERA del header (debajo del header, centrados)
     this.createHearts();
@@ -228,6 +253,107 @@ export class LifeSystem {
     if (this.keyCountText) {
       this.keyCountText.setText(`x${count}`);
     }
+  }
+
+  /**
+   * Crear barra de salud del boss en el header
+   */
+  private createBossHealthBar(bossName: string): void {
+    // Crear contenedor para la barra de salud del boss
+    this.bossHealthContainer = this.scene.add.container(
+      this.scene.cameras.main.width / 2,
+      40 // Centro vertical del header
+    );
+
+    // Dimensiones de la barra
+    const barWidth = 500;
+    const barHeight = 30;
+
+    // Fondo de la barra (gris oscuro)
+    this.bossHealthBarBackground = this.scene.add.graphics();
+    this.bossHealthBarBackground.fillStyle(0x3a3a3a, 1);
+    this.bossHealthBarBackground.fillRoundedRect(
+      -barWidth / 2,
+      -barHeight / 2,
+      barWidth,
+      barHeight,
+      8
+    );
+    this.bossHealthContainer.add(this.bossHealthBarBackground);
+
+    // Barra de salud (rojo/naranja degradado)
+    this.bossHealthBarFill = this.scene.add.graphics();
+    this.updateBossHealthBar(); // Inicializar con 100%
+    this.bossHealthContainer.add(this.bossHealthBarFill);
+
+    // Borde de la barra (cartoon style - negro grueso)
+    this.bossHealthBarBorder = this.scene.add.graphics();
+    this.bossHealthBarBorder.lineStyle(4, 0x000000, 1);
+    this.bossHealthBarBorder.strokeRoundedRect(
+      -barWidth / 2,
+      -barHeight / 2,
+      barWidth,
+      barHeight,
+      8
+    );
+    this.bossHealthContainer.add(this.bossHealthBarBorder);
+
+    // Agregar el contenedor al contenedor principal
+    this.container.add(this.bossHealthContainer);
+  }
+
+  /**
+   * Actualizar la barra de salud del boss visualmente
+   */
+  private updateBossHealthBar(): void {
+    if (!this.bossHealthBarFill) return;
+
+    const barWidth = 500;
+    const barHeight = 30;
+    const healthPercentage = this.currentBossHealth / this.maxBossHealth;
+    const fillWidth = barWidth * healthPercentage;
+
+    // Limpiar y redibujar
+    this.bossHealthBarFill.clear();
+
+    // Color según el porcentaje de vida
+    let fillColor = 0xff4444; // Rojo
+    if (healthPercentage > 0.66) {
+      fillColor = 0x44ff44; // Verde
+    } else if (healthPercentage > 0.33) {
+      fillColor = 0xffaa44; // Naranja
+    }
+
+    this.bossHealthBarFill.fillStyle(fillColor, 1);
+    this.bossHealthBarFill.fillRoundedRect(
+      -barWidth / 2 + 2, // Pequeño offset para no cubrir el borde
+      -barHeight / 2 + 2,
+      fillWidth - 4,
+      barHeight - 4,
+      6
+    );
+  }
+
+  /**
+   * Reducir la salud del boss
+   */
+  public damageBoss(damage: number): void {
+    this.currentBossHealth = Math.max(0, this.currentBossHealth - damage);
+    this.updateBossHealthBar();
+  }
+
+  /**
+   * Obtener la salud actual del boss
+   */
+  public getBossHealth(): number {
+    return this.currentBossHealth;
+  }
+
+  /**
+   * Verificar si el boss está derrotado
+   */
+  public isBossDefeated(): boolean {
+    return this.currentBossHealth <= 0;
   }
 
   public loseLife(): boolean {

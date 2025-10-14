@@ -41,6 +41,9 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar el mapa Level5 (desde LOCAL - assets)
     this.load.tilemapTiledJSON("Level5", "assets/Level5.json");
 
+    // Cargar el mapa FirstBoss - BOSS LEVEL (desde LOCAL - assets)
+    this.load.tilemapTiledJSON("FirstBoss", "assets/FirstBoss.json");
+
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
       "spritesheet-tiles-default",
@@ -160,6 +163,28 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
+    // ========== BOSS ENEMIES ==========
+    // BOSS BAT - Murciélago jefe del FirstBoss
+    // Dimensiones totales: 6090x1554 (10 columnas por fila)
+    // Frame size: 609x518 cada uno (1554/3 = 518)
+    // Fila 1 (frames 0-9): HURT - Cuando recibe daño (10 frames)
+    // Fila 2 (frames 10-18): WAKE - Despertar del estado dormido (9 frames)
+    // Fila 3 (frames 20-27): FLYING - Estado de vuelo en batalla (8 frames)
+    this.load.spritesheet(
+      "boss-bat-spritesheet",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-YhgPBVXu7j9tscC446Augx1rAUiz2h.png?XgJC",
+      {
+        frameWidth: 609,
+        frameHeight: 518,
+      }
+    );
+
+    // Cargar imagen de fondo para FirstBoss (768×1024px - ajustada al tamaño del tilemap)
+    this.load.image(
+      "fondo-boss1",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fondo-boss1%20%281%29-U8P7eQTsQxFpS4M0XjRYrsKkw50uRd.png?eKHL"
+    );
+
     // ========== MÚSICA DE NIVELES ==========
     // Cargar música del nivel de test
     this.load.audio(
@@ -274,6 +299,19 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "electrocute_sound",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/electrocute-ISm1Olyb9dag0f5mlYJh6XPSXCrvdm.mp3?9igL"
+    );
+
+    // ========== SONIDOS DE BOTONES E INTERACCIONES ==========
+    // Sonido cuando el jugador activa el botón rojo
+    this.load.audio(
+      "red_button_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/red-button-fwP061fHrkpUEZoJjPNtbJdcp42Tc8.mp3?fUqR"
+    );
+
+    // Sonido cuando el jugador salta sobre el jump button (trampolín)
+    this.load.audio(
+      "bounce_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/bounce-NSwv47WHV2Fxf3UhuNSenKcj7zU2tk.mp3?lQZj"
     );
 
     // ========== SONIDOS DE COLECCIONABLES ==========
@@ -475,8 +513,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Level5 por defecto
-    this.scene.start("Level5");
+    // Iniciar FirstBoss (BOSS LEVEL) por defecto para testing
+    this.scene.start("FirstBoss");
   }
 
   private loadingComplete(): void {

@@ -203,8 +203,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
   public update(): void {
-    // Si los controles están desactivados (ej. fin de nivel), no procesar nada
-    if (!this.isControlsActive) {
+    // Si los controles están desactivados (ej. fin de nivel o modo cinemático), no procesar nada
+    const isCinematicMode = this.getData("cinematicMode");
+    if (!this.isControlsActive || isCinematicMode) {
       return;
     }
 

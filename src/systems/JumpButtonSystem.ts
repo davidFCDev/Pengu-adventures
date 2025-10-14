@@ -15,7 +15,7 @@ export interface JumpButtonConfig {
   tilesetName?: string; // Nombre del tileset (default: "spritesheet-tiles-default")
   spritesheetKey?: string; // Clave del spritesheet con frames (default: "spritesheet-tiles-frames")
   depth?: number; // Profundidad visual (default: 10)
-  soundKey?: string; // Sonido al activar (default: "jump_sound")
+  soundKey?: string; // Sonido al activar (default: "bounce_sound")
   soundVolume?: number; // Volumen del sonido (default: 1.0)
 }
 
@@ -36,7 +36,7 @@ export class JumpButtonSystem {
       tilesetName: config.tilesetName ?? "spritesheet-tiles-default",
       spritesheetKey: config.spritesheetKey ?? "spritesheet-tiles-frames",
       depth: config.depth ?? 10,
-      soundKey: config.soundKey ?? "jump_sound",
+      soundKey: config.soundKey ?? "bounce_sound",
       soundVolume: config.soundVolume ?? 1.0,
     };
 
@@ -58,10 +58,6 @@ export class JumpButtonSystem {
         }
       });
     });
-
-    console.log(
-      `🚀 [JumpButtonSystem] Encontrados ${jumpButtonObjects.length} jump buttons`
-    );
 
     if (jumpButtonObjects.length === 0) {
       return;
@@ -130,11 +126,9 @@ export class JumpButtonSystem {
           jumpButtonSprite.setFrame(pressedLocalId);
 
           // Reproducir sonido de salto
-          if (this.config.scene.sound.get(this.config.soundKey)) {
-            this.config.scene.sound.play(this.config.soundKey, {
-              volume: this.config.soundVolume,
-            });
-          }
+          this.config.scene.sound.play(this.config.soundKey, {
+            volume: this.config.soundVolume,
+          });
 
           // Volver al estado normal después de un tiempo
           this.config.scene.time.delayedCall(this.config.resetDelay, () => {

@@ -20,6 +20,24 @@
                 "key": "animations"
             },
             {
+                "url": "assets/boss_bat.png",
+                "frameConfig": {
+                    "frameWidth": 613,
+                    "frameHeight": 528,
+                    "startFrame": 0,
+                    "endFrame": -1,
+                    "spacing": 0,
+                    "margin": 0
+                },
+                "type": "spritesheet",
+                "key": "boss_bat"
+            },
+            {
+                "url": "assets/boss1-fondo.png",
+                "type": "image",
+                "key": "boss1-fondo"
+            },
+            {
                 "url": "assets/Dino Rex/dino_rex_ability_black.png",
                 "frameConfig": {
                     "frameWidth": 128,
@@ -161,6 +179,21 @@
                 },
                 "type": "spritesheet",
                 "key": "dino_rex_stomp"
+            },
+            {
+                "url": "assets/FirstBoss.tmx",
+                "type": "binary",
+                "key": "FirstBoss"
+            },
+            {
+                "url": "assets/FirstBoss.json",
+                "type": "tilemapTiledJSON",
+                "key": "FirstBoss_1"
+            },
+            {
+                "url": "assets/fondo-boss1.png",
+                "type": "image",
+                "key": "fondo-boss1"
             },
             {
                 "url": "assets/Level1.json",
