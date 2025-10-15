@@ -27,6 +27,7 @@ export class LifeSystem {
   private bossHealthBarFill?: Phaser.GameObjects.Graphics;
   private bossHealthBarBorder?: Phaser.GameObjects.Graphics;
   private bossNameText?: Phaser.GameObjects.Text;
+  private bossHPText?: Phaser.GameObjects.Text; // Texto "HP"
   private currentBossHealth: number = 100;
   private maxBossHealth: number = 100;
 
@@ -265,9 +266,9 @@ export class LifeSystem {
       40 // Centro vertical del header
     );
 
-    // Dimensiones de la barra
-    const barWidth = 500;
-    const barHeight = 30;
+    // Dimensiones de la barra (reducida aún más)
+    const barWidth = 400; // Reducido de 450 a 400
+    const barHeight = 26; // Reducido de 28 a 26
 
     // Fondo de la barra (gris oscuro)
     this.bossHealthBarBackground = this.scene.add.graphics();
@@ -298,6 +299,40 @@ export class LifeSystem {
     );
     this.bossHealthContainer.add(this.bossHealthBarBorder);
 
+    // Texto "HP" a la izquierda de la barra
+    this.bossHPText = this.scene.add.text(
+      -barWidth / 2 - 30, // Ajustado para centrado perfecto
+      0,
+      "HP",
+      {
+        fontFamily: "Pixelify Sans",
+        fontSize: "26px", // Ajustado a 26px
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 6,
+        fontStyle: "bold",
+      }
+    );
+    this.bossHPText.setOrigin(0.5, 0.5);
+    this.bossHealthContainer.add(this.bossHPText);
+
+    // Texto "BOSS" a la derecha de la barra
+    this.bossNameText = this.scene.add.text(
+      barWidth / 2 + 30, // Ajustado para centrado perfecto
+      0,
+      "BOSS",
+      {
+        fontFamily: "Pixelify Sans",
+        fontSize: "26px", // Mismo tamaño que HP
+        color: "#ffaa00", // Color naranja/dorado
+        stroke: "#000000",
+        strokeThickness: 6,
+        fontStyle: "bold",
+      }
+    );
+    this.bossNameText.setOrigin(0.5, 0.5); // Centrado para simetría perfecta
+    this.bossHealthContainer.add(this.bossNameText);
+
     // Agregar el contenedor al contenedor principal
     this.container.add(this.bossHealthContainer);
   }
@@ -308,8 +343,8 @@ export class LifeSystem {
   private updateBossHealthBar(): void {
     if (!this.bossHealthBarFill) return;
 
-    const barWidth = 500;
-    const barHeight = 30;
+    const barWidth = 400; // Actualizado a 400
+    const barHeight = 26; // Actualizado a 26
     const healthPercentage = this.currentBossHealth / this.maxBossHealth;
     const fillWidth = barWidth * healthPercentage;
 

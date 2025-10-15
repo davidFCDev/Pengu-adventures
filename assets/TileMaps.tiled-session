@@ -18,11 +18,11 @@
             "scaleInDock": 0.75
         },
         "FirstBoss.tmx": {
-            "scale": 0.33,
-            "selectedLayer": 0,
+            "scale": 0.75,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 468.18181818181824,
-                "y": 709.0909090909091
+                "x": 378.66666666666663,
+                "y": 837.3333333333333
             }
         },
         "FirstBoss.tmx#spritesheet-backgrounds-default": {
@@ -107,7 +107,7 @@
             "scale": 0.33,
             "selectedLayer": 3,
             "viewCenter": {
-                "x": 3134.848484848485,
+                "x": 2848.4848484848485,
                 "y": 978.7878787878788
             }
         },
@@ -192,6 +192,8 @@
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "Level5.tmx",
+        "FirstBoss.tmx",
         "Level4.tmx",
         "Level3.tmx",
         "LevelBaseToCopy.tmx",

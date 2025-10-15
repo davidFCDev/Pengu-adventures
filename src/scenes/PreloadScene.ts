@@ -179,6 +179,32 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
+    // Cargar spritesheet de muerte del Boss Bat (DIE animation)
+    this.load.spritesheet(
+      "boss-bat-die-spritesheet",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/die_bat-Z60vTPdcbzWxxw04gnjzNmwit9KL86.png?xSuv",
+      {
+        frameWidth: 609,
+        frameHeight: 518,
+      }
+    );
+
+    // Cargar spritesheet de estado confuso (para el boss aturdido)
+    this.load.spritesheet(
+      "confused-status-spritesheet",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/confused_status-lDP44E0A9zwjU7uok5OsSUpkpReilW.png?pEz6",
+      {
+        frameWidth: 670, // 10720 / 16 frames = 670px por frame
+        frameHeight: 392,
+      }
+    );
+
+    // Cargar imagen de bola de nieve rodante (FirstBoss)
+    this.load.image(
+      "roller-snowball",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/roller-snowball-7Qny1WDOwxpF0zGLnHYmgXlKAdrjm0.png?nIAV"
+    );
+
     // Cargar imagen de fondo para FirstBoss (768×1024px - ajustada al tamaño del tilemap)
     this.load.image(
       "fondo-boss1",
@@ -190,6 +216,25 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "level1_music",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-oFuFEHvgIOYOwUItEyjAzmuKezGcyo.mp3"
+    );
+
+    // Cargar música del boss (FirstBoss)
+    this.load.audio(
+      "boss_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-music-Uc0TBbcOXiNZTFHe8IImIh6vzL17hD.mp3?ZGgU"
+    );
+
+    // ========== SONIDOS DE EFECTOS ==========
+    // Sonido de despertar del Boss Bat
+    this.load.audio(
+      "boss_bat_wake",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-Wni2i2yqMdyNmed5q9T6lOQL5BjO9T.mp3?TCwy"
+    );
+
+    // Sonido de confusión del Boss Bat
+    this.load.audio(
+      "boss_confused",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-confused-5MnQmN0K0PPmO331Tm915ms3IKHKJR.mp3?KUxB"
     );
 
     // ========== SONIDOS DEL PLAYER ==========
