@@ -266,9 +266,9 @@ export class LifeSystem {
       40 // Centro vertical del header
     );
 
-    // Dimensiones de la barra (reducida aún más)
-    const barWidth = 400; // Reducido de 450 a 400
-    const barHeight = 26; // Reducido de 28 a 26
+    // Dimensiones de la barra (reducida para mejor centrado)
+    const barWidth = 350; // Reducido de 400 a 350
+    const barHeight = 30; // Aumentado de 24 a 30 para más grosor
 
     // Fondo de la barra (gris oscuro)
     this.bossHealthBarBackground = this.scene.add.graphics();
@@ -299,9 +299,9 @@ export class LifeSystem {
     );
     this.bossHealthContainer.add(this.bossHealthBarBorder);
 
-    // Texto "HP" a la izquierda de la barra
+    // Texto "HP" a la izquierda de la barra (alineado desde el borde derecho)
     this.bossHPText = this.scene.add.text(
-      -barWidth / 2 - 30, // Ajustado para centrado perfecto
+      -barWidth / 2 - 30, // 30px a la izquierda de la barra
       0,
       "HP",
       {
@@ -313,12 +313,12 @@ export class LifeSystem {
         fontStyle: "bold",
       }
     );
-    this.bossHPText.setOrigin(0.5, 0.5);
+    this.bossHPText.setOrigin(1, 0.5); // Alineado desde la derecha para mantener distancia con barra
     this.bossHealthContainer.add(this.bossHPText);
 
-    // Texto "BOSS" a la derecha de la barra
+    // Texto "BOSS" a la derecha de la barra (alineado desde el borde izquierdo)
     this.bossNameText = this.scene.add.text(
-      barWidth / 2 + 30, // Ajustado para centrado perfecto
+      barWidth / 2 + 30, // Misma distancia que HP (30px)
       0,
       "BOSS",
       {
@@ -326,11 +326,11 @@ export class LifeSystem {
         fontSize: "26px", // Mismo tamaño que HP
         color: "#ffaa00", // Color naranja/dorado
         stroke: "#000000",
-        strokeThickness: 6,
+        strokeThickness: 6, // Mismo grosor que HP
         fontStyle: "bold",
       }
     );
-    this.bossNameText.setOrigin(0.5, 0.5); // Centrado para simetría perfecta
+    this.bossNameText.setOrigin(0, 0.5); // Alineado desde la izquierda para mantener distancia con barra
     this.bossHealthContainer.add(this.bossNameText);
 
     // Agregar el contenedor al contenedor principal
@@ -343,8 +343,8 @@ export class LifeSystem {
   private updateBossHealthBar(): void {
     if (!this.bossHealthBarFill) return;
 
-    const barWidth = 400; // Actualizado a 400
-    const barHeight = 26; // Actualizado a 26
+    const barWidth = 350; // Actualizado a 350
+    const barHeight = 30; // Actualizado a 30
     const healthPercentage = this.currentBossHealth / this.maxBossHealth;
     const fillWidth = barWidth * healthPercentage;
 

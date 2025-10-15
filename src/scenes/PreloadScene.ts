@@ -41,8 +41,11 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar el mapa Level5 (desde LOCAL - assets)
     this.load.tilemapTiledJSON("Level5", "assets/Level5.json");
 
-    // Cargar el mapa FirstBoss - BOSS LEVEL (desde LOCAL - assets)
-    this.load.tilemapTiledJSON("FirstBoss", "assets/FirstBoss.json");
+    // Cargar el mapa FirstBoss - BOSS LEVEL (desde GitHub raw)
+    this.load.tilemapTiledJSON(
+      "FirstBoss",
+      "https://raw.githubusercontent.com/davidFCDev/remix-base-startup/main/assets/FirstBoss.json"
+    );
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
     this.load.image(
