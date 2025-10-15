@@ -38,8 +38,11 @@ export class PreloadScene extends Phaser.Scene {
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level4.json"
     );
 
-    // Cargar el mapa Level5 (desde LOCAL - assets)
-    this.load.tilemapTiledJSON("Level5", "assets/Level5.json");
+    // Cargar el mapa Level5 (desde GitHub)
+    this.load.tilemapTiledJSON(
+      "Level5",
+      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level5.json"
+    );
 
     // Cargar el mapa FirstBoss - BOSS LEVEL (desde GitHub raw)
     this.load.tilemapTiledJSON(
@@ -214,6 +217,37 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fondo-boss1%20%281%29-U8P7eQTsQxFpS4M0XjRYrsKkw50uRd.png?eKHL"
     );
 
+    // ========== ROADMAP (Level Select) ASSETS ==========
+    // Fondo de la pantalla de selección de niveles
+    this.load.image(
+      "frostland",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/frostland-x6CyuIIlNEH3kZJXLxFbCJT8yCgmje.png?YYUC"
+    );
+
+    // Botón de nivel seleccionado (button-1)
+    this.load.image(
+      "button-1",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-1-KYIDtWckRC8p50s6cwACteYAeXs6ih.png?hc3z"
+    );
+
+    // Botón de nivel desbloqueado (button-2)
+    this.load.image(
+      "button-2",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-2-d1rIoj5jK8pkehNnqL7vW0vdSDMPjk.png?bJvr"
+    );
+
+    // Botón de nivel bloqueado (button-3)
+    this.load.image(
+      "button-3",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-3-iTQVI1Mfj7vVEmxIiZYDwjnCtLED1A.png?lNhd"
+    );
+
+    // Icono de calavera para el nivel Boss
+    this.load.image(
+      "boss-skull-icon",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/image%20%2812%29-nh4vJjrkmBYT1uWBpTCwCLV0KCz7sN.png?40x2"
+    );
+
     // ========== MÚSICA DE NIVELES ==========
     // Cargar música del nivel de test
     this.load.audio(
@@ -225,6 +259,12 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio(
       "boss_music",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-music-Uc0TBbcOXiNZTFHe8IImIh6vzL17hD.mp3?ZGgU"
+    );
+
+    // Cargar música del Roadmap (selección de nivel)
+    this.load.audio(
+      "roadmap_music",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/choose-level-PFlnialE3QOlsC5QiaBn8wi7ncT8jl.mp3?5bct"
     );
 
     // ========== SONIDOS DE EFECTOS ==========
@@ -388,11 +428,11 @@ export class PreloadScene extends Phaser.Scene {
     // Set black background
     this.cameras.main.setBackgroundColor("#000000");
 
-    // Load Pixelify font and wait for it to load
+    // Load Pixelify font and Bangers font and wait for them to load
     if ((window as any).WebFont) {
       (window as any).WebFont.load({
         google: {
-          families: ["Pixelify Sans:400,700"],
+          families: ["Pixelify Sans:400,700", "Bangers"],
         },
         active: () => {
           // Font loaded, create content
@@ -561,8 +601,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar FirstBoss (BOSS LEVEL) por defecto para testing
-    this.scene.start("FirstBoss");
+    // Iniciar Roadmap (pantalla de selección de niveles)
+    this.scene.start("Roadmap");
   }
 
   private loadingComplete(): void {

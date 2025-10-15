@@ -7,6 +7,7 @@ import { Level3 } from "./scenes/Level3";
 import { Level4 } from "./scenes/Level4";
 import { Level5 } from "./scenes/Level5";
 import { PreloadScene } from "./scenes/PreloadScene";
+import Roadmap from "./scenes/Roadmap";
 import { initializeDevelopment, initializeRemixSDK } from "./utils/RemixUtils";
 
 // Game configuration
@@ -22,8 +23,17 @@ const config: Phaser.Types.Core.GameConfig = {
     height: GameSettings.canvas.height,
   },
   backgroundColor: "#1a1a1a",
-  // Scene order: PreloadScene -> FirstBoss (BOSS) -> Level1 -> Level2 -> Level3 -> Level4 -> Level5
-  scene: [PreloadScene, FirstBoss, Level1, Level2, Level3, Level4, Level5],
+  // Scene order: PreloadScene -> Roadmap (Level Select) -> Level1 -> Level2 -> Level3 -> Level4 -> Level5 -> FirstBoss (BOSS)
+  scene: [
+    PreloadScene,
+    Roadmap,
+    Level1,
+    Level2,
+    Level3,
+    Level4,
+    Level5,
+    FirstBoss,
+  ],
   physics: {
     default: "arcade",
     arcade: {

@@ -148,6 +148,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     worldY: number;
   }> = []; // Array para muros de nieve
   protected levelEndUI?: any; // UI de fin de nivel
+  protected gameOverUI?: any; // UI de game over
   protected hasFinishedLevel: boolean = false;
   protected snowParticleSystem?: SnowParticleSystem; // Sistema de partículas de nieve
   protected enemySystem?: EnemySystem; // Sistema de enemigos
@@ -986,7 +987,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
-   * Reiniciar el nivel actual
+   * Mostrar modal de Game Over (en lugar de reiniciar directamente)
    */
   private restartLevel(): void {
     // Reproducir sonido de game over
@@ -994,21 +995,23 @@ export abstract class BaseGameScene extends Phaser.Scene {
       volume: 0.6,
     });
 
-    // Detener toda la música actual antes de reiniciar
-    this.stopCurrentMusic();
+    // CRÍTICO: Bloquear el control del jugador
+    if (this.player) {
+      this.player.setControlsActive(false);
+    }
 
-    // CRÍTICO: Cancelar todos los timers pendientes
-    this.time.removeAllEvents();
+    // Cargar GameOverUI dinámicamente y mostrar el modal
+    import("../objects/ui/GameOverUI").then((module) => {
+      const GameOverUI = module.default;
 
-    // CRÍTICO: Cancelar todos los tweens activos
-    this.tweens.killAll();
+      // SIEMPRE crear un nuevo GameOverUI (para evitar bugs al reintentar)
+      if (this.gameOverUI) {
+        this.gameOverUI.destroy();
+      }
+      this.gameOverUI = new GameOverUI(this);
 
-    // Esperar un poco para que se escuche el sonido de game over
-    // antes de reiniciar la escena
-    this.time.delayedCall(1500, () => {
-      // REINICIO DESDE CERO: scene.restart() llama automáticamente a shutdown() y create()
-      // No necesitamos llamar a shutdown() manualmente
-      this.scene.restart();
+      // Mostrar el modal con animación
+      this.gameOverUI.show();
     });
   }
 

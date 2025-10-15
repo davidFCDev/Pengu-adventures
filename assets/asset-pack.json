@@ -15,6 +15,11 @@
         "key": "__green_angler_fish_swim_snapping"
       },
       {
+        "url": "assets/a2.png",
+        "type": "image",
+        "key": "a2"
+      },
+      {
         "url": "assets/animations.json",
         "type": "animation",
         "key": "animations"
@@ -33,22 +38,24 @@
         "key": "boss_bat"
       },
       {
-        "url": "assets/boss1-fondo.png",
-        "type": "image",
-        "key": "boss1-fondo"
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-Wni2i2yqMdyNmed5q9T6lOQL5BjO9T.mp3?TCwy",
+        "type": "audio",
+        "key": "boss_bat_wake"
       },
       {
-        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-YhgPBVXu7j9tscC446Augx1rAUiz2h.png?XgJC",
-        "frameConfig": {
-          "frameWidth": 609,
-          "frameHeight": 518,
-          "startFrame": 0,
-          "endFrame": -1,
-          "spacing": 0,
-          "margin": 0
-        },
-        "type": "spritesheet",
-        "key": "boss-bat-spritesheet"
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-confused-5MnQmN0K0PPmO331Tm915ms3IKHKJR.mp3?KUxB",
+        "type": "audio",
+        "key": "boss_confused"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-music-Uc0TBbcOXiNZTFHe8IImIh6vzL17hD.mp3?ZGgU",
+        "type": "audio",
+        "key": "boss_music"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/choose-level-PFlnialE3QOlsC5QiaBn8wi7ncT8jl.mp3?5bct",
+        "type": "audio",
+        "key": "roadmap_music"
       },
       {
         "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/die_bat-Z60vTPdcbzWxxw04gnjzNmwit9KL86.png?xSuv",
@@ -64,6 +71,39 @@
         "key": "boss-bat-die-spritesheet"
       },
       {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-YhgPBVXu7j9tscC446Augx1rAUiz2h.png?XgJC",
+        "frameConfig": {
+          "frameWidth": 609,
+          "frameHeight": 518,
+          "startFrame": 0,
+          "endFrame": -1,
+          "spacing": 0,
+          "margin": 0
+        },
+        "type": "spritesheet",
+        "key": "boss-bat-spritesheet"
+      },
+      {
+        "url": "assets/boss1-fondo.png",
+        "type": "image",
+        "key": "boss1-fondo"
+      },
+      {
+        "url": "assets/button-1.png",
+        "type": "image",
+        "key": "button-1"
+      },
+      {
+        "url": "assets/button-2.png",
+        "type": "image",
+        "key": "button-2"
+      },
+      {
+        "url": "assets/button-3.png",
+        "type": "image",
+        "key": "button-3"
+      },
+      {
         "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/confused_status-lDP44E0A9zwjU7uok5OsSUpkpReilW.png?pEz6",
         "frameConfig": {
           "frameWidth": 670,
@@ -75,26 +115,6 @@
         },
         "type": "spritesheet",
         "key": "confused-status-spritesheet"
-      },
-      {
-        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/roller-snowball-7Qny1WDOwxpF0zGLnHYmgXlKAdrjm0.png?nIAV",
-        "type": "image",
-        "key": "roller-snowball"
-      },
-      {
-        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-music-Uc0TBbcOXiNZTFHe8IImIh6vzL17hD.mp3?ZGgU",
-        "type": "audio",
-        "key": "boss_music"
-      },
-      {
-        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-Wni2i2yqMdyNmed5q9T6lOQL5BjO9T.mp3?TCwy",
-        "type": "audio",
-        "key": "boss_bat_wake"
-      },
-      {
-        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-confused-5MnQmN0K0PPmO331Tm915ms3IKHKJR.mp3?KUxB",
-        "type": "audio",
-        "key": "boss_confused"
       },
       {
         "url": "assets/Dino Rex/dino_rex_ability_black.png",
@@ -255,6 +275,31 @@
         "key": "fondo-boss1"
       },
       {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/frostland-x6CyuIIlNEH3kZJXLxFbCJT8yCgmje.png?YYUC",
+        "type": "image",
+        "key": "frostland"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-1-KYIDtWckRC8p50s6cwACteYAeXs6ih.png?hc3z",
+        "type": "image",
+        "key": "button-1"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-2-d1rIoj5jK8pkehNnqL7vW0vdSDMPjk.png?bJvr",
+        "type": "image",
+        "key": "button-2"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/button-3-iTQVI1Mfj7vVEmxIiZYDwjnCtLED1A.png?lNhd",
+        "type": "image",
+        "key": "button-3"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/image%20%2812%29-nh4vJjrkmBYT1uWBpTCwCLV0KCz7sN.png?40x2",
+        "type": "image",
+        "key": "boss-skull-icon"
+      },
+      {
         "url": "assets/Level1.json",
         "type": "tilemapTiledJSON",
         "key": "Level1"
@@ -314,6 +359,11 @@
         "url": "assets/PT_TOKEN_MASTER_001.png",
         "type": "image",
         "key": "PT_TOKEN_MASTER_001"
+      },
+      {
+        "url": "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/roller-snowball-7Qny1WDOwxpF0zGLnHYmgXlKAdrjm0.png?nIAV",
+        "type": "image",
+        "key": "roller-snowball"
       },
       {
         "url": "assets/sprites/snowman-spritesheet.png",
