@@ -160,6 +160,12 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected aquaticEnemyManager?: any; // Sistema de enemigos acuáticos (AquaticEnemyManager)
   protected redButtonSystem?: any; // Sistema de botones rojos y cadenas (RedButtonSystem)
 
+  // Sistema de puntuación y cronómetro
+  protected levelStartTime: number = 0; // Timestamp del inicio del nivel
+  protected levelEndTime: number = 0; // Timestamp del fin del nivel
+  protected initialLives: number = 3; // Vidas al inicio del nivel
+  protected livesMissedDuringLevel: number = 0; // Vidas perdidas durante el nivel
+
   // Configuración
   protected config!: GameSceneConfig;
 
@@ -251,6 +257,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 0. IMPORTANTE: Resetear banderas de estado al inicio
     this.isGameOverInProgress = false;
     this.hasFinishedLevel = false;
+
+    // 0.1. Iniciar cronómetro del nivel
+    this.levelStartTime = this.time.now;
+    this.levelEndTime = 0;
+    this.livesMissedDuringLevel = 0;
 
     // 1. Crear el mapa específico (implementado por la escena hija)
     this.createMap();
@@ -915,6 +926,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
       }
 
       const hasLivesLeft = this.lifeSystem.loseLife();
+
+      // Incrementar contador de vidas perdidas para el score
+      this.livesMissedDuringLevel++;
 
       // Verificar tanto el retorno como el estado interno
       if (!hasLivesLeft || this.lifeSystem.isGameOver()) {
@@ -1604,6 +1618,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     this.hasFinishedLevel = true;
 
+    // Detener cronómetro del nivel
+    this.levelEndTime = this.time.now;
+
     // Detener al player completamente
     if (this.player && this.player.body) {
       const body = this.player.body as Phaser.Physics.Arcade.Body;
@@ -1629,13 +1646,32 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.currentMusic.pause();
     }
 
+    // Calcular score del nivel
+    const levelScore = this.calculateLevelScore();
+
     // Mostrar UI de fin de nivel con un pequeño delay para ver la animación completa
     this.time.delayedCall(300, () => {
       import("../objects/ui/LevelEndUI").then(({ LevelEndUI }) => {
-        this.levelEndUI = new LevelEndUI(this);
+        this.levelEndUI = new LevelEndUI(this, levelScore);
         this.levelEndUI.show();
       });
     });
+  }
+
+  /**
+   * Calcula el score del nivel actual basado en las estadísticas
+   * Las escenas hijas pueden override este método para lógica personalizada
+   */
+  protected calculateLevelScore(): any {
+    const timeInSeconds = (this.levelEndTime - this.levelStartTime) / 1000;
+
+    // Por defecto retornamos null (las escenas hijas deben implementar su cálculo)
+    // Este método será override por Level1-5 (con monedas/mini-pingus) y Level6 (boss)
+    console.warn("⚠️ calculateLevelScore() no implementado en esta escena");
+    return {
+      timeInSeconds,
+      livesMissed: this.livesMissedDuringLevel,
+    };
   }
 
   /**

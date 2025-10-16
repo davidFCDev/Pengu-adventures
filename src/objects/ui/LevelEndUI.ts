@@ -1,15 +1,21 @@
+import { ScoreManager } from "../../systems/ScoreManager";
+
 /**
  * UI que se muestra cuando el jugador completa el nivel
  */
 export class LevelEndUI extends Phaser.GameObjects.Container {
   private background!: Phaser.GameObjects.Rectangle;
-  private celebrateSprite!: Phaser.GameObjects.Sprite;
   private buttonGraphics!: Phaser.GameObjects.Graphics;
   private buttonText!: Phaser.GameObjects.Text;
   private buttonHitArea!: Phaser.GameObjects.Rectangle;
-  constructor(scene: Phaser.Scene) {
+  private scoreData: any; // Datos del score calculado
+
+  constructor(scene: Phaser.Scene, scoreData?: any) {
     super(scene, 0, 0);
     scene.add.existing(this);
+
+    this.scoreData = scoreData || null;
+
     // Fijar al centro de la cámara
     this.setScrollFactor(0);
     this.setDepth(1000);
@@ -19,6 +25,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
   private createUI(): void {
     const centerX = this.scene.cameras.main.width / 2;
     const centerY = this.scene.cameras.main.height / 2;
+
     // Fondo overlay oscuro
     this.background = this.scene.add.rectangle(
       centerX,
@@ -30,39 +37,33 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     );
     this.background.setScrollFactor(0);
     this.add(this.background);
-    // Contenedor del modal (negro suave con borde negro)
+
+    // Contenedor del modal (más grande para el desglose del score)
+    const modalHeight = this.scoreData ? 550 : 400; // Más alto si hay scoreData
     const modalBg = this.scene.add.graphics();
     modalBg.fillStyle(0x000000, 0.85); // Negro suave (85% opacidad)
-    modalBg.fillRoundedRect(centerX - 200, centerY - 200, 400, 400, 20);
+    modalBg.fillRoundedRect(
+      centerX - 200,
+      centerY - modalHeight / 2,
+      400,
+      modalHeight,
+      20
+    );
     modalBg.lineStyle(8, 0x000000, 1); // Borde negro 100%
-    modalBg.strokeRoundedRect(centerX - 200, centerY - 200, 400, 400, 20);
+    modalBg.strokeRoundedRect(
+      centerX - 200,
+      centerY - modalHeight / 2,
+      400,
+      modalHeight,
+      20
+    );
     modalBg.setScrollFactor(0);
     this.add(modalBg);
-    // Sprite de celebración
-    this.celebrateSprite = this.scene.add.sprite(
-      centerX,
-      centerY - 80,
-      "celebrate"
-    );
-    this.celebrateSprite.setScale(1.5);
-    this.celebrateSprite.setScrollFactor(0);
-    this.add(this.celebrateSprite);
-    // Crear animación de celebración si no existe
-    if (!this.scene.anims.exists("celebrate_anim")) {
-      this.scene.anims.create({
-        key: "celebrate_anim",
-        frames: this.scene.anims.generateFrameNumbers("celebrate", {
-          start: 0,
-          end: 3,
-        }),
-        frameRate: 8,
-        repeat: 0, // Solo una vez, se queda en el último frame
-      });
-    }
-    // Texto "LEVEL COMPLETE!" con fuente Bangers (más separado del sprite)
+
+    // Texto "LEVEL COMPLETE!" con fuente Bangers (más arriba sin sprite)
     const completeText = this.scene.add.text(
       centerX,
-      centerY + 50,
+      centerY - modalHeight / 2 + 80,
       "LEVEL COMPLETE!",
       {
         fontFamily: "Bangers",
@@ -74,8 +75,141 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     completeText.setOrigin(0.5, 0.5);
     completeText.setScrollFactor(0);
     this.add(completeText);
+
+    // Mostrar desglose del score si existe
+    if (this.scoreData) {
+      this.createScoreBreakdown(centerX, centerY - modalHeight / 2 + 140);
+    }
+
     // Botón "Next Level"
-    this.createNextButton(centerX, centerY + 140);
+    const buttonY = this.scoreData
+      ? centerY + modalHeight / 2 - 60
+      : centerY + 140;
+    this.createNextButton(centerX, buttonY);
+  }
+
+  /**
+   * Crear desglose visual del score
+   */
+  private createScoreBreakdown(startX: number, startY: number): void {
+    const lineHeight = 36; // Aumentado de 32 a 36
+    let currentY = startY;
+
+    // Helper para formatear tiempo
+    const formatTime = (seconds: number): string => {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    // Helper para formatear multiplicador
+    const formatMultiplier = (mult: number): string => {
+      return `x${mult.toFixed(1)}`;
+    };
+
+    // 1. Monedas
+    if (this.scoreData.coinsCollected !== undefined) {
+      const coinsText = this.scene.add.text(
+        startX,
+        currentY,
+        `Coins: ${this.scoreData.coinsCollected}/${this.scoreData.totalCoins}  (+${this.scoreData.coinPoints})`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "28px", // Aumentado de 24px a 28px
+          color: "#FFD700", // Dorado para monedas
+        }
+      );
+      coinsText.setOrigin(0.5);
+      coinsText.setScrollFactor(0);
+      this.add(coinsText);
+      currentY += lineHeight;
+    }
+
+    // 2. Mini-Pingus
+    if (this.scoreData.miniPingusCollected !== undefined) {
+      const pinguText = this.scene.add.text(
+        startX,
+        currentY,
+        `Mini-Pingus: ${this.scoreData.miniPingusCollected}/${this.scoreData.totalMiniPingus}  (+${this.scoreData.miniPinguPoints})`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "28px", // Aumentado de 24px a 28px
+          color: "#00D9FF", // Celeste para mini-pingus
+        }
+      );
+      pinguText.setOrigin(0.5);
+      pinguText.setScrollFactor(0);
+      this.add(pinguText);
+      currentY += lineHeight;
+    }
+
+    // 3. Tiempo
+    if (this.scoreData.timeInSeconds !== undefined) {
+      const timeText = this.scene.add.text(
+        startX,
+        currentY,
+        `Time: ${formatTime(this.scoreData.timeInSeconds)}  (${formatMultiplier(
+          this.scoreData.timeMultiplier
+        )})`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "28px", // Aumentado de 24px a 28px
+          color: "#FFFFFF",
+        }
+      );
+      timeText.setOrigin(0.5);
+      timeText.setScrollFactor(0);
+      this.add(timeText);
+      currentY += lineHeight;
+    }
+
+    // 4. Vidas perdidas
+    if (this.scoreData.livesMissed !== undefined) {
+      const livesText = this.scene.add.text(
+        startX,
+        currentY,
+        `Lives Lost: ${this.scoreData.livesMissed}  (${formatMultiplier(
+          this.scoreData.livesMultiplier
+        )})`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "28px", // Aumentado de 24px a 28px
+          color: "#FF6B6B", // Rojo suave para vidas
+        }
+      );
+      livesText.setOrigin(0.5);
+      livesText.setScrollFactor(0);
+      this.add(livesText);
+      currentY += lineHeight + 15; // Aumentado el espacio extra antes del total
+    }
+
+    // Línea separadora
+    const line = this.scene.add.graphics();
+    line.lineStyle(3, 0xffffff, 0.5);
+    line.beginPath();
+    line.moveTo(startX - 150, currentY);
+    line.lineTo(startX + 150, currentY);
+    line.strokePath();
+    line.setScrollFactor(0);
+    this.add(line);
+    currentY += 30; // Aumentado de 20 a 30 para más espacio
+
+    // 5. Score Final (más grande y destacado)
+    const finalScoreText = this.scene.add.text(
+      startX,
+      currentY,
+      `SCORE: ${this.scoreData.finalScore}`,
+      {
+        fontFamily: "Bangers",
+        fontSize: "44px", // Aumentado de 40px a 44px
+        color: "#FFDE59", // Amarillo como los botones
+        stroke: "#000000",
+        strokeThickness: 4,
+      }
+    );
+    finalScoreText.setOrigin(0.5);
+    finalScoreText.setScrollFactor(0);
+    this.add(finalScoreText);
   }
   private createNextButton(x: number, y: number): void {
     // Botón amarillo con Graphics (estilo Roadmap)
@@ -133,6 +267,20 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     });
   }
   private onNextLevel(): void {
+    // Guardar score si existe
+    if (this.scoreData && this.scoreData.finalScore !== undefined) {
+      ScoreManager.saveScore({
+        levelNumber: this.scoreData.levelNumber,
+        score: this.scoreData.finalScore,
+        coinsCollected: this.scoreData.coinsCollected,
+        totalCoins: this.scoreData.totalCoins,
+        miniPingusCollected: this.scoreData.miniPingusCollected,
+        totalMiniPingus: this.scoreData.totalMiniPingus,
+        timeInSeconds: this.scoreData.timeInSeconds,
+        livesMissed: this.scoreData.livesMissed,
+      });
+    }
+
     // Ocultar UI primero
     this.hide();
 
@@ -172,8 +320,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
   }
   public show(): void {
     this.setVisible(true);
-    // Reproducir animación de celebración (se queda en el último frame)
-    this.celebrateSprite.play("celebrate_anim");
+
     // Animar entrada
     this.setAlpha(0);
     this.scene.tweens.add({
@@ -182,18 +329,12 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       duration: 500,
       ease: "Power2",
     });
-    // Animar sprite de celebración desde escala 0 hasta escala normal
-    this.celebrateSprite.setScale(0);
-    this.scene.tweens.add({
-      targets: this.celebrateSprite,
-      scale: 1.5, // Escala 1.5 para que se vea bien (128x128 * 1.5 = 192px)
-      duration: 600,
-      ease: "Back.easeOut",
-    });
+
     // Animar elementos del botón con delay
     this.buttonGraphics.setAlpha(0);
     this.buttonText.setScale(0);
     this.buttonHitArea.setAlpha(0);
+
     this.scene.tweens.add({
       targets: this.buttonGraphics,
       alpha: 1,
@@ -201,6 +342,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       delay: 300,
       ease: "Power2",
     });
+
     this.scene.tweens.add({
       targets: this.buttonText,
       scale: 1,
@@ -208,6 +350,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       delay: 300,
       ease: "Back.easeOut",
     });
+
     this.scene.tweens.add({
       targets: this.buttonHitArea,
       alpha: 1,
@@ -216,8 +359,8 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       ease: "Power2",
     });
   }
+
   public hide(): void {
     this.setVisible(false);
-    this.celebrateSprite.stop();
   }
 }

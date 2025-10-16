@@ -3,6 +3,7 @@ import { CoinSystem } from "../systems/CoinSystem";
 import { DoorSystem } from "../systems/DoorSystem";
 import { KeySystem } from "../systems/KeySystem";
 import { MiniPinguSystem } from "../systems/MiniPinguSystem";
+import { calculateLevelScore, type LevelStats } from "../systems/ScoreSystem";
 import { BaseGameScene, GameSceneConfig } from "./BaseGameScene";
 
 export class Level4 extends BaseGameScene {
@@ -313,5 +314,31 @@ export class Level4 extends BaseGameScene {
     if (this.keySystem) this.keySystem.destroy();
     if (this.doorSystem) this.doorSystem.destroy();
     super.shutdown();
+  }
+
+  /**
+   * Calcular score del nivel basado en monedas, mini-pingus, tiempo y vidas
+   */
+  protected calculateLevelScore(): any {
+    const timeInSeconds = (this.levelEndTime - this.levelStartTime) / 1000;
+
+    const stats: LevelStats = {
+      coinsCollected: this.coinSystem.getCollectedCoins(),
+      totalCoins: this.coinSystem.getTotalCoins(),
+      miniPingusCollected: this.miniPinguSystem.getCollectedMiniPingus(),
+      totalMiniPingus: this.miniPinguSystem.getTotalMiniPingus(),
+      timeInSeconds: timeInSeconds,
+      livesMissed: this.livesMissedDuringLevel,
+    };
+
+    const scoreBreakdown = calculateLevelScore(stats);
+
+    console.log("📊 Level 4 Score:", scoreBreakdown);
+
+    return {
+      ...stats,
+      ...scoreBreakdown,
+      levelNumber: 4,
+    };
   }
 }

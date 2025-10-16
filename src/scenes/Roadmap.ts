@@ -1,4 +1,5 @@
 // You can write more code here
+import { ScoreManager } from "../systems/ScoreManager";
 
 /* START OF COMPILED CODE */
 
@@ -342,13 +343,13 @@ class Roadmap extends Phaser.Scene {
     // Fondo del modal (negro suave con borde negro)
     this.modalBackground = this.add.graphics();
     this.modalBackground.fillStyle(0x000000, 0.85); // Negro suave (85% opacidad)
-    this.modalBackground.fillRoundedRect(-200, -200, 400, 400, 20);
+    this.modalBackground.fillRoundedRect(-200, -225, 400, 450, 20);
     this.modalBackground.lineStyle(8, 0x000000, 1); // Borde negro 100%
-    this.modalBackground.strokeRoundedRect(-200, -200, 400, 400, 20);
+    this.modalBackground.strokeRoundedRect(-200, -225, 400, 450, 20);
     this.modalContainer.add(this.modalBackground);
 
     // Título del nivel (blanco - fuente Bangers)
-    const titleText = this.add.text(0, -150, levelName, {
+    const titleText = this.add.text(0, -170, levelName, {
       fontFamily: "Bangers",
       fontSize: "56px",
       color: "#ffffff", // Blanco
@@ -357,12 +358,30 @@ class Roadmap extends Phaser.Scene {
     titleText.setOrigin(0.5, 0.5);
     this.modalContainer.add(titleText);
 
-    // Sección de estadísticas en fila (Mini-Pengus y Coins)
-    const statsY = -50;
+    // Obtener datos del mejor run
+    const scoreData = ScoreManager.getScore(levelNumber);
+
+    // Subtítulo "Your Best Run:" (siempre visible)
+    const subtitleText = this.add.text(
+      0,
+      -100,
+      scoreData ? "YOUR BEST RUN:" : "NOT PLAYED YET",
+      {
+        fontFamily: "Bangers",
+        fontSize: "32px",
+        color: scoreData ? "#00D9FF" : "#888888", // Cyan si hay datos, gris si no
+        stroke: "#000000",
+        strokeThickness: 3,
+      }
+    );
+    subtitleText.setOrigin(0.5, 0.5);
+    this.modalContainer.add(subtitleText);
+
+    // Sección de estadísticas en fila (Mini-Pengus y Coins del mejor run)
+    const statsY = -30;
     const modalWidth = 400;
 
     // Distribuir en space-evenly: dividir el ancho en 3 partes iguales
-    // Los grupos estarán en 1/3 y 2/3 del ancho del modal
     const spacing = modalWidth / 3;
     const leftGroupX = -modalWidth / 2 + spacing; // 1/3 desde la izquierda
     const rightGroupX = -modalWidth / 2 + spacing * 2; // 2/3 desde la izquierda
@@ -374,12 +393,18 @@ class Roadmap extends Phaser.Scene {
     this.modalContainer.add(miniPinguIcon);
 
     // Mini-Pingu count (blanco - fuente Bangers, a la derecha del icono)
-    const miniPinguText = this.add.text(leftGroupX + 10, statsY, "x0", {
-      fontFamily: "Bangers",
-      fontSize: "36px",
-      color: "#ffffff", // Blanco
-      padding: { right: 10 }, // Padding para evitar cortes por inclinación
-    });
+    const miniPinguCount = scoreData?.miniPingusCollected ?? 0;
+    const miniPinguText = this.add.text(
+      leftGroupX + 10,
+      statsY,
+      `x${miniPinguCount}`,
+      {
+        fontFamily: "Bangers",
+        fontSize: "36px",
+        color: "#ffffff", // Blanco
+        padding: { right: 10 }, // Padding para evitar cortes por inclinación
+      }
+    );
     miniPinguText.setOrigin(0, 0.5);
     this.modalContainer.add(miniPinguText);
 
@@ -394,7 +419,8 @@ class Roadmap extends Phaser.Scene {
     this.modalContainer.add(coinIcon);
 
     // Coin count (blanco - fuente Bangers, a la derecha del icono)
-    const coinText = this.add.text(rightGroupX + 10, statsY, "x0", {
+    const coinCount = scoreData?.coinsCollected ?? 0;
+    const coinText = this.add.text(rightGroupX + 10, statsY, `x${coinCount}`, {
       fontFamily: "Bangers",
       fontSize: "36px",
       color: "#ffffff", // Blanco
@@ -403,16 +429,54 @@ class Roadmap extends Phaser.Scene {
     coinText.setOrigin(0, 0.5);
     this.modalContainer.add(coinText);
 
+    // Sección de vidas (corazones) - entre stats y score
+    if (scoreData) {
+      const livesY = 30; // Entre stats (-30) y score (80) - aumentado de 20 a 30
+      const livesRemaining = 3 - (scoreData.livesMissed ?? 0); // Calcular vidas restantes
+      const heartSpacing = 50; // Espacio entre corazones
+      const startHeartX = -heartSpacing; // Centrar los 3 corazones
+
+      // Crear 3 corazones
+      for (let i = 0; i < 3; i++) {
+        const heartX = startHeartX + i * heartSpacing;
+        // Frame 0 = lleno, Frame 2 = vacío (Frame 1 es semi-lleno)
+        const heartFrame = i < livesRemaining ? 0 : 2;
+        const heart = this.add.image(
+          heartX,
+          livesY,
+          "heart_spritesheet",
+          heartFrame
+        );
+        heart.setScale(1.2);
+        heart.setOrigin(0.5, 0.5);
+        this.modalContainer.add(heart);
+      }
+    }
+
+    // SCORE del mejor run (más grande y destacado)
+    if (scoreData) {
+      const scoreText = this.add.text(0, 80, `SCORE: ${scoreData.score}`, {
+        fontFamily: "Bangers",
+        fontSize: "48px",
+        color: "#FFDE59", // Amarillo destacado
+        stroke: "#000000",
+        strokeThickness: 4,
+      });
+      scoreText.setOrigin(0.5, 0.5);
+      this.modalContainer.add(scoreText);
+    }
+
     // Botón START (amarillo #FFDE59 con borde negro)
+    const startButtonY = scoreData ? 160 : 80; // Ajustar posición según si hay score (aumentado de 150 a 160)
     const startButton = this.add.graphics();
     startButton.fillStyle(0xffde59, 1); // Amarillo #FFDE59
-    startButton.fillRoundedRect(-100, 50, 200, 60, 15);
+    startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
     startButton.lineStyle(6, 0x000000, 1); // Borde negro
-    startButton.strokeRoundedRect(-100, 50, 200, 60, 15);
+    startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
     this.modalContainer.add(startButton);
 
     // Texto del botón START (negro - fuente Bangers)
-    const startText = this.add.text(0, 80, "START", {
+    const startText = this.add.text(0, startButtonY, "START", {
       fontFamily: "Bangers",
       fontSize: "40px",
       color: "#000000", // Negro
@@ -422,7 +486,7 @@ class Roadmap extends Phaser.Scene {
     this.modalContainer.add(startText);
 
     // Hacer el botón START interactivo
-    const startButtonHitArea = this.add.rectangle(0, 80, 200, 60);
+    const startButtonHitArea = this.add.rectangle(0, startButtonY, 200, 60);
     startButtonHitArea.setInteractive({ useHandCursor: true });
     this.modalContainer.add(startButtonHitArea);
 
