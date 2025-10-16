@@ -99,6 +99,16 @@ class Roadmap extends Phaser.Scene {
   // Música de fondo
   private music!: Phaser.Sound.BaseSound;
 
+  // Totales de collectibles por nivel
+  private readonly levelTotals = [
+    { miniPingus: 3, coins: 29 }, // Level 1
+    { miniPingus: 3, coins: 30 }, // Level 2
+    { miniPingus: 3, coins: 30 }, // Level 3
+    { miniPingus: 3, coins: 30 }, // Level 4
+    { miniPingus: 3, coins: 30 }, // Level 5
+    { miniPingus: 0, coins: 0 }, // Level 6 (Boss - sin collectibles)
+  ];
+
   create() {
     this.editorCreate();
 
@@ -394,10 +404,11 @@ class Roadmap extends Phaser.Scene {
 
     // Mini-Pingu count (blanco - fuente Bangers, a la derecha del icono)
     const miniPinguCount = scoreData?.miniPingusCollected ?? 0;
+    const totalMiniPingus = this.levelTotals[levelIndex].miniPingus;
     const miniPinguText = this.add.text(
       leftGroupX + 10,
       statsY,
-      `x${miniPinguCount}`,
+      `${miniPinguCount}/${totalMiniPingus}`,
       {
         fontFamily: "Bangers",
         fontSize: "36px",
@@ -420,12 +431,18 @@ class Roadmap extends Phaser.Scene {
 
     // Coin count (blanco - fuente Bangers, a la derecha del icono)
     const coinCount = scoreData?.coinsCollected ?? 0;
-    const coinText = this.add.text(rightGroupX + 10, statsY, `x${coinCount}`, {
-      fontFamily: "Bangers",
-      fontSize: "36px",
-      color: "#ffffff", // Blanco
-      padding: { right: 10 }, // Padding para evitar cortes por inclinación
-    });
+    const totalCoins = this.levelTotals[levelIndex].coins;
+    const coinText = this.add.text(
+      rightGroupX + 10,
+      statsY,
+      `${coinCount}/${totalCoins}`,
+      {
+        fontFamily: "Bangers",
+        fontSize: "36px",
+        color: "#ffffff", // Blanco
+        padding: { right: 10 }, // Padding para evitar cortes por inclinación
+      }
+    );
     coinText.setOrigin(0, 0.5);
     this.modalContainer.add(coinText);
 
@@ -501,17 +518,17 @@ class Roadmap extends Phaser.Scene {
     startButtonHitArea.on("pointerover", () => {
       startButton.clear();
       startButton.fillStyle(0xffd040, 1); // Amarillo más oscuro en hover
-      startButton.fillRoundedRect(-100, 50, 200, 60, 15);
+      startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
       startButton.lineStyle(6, 0x000000, 1); // Borde negro
-      startButton.strokeRoundedRect(-100, 50, 200, 60, 15);
+      startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
     });
 
     startButtonHitArea.on("pointerout", () => {
       startButton.clear();
       startButton.fillStyle(0xffde59, 1); // Volver al amarillo original
-      startButton.fillRoundedRect(-100, 50, 200, 60, 15);
+      startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
       startButton.lineStyle(6, 0x000000, 1); // Borde negro
-      startButton.strokeRoundedRect(-100, 50, 200, 60, 15);
+      startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
     });
 
     // Click fuera del modal para cerrarlo

@@ -136,8 +136,8 @@ export class LifeSystem {
       this.miniPinguIcon.setScale(0.6);
       this.miniPinguCountContainer.add(this.miniPinguIcon);
 
-      // Texto contador "x0" con fuente Pixelify Sans
-      this.miniPinguCountText = this.scene.add.text(15, 0, "x0", {
+      // Texto contador "0" con fuente Pixelify Sans
+      this.miniPinguCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "28px",
         fontFamily: "Pixelify Sans",
         color: "#FFD700", // Amarillo dorado
@@ -170,8 +170,8 @@ export class LifeSystem {
       this.coinIcon.setScale(0.8); // Aumentado para que se vea bien en el header
       this.coinCountContainer.add(this.coinIcon);
 
-      // Texto contador "x0" con fuente Pixelify Sans
-      this.coinCountText = this.scene.add.text(15, 0, "x0", {
+      // Texto contador "0" con fuente Pixelify Sans
+      this.coinCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "28px",
         fontFamily: "Pixelify Sans",
         color: "#FFD700",
@@ -188,7 +188,7 @@ export class LifeSystem {
    */
   public updateCoinCount(count: number): void {
     if (this.coinCountText) {
-      this.coinCountText.setText(`x${count}`);
+      this.coinCountText.setText(`${count}`);
     }
   }
 
@@ -197,7 +197,7 @@ export class LifeSystem {
    */
   public updateMiniPinguCount(count: number): void {
     if (this.miniPinguCountText) {
-      this.miniPinguCountText.setText(`x${count}`);
+      this.miniPinguCountText.setText(`${count}`);
     }
   }
 
@@ -234,8 +234,8 @@ export class LifeSystem {
       this.keyIcon.setScale(0.9);
       this.keyCountContainer.add(this.keyIcon);
 
-      // Texto contador "x0" con fuente Pixelify Sans
-      this.keyCountText = this.scene.add.text(15, 0, "x0", {
+      // Texto contador "0" con fuente Pixelify Sans
+      this.keyCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "28px",
         fontFamily: "Pixelify Sans",
         color: "#FFD700",
@@ -252,7 +252,7 @@ export class LifeSystem {
    */
   public updateKeyCount(count: number): void {
     if (this.keyCountText) {
-      this.keyCountText.setText(`x${count}`);
+      this.keyCountText.setText(`${count}`);
     }
   }
 
