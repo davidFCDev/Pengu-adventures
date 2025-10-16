@@ -323,9 +323,20 @@ class Roadmap extends Phaser.Scene {
     const levelNumber = levelIndex + 1;
     const levelName = levelIndex === 5 ? "BOSS" : `Level ${levelNumber}`;
 
+    // Subtítulos para cada nivel
+    const levelSubtitles = [
+      "Pengu's Trail",
+      "Frozen Falls",
+      "Frosty Peaks",
+      "Snowcap Valley",
+      "Icy Ridge",
+      "Crystal Cavern",
+    ];
+    const subtitle = levelSubtitles[levelIndex];
+
     // Crear overlay oscuro de fondo (responsive - ocupa todo el canvas)
     this.modalOverlay = this.add.graphics();
-    this.modalOverlay.fillStyle(0x000000, 0.7);
+    this.modalOverlay.fillStyle(0x000000, 0.65); // Reducido de 0.7 a 0.65
     this.modalOverlay.fillRect(
       0,
       0,
@@ -350,16 +361,16 @@ class Roadmap extends Phaser.Scene {
     );
     this.modalContainer.setDepth(1001);
 
-    // Fondo del modal (negro suave con borde negro)
+    // Fondo del modal (negro suave con borde negro) - Aumentado height ligeramente
     this.modalBackground = this.add.graphics();
-    this.modalBackground.fillStyle(0x000000, 0.85); // Negro suave (85% opacidad)
-    this.modalBackground.fillRoundedRect(-200, -225, 400, 450, 20);
+    this.modalBackground.fillStyle(0x000000, 0.8); // Reducido de 0.85 a 0.8
+    this.modalBackground.fillRoundedRect(-225, -260, 450, 520, 20); // Aumentado de 500 a 520
     this.modalBackground.lineStyle(8, 0x000000, 1); // Borde negro 100%
-    this.modalBackground.strokeRoundedRect(-200, -225, 400, 450, 20);
+    this.modalBackground.strokeRoundedRect(-225, -260, 450, 520, 20);
     this.modalContainer.add(this.modalBackground);
 
     // Título del nivel (blanco - fuente Bangers)
-    const titleText = this.add.text(0, -170, levelName, {
+    const titleText = this.add.text(0, -200, levelName, {
       fontFamily: "Bangers",
       fontSize: "56px",
       color: "#ffffff", // Blanco
@@ -368,13 +379,32 @@ class Roadmap extends Phaser.Scene {
     titleText.setOrigin(0.5, 0.5);
     this.modalContainer.add(titleText);
 
+    // Subtítulo del nivel (blanco suave - fuente Bangers)
+    const subtitleText = this.add.text(0, -145, subtitle, {
+      fontFamily: "Bangers",
+      fontSize: "32px",
+      color: "#CCCCCC", // Blanco suave (antes Cyan)
+      padding: { right: 10 },
+    });
+    subtitleText.setOrigin(0.5, 0.5);
+    this.modalContainer.add(subtitleText);
+
+    // Línea divisoria debajo del subtítulo
+    const dividerLine = this.add.graphics();
+    dividerLine.lineStyle(3, 0xffffff, 0.5);
+    dividerLine.beginPath();
+    dividerLine.moveTo(-150, -110);
+    dividerLine.lineTo(150, -110);
+    dividerLine.strokePath();
+    this.modalContainer.add(dividerLine);
+
     // Obtener datos del mejor run
     const scoreData = ScoreManager.getScore(levelNumber);
 
-    // Subtítulo "Your Best Run:" (siempre visible)
-    const subtitleText = this.add.text(
+    // Texto "Your Best Run:" o "Not Played Yet"
+    const bestRunText = this.add.text(
       0,
-      -100,
+      -65,
       scoreData ? "YOUR BEST RUN:" : "NOT PLAYED YET",
       {
         fontFamily: "Bangers",
@@ -384,76 +414,80 @@ class Roadmap extends Phaser.Scene {
         strokeThickness: 3,
       }
     );
-    subtitleText.setOrigin(0.5, 0.5);
-    this.modalContainer.add(subtitleText);
+    bestRunText.setOrigin(0.5, 0.5);
+    this.modalContainer.add(bestRunText);
 
-    // Sección de estadísticas en fila (Mini-Pengus y Coins del mejor run)
-    const statsY = -30;
-    const modalWidth = 400;
-
-    // Distribuir en space-evenly: dividir el ancho en 3 partes iguales
-    const spacing = modalWidth / 3;
-    const leftGroupX = -modalWidth / 2 + spacing; // 1/3 desde la izquierda
-    const rightGroupX = -modalWidth / 2 + spacing * 2; // 2/3 desde la izquierda
-
-    // Grupo Mini-Pingu (centrado en leftGroupX)
-    const miniPinguIcon = this.add.image(leftGroupX - 30, statsY, "mini-pingu");
-    miniPinguIcon.setScale(1.0);
-    miniPinguIcon.setOrigin(0.5, 0.5);
-    this.modalContainer.add(miniPinguIcon);
-
-    // Mini-Pingu count (blanco - fuente Bangers, a la derecha del icono)
-    const miniPinguCount = scoreData?.miniPingusCollected ?? 0;
-    const totalMiniPingus = this.levelTotals[levelIndex].miniPingus;
-    const miniPinguText = this.add.text(
-      leftGroupX + 10,
-      statsY,
-      `${miniPinguCount}/${totalMiniPingus}`,
-      {
-        fontFamily: "Bangers",
-        fontSize: "36px",
-        color: "#ffffff", // Blanco
-        padding: { right: 10 }, // Padding para evitar cortes por inclinación
-      }
-    );
-    miniPinguText.setOrigin(0, 0.5);
-    this.modalContainer.add(miniPinguText);
-
-    // Grupo Coins (centrado en rightGroupX)
-    const coinIcon = this.add.image(
-      rightGroupX - 30,
-      statsY,
-      "PT_TOKEN_MASTER_001"
-    );
-    coinIcon.setScale(1.4); // Más grande que mini-pingu
-    coinIcon.setOrigin(0.5, 0.5);
-    this.modalContainer.add(coinIcon);
-
-    // Coin count (blanco - fuente Bangers, a la derecha del icono)
-    const coinCount = scoreData?.coinsCollected ?? 0;
-    const totalCoins = this.levelTotals[levelIndex].coins;
-    const coinText = this.add.text(
-      rightGroupX + 10,
-      statsY,
-      `${coinCount}/${totalCoins}`,
-      {
-        fontFamily: "Bangers",
-        fontSize: "36px",
-        color: "#ffffff", // Blanco
-        padding: { right: 10 }, // Padding para evitar cortes por inclinación
-      }
-    );
-    coinText.setOrigin(0, 0.5);
-    this.modalContainer.add(coinText);
-
-    // Sección de vidas (corazones) - entre stats y score
+    // Solo mostrar stats si hay scoreData
     if (scoreData) {
-      const livesY = 30; // Entre stats (-30) y score (80) - aumentado de 20 a 30
+      // Sección de estadísticas en fila (Mini-Pengus y Coins del mejor run)
+      const statsY = -5; // Aumentado gap desde -10 a -5
+      const modalWidth = 450; // Actualizado al nuevo ancho
+
+      // Más espacio entre mini-pingus y coins
+      const leftGroupX = -70; // Posición izquierda para mini-pingu
+      const rightGroupX = 70; // Posición derecha para coins (más separación)
+
+      // Grupo Mini-Pingu (centrado en leftGroupX)
+      const miniPinguIcon = this.add.image(
+        leftGroupX - 30,
+        statsY,
+        "mini-pingu"
+      );
+      miniPinguIcon.setScale(1.0);
+      miniPinguIcon.setOrigin(0.5, 0.5);
+      this.modalContainer.add(miniPinguIcon);
+
+      // Mini-Pingu count (blanco - fuente Bangers, a la derecha del icono)
+      const miniPinguCount = scoreData.miniPingusCollected ?? 0;
+      const totalMiniPingus = this.levelTotals[levelIndex].miniPingus;
+      const miniPinguText = this.add.text(
+        leftGroupX + 10,
+        statsY,
+        `${miniPinguCount}/${totalMiniPingus}`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "36px",
+          color: "#ffffff", // Blanco
+          padding: { right: 10 }, // Padding para evitar cortes por inclinación
+        }
+      );
+      miniPinguText.setOrigin(0, 0.5);
+      this.modalContainer.add(miniPinguText);
+
+      // Grupo Coins (centrado en rightGroupX)
+      const coinIcon = this.add.image(
+        rightGroupX - 30,
+        statsY,
+        "PT_TOKEN_MASTER_001"
+      );
+      coinIcon.setScale(1.4); // Más grande que mini-pingu
+      coinIcon.setOrigin(0.5, 0.5);
+      this.modalContainer.add(coinIcon);
+
+      // Coin count (blanco - fuente Bangers, a la derecha del icono)
+      const coinCount = scoreData.coinsCollected ?? 0;
+      const totalCoins = this.levelTotals[levelIndex].coins;
+      const coinText = this.add.text(
+        rightGroupX + 10,
+        statsY,
+        `${coinCount}/${totalCoins}`,
+        {
+          fontFamily: "Bangers",
+          fontSize: "36px",
+          color: "#ffffff", // Blanco
+          padding: { right: 10 }, // Padding para evitar cortes por inclinación
+        }
+      );
+      coinText.setOrigin(0, 0.5);
+      this.modalContainer.add(coinText);
+
+      // Sección de vidas (corazones) - entre stats y score
+      const livesY = 55; // Ajustado para el nuevo espaciado
       const livesRemaining = 3 - (scoreData.livesMissed ?? 0); // Calcular vidas restantes
       const heartSpacing = 50; // Espacio entre corazones
       const startHeartX = -heartSpacing; // Centrar los 3 corazones
 
-      // Crear 3 corazones
+      // Crear 3 corazones (ligeramente más grandes)
       for (let i = 0; i < 3; i++) {
         const heartX = startHeartX + i * heartSpacing;
         // Frame 0 = lleno, Frame 2 = vacío (Frame 1 es semi-lleno)
@@ -464,15 +498,13 @@ class Roadmap extends Phaser.Scene {
           "heart_spritesheet",
           heartFrame
         );
-        heart.setScale(1.2);
+        heart.setScale(1.3); // Aumentado de 1.2 a 1.3
         heart.setOrigin(0.5, 0.5);
         this.modalContainer.add(heart);
       }
-    }
 
-    // SCORE del mejor run (más grande y destacado)
-    if (scoreData) {
-      const scoreText = this.add.text(0, 80, `SCORE: ${scoreData.score}`, {
+      // SCORE del mejor run (más grande y destacado)
+      const scoreText = this.add.text(0, 130, `SCORE: ${scoreData.score}`, {
         fontFamily: "Bangers",
         fontSize: "48px",
         color: "#FFDE59", // Amarillo destacado
@@ -484,7 +516,8 @@ class Roadmap extends Phaser.Scene {
     }
 
     // Botón START (amarillo #FFDE59 con borde negro)
-    const startButtonY = scoreData ? 160 : 80; // Ajustar posición según si hay score (aumentado de 150 a 160)
+    // Modal va de -260 a +260, botón en la misma posición siempre
+    const startButtonY = 210; // Posición fija para ambos casos
     const startButton = this.add.graphics();
     startButton.fillStyle(0xffde59, 1); // Amarillo #FFDE59
     startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);

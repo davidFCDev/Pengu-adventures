@@ -1,4 +1,6 @@
+import { MobileControlsSystem } from "../../systems/MobileControlsSystem";
 import { Snowball } from "./Snowball";
+
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasdKeys?: {
@@ -10,6 +12,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private jumpKey?: Phaser.Input.Keyboard.Key;
   private throwKey?: Phaser.Input.Keyboard.Key;
   private crouchKey?: Phaser.Input.Keyboard.Key;
+
+  // Sistema de controles móviles
+  private mobileControls?: MobileControlsSystem;
+  private wasButtonAPressed: boolean = false; // Para detectar tap del botón A (saltar)
+  private wasButtonBPressed: boolean = false; // Para detectar tap del botón B (lanzar)
   private isSwimming: boolean = false;
   private isClimbing: boolean = false;
   private swimSpeed: number = 200; // Aumentado de 160 a 200 para nado más rápido
@@ -118,6 +125,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         Phaser.Input.Keyboard.KeyCodes.SHIFT
       );
     }
+
+    // Inicializar controles móviles
+    this.mobileControls = new MobileControlsSystem(this.scene);
   }
   private setupSounds(): void {
     // Configurar sonidos con volumen bajo y suave
@@ -217,6 +227,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       !this.crouchKey
     )
       return;
+
     const body = this.body as Phaser.Physics.Arcade.Body;
     const speed = this.isSwimming ? this.swimSpeed : this.walkSpeed;
     // Detectar si está en el suelo
@@ -280,8 +291,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     // Debug: mostrar información del estado cada cierto tiempo
     // Movimiento horizontal y animaciones
-    const isMovingLeft = this.cursors.left.isDown || this.wasdKeys.A.isDown;
-    const isMovingRight = this.cursors.right.isDown || this.wasdKeys.D.isDown;
+    // Combinar input de teclado y joystick móvil
+    const keyboardLeft = this.cursors.left.isDown || this.wasdKeys.A.isDown;
+    const keyboardRight = this.cursors.right.isDown || this.wasdKeys.D.isDown;
+    const joystickLeft =
+      this.mobileControls && this.mobileControls.joystickDirection.x < -0.2; // Más sensible horizontalmente
+    const joystickRight =
+      this.mobileControls && this.mobileControls.joystickDirection.x > 0.2; // Más sensible horizontalmente
+
+    const isMovingLeft = keyboardLeft || joystickLeft;
+    const isMovingRight = keyboardRight || joystickRight;
     // Ajustar velocidad según el modo
     const currentSpeed = this.isGhost ? this.ghostSpeed : speed;
     if (isMovingLeft) {
@@ -342,9 +361,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     } else if (this.isSwimming) {
       // Estilo Flappy Bird: impulsos hacia arriba, gravedad constante hacia abajo
       const currentTime = this.scene.time.now;
-      // Detectar si se presiona cualquiera de las teclas de nado
+      // Detectar si se presiona cualquiera de las teclas de nado (teclado o botón móvil)
+      const mobileJump =
+        this.mobileControls && this.mobileControls.buttonAPressed;
       const isSwimKeyPressed =
-        this.cursors.up.isDown || this.wasdKeys.W.isDown || this.jumpKey.isDown;
+        this.cursors.up.isDown ||
+        this.wasdKeys.W.isDown ||
+        this.jumpKey.isDown ||
+        mobileJump;
       if (
         isSwimKeyPressed &&
         currentTime - this.lastFlappyTime > this.flappyCooldown
@@ -361,8 +385,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     } else if (this.isClimbing) {
       // Modo escalada: movimiento vertical controlado
-      const isMovingUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
-      const isMovingDown = this.cursors.down.isDown || this.wasdKeys.S.isDown;
+      const keyboardUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+      const keyboardDown = this.cursors.down.isDown || this.wasdKeys.S.isDown;
+
+      const joystickUp =
+        this.mobileControls && this.mobileControls.joystickDirection.y < -0.5;
+      const joystickDown =
+        this.mobileControls && this.mobileControls.joystickDirection.y > 0.5;
+
+      const isMovingUp = keyboardUp || joystickUp;
+      const isMovingDown = keyboardDown || joystickDown;
+
       if (isMovingUp) {
         body.setVelocityY(-this.climbSpeed);
         // Mantener animación de escalada
@@ -385,8 +418,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.hasDoubleJump = false;
       }
 
-      // Detectar si la tecla de salto fue presionada (nuevo tap)
-      const jumpJustPressed = this.jumpKey.isDown && !this.wasJumpPressed;
+      // Detectar si la tecla de salto fue presionada (nuevo tap) - teclado o móvil
+      const mobileJumpJustPressed =
+        this.mobileControls &&
+        this.mobileControls.buttonAPressed &&
+        !this.wasButtonAPressed;
+      const jumpJustPressed =
+        (this.jumpKey.isDown && !this.wasJumpPressed) || mobileJumpJustPressed;
       const currentTime = this.scene.time.now;
       const enoughTimePassed =
         currentTime - this.lastJumpTime > this.minJumpDelay;
@@ -435,6 +473,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       // Actualizar estado de la tecla de salto para el próximo frame
       this.wasJumpPressed = this.jumpKey.isDown;
+      if (this.mobileControls) {
+        this.wasButtonAPressed = this.mobileControls.buttonAPressed;
+      }
 
       // 🐛 FIX: Mantener animación de salto si está subiendo rápidamente
       if (body.velocity.y < -200 && !this.isOnGround) {
@@ -461,9 +502,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private handleThrow(): void {
     const currentTime = this.scene.time.now;
     const body = this.body as Phaser.Physics.Arcade.Body;
-    // Detectar tap de la tecla E (presionada ahora pero no estaba presionada antes)
+    // Detectar tap de la tecla E o botón B móvil (presionada ahora pero no estaba presionada antes)
+    const mobileThrowJustPressed =
+      this.mobileControls &&
+      this.mobileControls.buttonBPressed &&
+      !this.wasButtonBPressed;
     const isThrowKeyJustPressed =
-      this.throwKey!.isDown && !this.wasThrowKeyDown;
+      (this.throwKey!.isDown && !this.wasThrowKeyDown) ||
+      mobileThrowJustPressed;
     if (isThrowKeyJustPressed) {
       if (this.isGhost) {
         // BLOW: Se puede usar en movimiento, solo requiere cooldown (como snowball)
@@ -501,14 +547,23 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
     // Actualizar estado de la tecla para el próximo frame
     this.wasThrowKeyDown = this.throwKey!.isDown;
+    if (this.mobileControls) {
+      this.wasButtonBPressed = this.mobileControls.buttonBPressed;
+    }
   }
   private handleCrouch(): void {
-    // Detectar si se está presionando DOWN arrow o SHIFT para agacharse
+    // Detectar si se está presionando DOWN arrow, SHIFT o joystick abajo para agacharse
     // SOLO si no está en modo climbing (para no interferir con bajar escaleras)
-    const isCrouchPressed =
+    const keyboardCrouch =
       this.crouchKey!.isDown ||
       (!this.isClimbing &&
         (this.cursors!.down.isDown || this.wasdKeys!.S.isDown));
+    const joystickCrouch =
+      !this.isClimbing &&
+      this.mobileControls &&
+      this.mobileControls.joystickDirection.y > 0.5; // Ajustado a 0.5
+
+    const isCrouchPressed = keyboardCrouch || joystickCrouch;
     const wasCrouching = this.isCrouching;
 
     // 🏠 DETECCIÓN DE TECHO: Si hay techo encima, forzar crouch
@@ -1375,5 +1430,35 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       ((tile.properties as any).collision === true ||
         (tile.properties as any).cross === true)
     );
+  }
+
+  /**
+   * Muestra u oculta los controles móviles
+   */
+  public setMobileControlsVisible(visible: boolean): void {
+    if (this.mobileControls) {
+      this.mobileControls.setVisible(visible);
+    }
+  }
+
+  /**
+   * Limpia los recursos del player
+   */
+  public destroy(fromScene?: boolean): void {
+    // Limpiar controles móviles
+    if (this.mobileControls) {
+      this.mobileControls.destroy();
+    }
+
+    // Limpiar timers activos
+    this.activeTimers.forEach((timer) => {
+      if (timer) {
+        timer.destroy();
+      }
+    });
+    this.activeTimers = [];
+
+    // Llamar al destroy del padre
+    super.destroy(fromScene);
   }
 }

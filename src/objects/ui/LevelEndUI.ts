@@ -33,27 +33,28 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       this.scene.cameras.main.width,
       this.scene.cameras.main.height,
       0x000000,
-      0.7
+      0.65 // Reducido de 0.7 a 0.65
     );
     this.background.setScrollFactor(0);
     this.add(this.background);
 
     // Contenedor del modal (más grande para el desglose del score)
+    const modalWidth = 500; // Aumentado de 400 a 500
     const modalHeight = this.scoreData ? 550 : 400; // Más alto si hay scoreData
     const modalBg = this.scene.add.graphics();
-    modalBg.fillStyle(0x000000, 0.85); // Negro suave (85% opacidad)
+    modalBg.fillStyle(0x000000, 0.8); // Reducido de 0.85 a 0.8
     modalBg.fillRoundedRect(
-      centerX - 200,
+      centerX - modalWidth / 2,
       centerY - modalHeight / 2,
-      400,
+      modalWidth,
       modalHeight,
       20
     );
     modalBg.lineStyle(8, 0x000000, 1); // Borde negro 100%
     modalBg.strokeRoundedRect(
-      centerX - 200,
+      centerX - modalWidth / 2,
       centerY - modalHeight / 2,
-      400,
+      modalWidth,
       modalHeight,
       20
     );
@@ -67,7 +68,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       "LEVEL COMPLETE!",
       {
         fontFamily: "Bangers",
-        fontSize: "48px",
+        fontSize: "56px", // Aumentado de 48px a 56px
         color: "#ffffff",
         padding: { right: 10 },
       }
@@ -115,7 +116,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         `Coins: ${this.scoreData.coinsCollected}/${this.scoreData.totalCoins}  (+${this.scoreData.coinPoints})`,
         {
           fontFamily: "Bangers",
-          fontSize: "28px", // Aumentado de 24px a 28px
+          fontSize: "32px", // Aumentado de 28px a 32px
           color: "#FFD700", // Dorado para monedas
         }
       );
@@ -133,7 +134,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         `Mini-Pingus: ${this.scoreData.miniPingusCollected}/${this.scoreData.totalMiniPingus}  (+${this.scoreData.miniPinguPoints})`,
         {
           fontFamily: "Bangers",
-          fontSize: "28px", // Aumentado de 24px a 28px
+          fontSize: "32px", // Aumentado de 28px a 32px
           color: "#00D9FF", // Celeste para mini-pingus
         }
       );
@@ -153,7 +154,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         )})`,
         {
           fontFamily: "Bangers",
-          fontSize: "28px", // Aumentado de 24px a 28px
+          fontSize: "32px", // Aumentado de 28px a 32px
           color: "#FFFFFF",
         }
       );
@@ -173,7 +174,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         )})`,
         {
           fontFamily: "Bangers",
-          fontSize: "28px", // Aumentado de 24px a 28px
+          fontSize: "32px", // Aumentado de 28px a 32px
           color: "#FF6B6B", // Rojo suave para vidas
         }
       );
@@ -201,7 +202,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       `SCORE: ${this.scoreData.finalScore}`,
       {
         fontFamily: "Bangers",
-        fontSize: "44px", // Aumentado de 40px a 44px
+        fontSize: "48px", // Aumentado de 44px a 48px
         color: "#FFDE59", // Amarillo como los botones
         stroke: "#000000",
         strokeThickness: 4,

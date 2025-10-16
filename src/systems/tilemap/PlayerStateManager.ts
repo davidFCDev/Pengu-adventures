@@ -52,7 +52,12 @@ export class PlayerStateManager {
     );
 
     // Solo activar climbing si está en escalera Y presiona hacia arriba
-    const isPressingUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+    // Detectar input de teclado o joystick móvil
+    const keyboardUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+    const mobileControls = (this.player as any).mobileControls;
+    const joystickUp =
+      mobileControls && mobileControls.joystickDirection.y < -0.5;
+    const isPressingUp = keyboardUp || joystickUp;
 
     // ACTIVAR climbing: Solo si está en escalera Y presiona UP intencionalmente
     if (isOnLadder && isPressingUp && !this.player.getIsClimbing()) {
