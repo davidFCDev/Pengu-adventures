@@ -25,6 +25,13 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     this.titleText = titleText || "LEVEL COMPLETE!"; // Default o customizado
     this.isBossLevel = isBossLevel; // Guardar flag de boss level
 
+    console.log(
+      "🎯 LevelEndUI creado - isBossLevel:",
+      this.isBossLevel,
+      "scoreData:",
+      this.scoreData
+    );
+
     // Fijar al centro de la cámara
     this.setScrollFactor(0);
     this.setDepth(1000);
@@ -118,6 +125,12 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     };
 
     // 1. Monedas (solo mostrar si NO es boss level)
+    console.log(
+      "🪙 Verificando monedas - isBossLevel:",
+      this.isBossLevel,
+      "coinsCollected:",
+      this.scoreData.coinsCollected
+    );
     if (!this.isBossLevel && this.scoreData.coinsCollected !== undefined) {
       const coinsText = this.scene.add.text(
         startX,
@@ -136,6 +149,12 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     }
 
     // 2. Mini-Pingus (solo mostrar si NO es boss level)
+    console.log(
+      "🐧 Verificando mini-pingus - isBossLevel:",
+      this.isBossLevel,
+      "miniPingusCollected:",
+      this.scoreData.miniPingusCollected
+    );
     if (!this.isBossLevel && this.scoreData.miniPingusCollected !== undefined) {
       const pinguText = this.scene.add.text(
         startX,
