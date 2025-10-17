@@ -408,6 +408,20 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/electrocute-ISm1Olyb9dag0f5mlYJh6XPSXCrvdm.mp3?9igL"
     );
 
+    // ========== SONIDOS DE CONGELACIÓN ==========
+    // Sonido cuando la bola de nieve congela a un enemigo (Slime)
+    this.load.audio(
+      "freeze_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/freeze-nDjIVZAKd1MZlmm4VmqC6wG8ys2pj6.mp3?GyOI"
+    );
+
+    // ========== SONIDOS DE PUERTAS ==========
+    // Sonido cuando intentas abrir una puerta sin tener llave
+    this.load.audio(
+      "door_error_sound",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/error-te5U64ggXEevr6c7P2xSohfUNU3HTY.mp3?HuIY"
+    );
+
     // ========== SONIDOS DE BOTONES E INTERACCIONES ==========
     // Sonido cuando el jugador activa el botón rojo
     this.load.audio(

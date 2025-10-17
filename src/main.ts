@@ -22,6 +22,9 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GameSettings.canvas.width,
     height: GameSettings.canvas.height,
+    // Mejoras para móvil: expandir para llenar la pantalla
+    expandParent: true,
+    fullscreenTarget: document.body,
   },
   backgroundColor: "#1a1a1a",
   // Scene order: PreloadScene -> MainPage -> Roadmap (Level Select) -> Level1 -> Level2 -> Level3 -> Level4 -> Level5 -> FirstBoss (BOSS)

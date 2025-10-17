@@ -205,6 +205,11 @@ export class DoorSystem {
         this.animateDoorOpening(doorPart, index * 100);
       });
     } else {
+      // 🔊 Reproducir sonido de error cuando no hay llave
+      if (this.scene.sound) {
+        this.scene.sound.play("door_error_sound", { volume: 0.6 });
+      }
+
       // Si no hay llaves, reactivar las partes
       doorParts.forEach((doorPart) => {
         doorPart.sprite.setActive(true);

@@ -323,6 +323,11 @@ export class FreezableEnemy extends Phaser.Physics.Arcade.Sprite {
     this.enemyState = FreezableEnemyState.FROZEN;
     this.frozenTimer = 5000; // 5 segundos congelado
 
+    // 🔊 Reproducir sonido de congelación
+    if (this.scene.sound) {
+      this.scene.sound.play("freeze_sound", { volume: 0.5 });
+    }
+
     // Detener movimiento
     if (this.body) {
       (this.body as Phaser.Physics.Arcade.Body).setVelocityX(0);

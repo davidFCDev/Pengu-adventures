@@ -231,21 +231,15 @@ export class MobileControlsSystem {
       }
     });
 
-    this.joystickZone.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+    // Mover el handler de movimiento al nivel global de la escena
+    // Esto permite que el joystick siga funcionando aunque el dedo salga del área
+    this.scene.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (this.joystickActive && pointer.id === this.joystickPointerId) {
         this.updateJoystick(pointer);
       }
     });
 
-    this.joystickZone.on("pointerup", (pointer: Phaser.Input.Pointer) => {
-      if (this.joystickActive && pointer.id === this.joystickPointerId) {
-        this.joystickActive = false;
-        this.joystickPointerId = -1;
-        this.resetJoystick();
-      }
-    });
-
-    // Evento global de respaldo para resetear el joystick si se suelta fuera de la zona
+    // Resetear joystick solo cuando se levanta el dedo
     this.scene.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
       if (this.joystickActive && pointer.id === this.joystickPointerId) {
         this.joystickActive = false;

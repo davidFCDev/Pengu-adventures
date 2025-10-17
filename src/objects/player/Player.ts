@@ -193,6 +193,18 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     body.setVelocity(0, 0);
   }
   private playAnimation(animationKey: string): void {
+    // 🐛 DEBUG: Log cuando se intenta reproducir CROUCH desde cualquier parte
+    if (animationKey === "penguin_crouch") {
+      const stack = new Error().stack;
+      console.log("🎯 INTENTO DE REPRODUCIR CROUCH:", {
+        currentAnimation: this.currentAnimation,
+        newAnimation: animationKey,
+        isPlayingCrouch:
+          this.anims.isPlaying && this.currentAnimation === "penguin_crouch",
+        callStack: stack?.split("\n").slice(1, 4).join("\n"), // Mostrar las primeras 3 líneas del stack
+      });
+    }
+
     // No cambiar animación si está ejecutando THROW o BLOW, excepto para animaciones especiales
     const isSpecialAnimation =
       animationKey === "penguin_climb" || animationKey === "penguin_swing";
@@ -609,22 +621,60 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
   private handleCrouch(): void {
-    // Detectar si se está presionando DOWN arrow, SHIFT o joystick abajo para agacharse
-    // SOLO si no está en modo climbing (para no interferir con bajar escaleras)
+    // 🎯 CROUCH mientras te mueves: Permitir agacharse con DOWN/S incluso si te mueves
+    // PERO: No activar si SOLO empujas contra una pared (sin DOWN)
+    const keyboardLeft = this.cursors!.left.isDown || this.wasdKeys!.A.isDown;
+    const keyboardRight = this.cursors!.right.isDown || this.wasdKeys!.D.isDown;
+    const keyboardDown = this.cursors!.down.isDown || this.wasdKeys!.S.isDown;
+
+    const body = this.body as Phaser.Physics.Arcade.Body;
+
+    // CROUCH si:
+    // 1. Se presiona DOWN/S o SHIFT (crouchKey) - puede estar moviéndose
+    // 2. NO se está escalando
     const keyboardCrouch =
-      this.crouchKey!.isDown ||
-      (!this.isClimbing &&
-        (this.cursors!.down.isDown || this.wasdKeys!.S.isDown));
+      this.crouchKey!.isDown || (!this.isClimbing && keyboardDown);
+
+    // Para joystick: Permitir movimiento lateral mientras se agacha
+    // Solo verificar que haya suficiente presión hacia abajo
     const joystickCrouch =
       !this.isClimbing &&
       this.mobileControls &&
-      this.mobileControls.joystickDirection.y > 0.5; // Ajustado a 0.5
+      this.mobileControls.joystickDirection.y > 0.5; // Presión vertical hacia abajo
 
     const isCrouchPressed = keyboardCrouch || joystickCrouch;
     const wasCrouching = this.isCrouching;
 
     // 🏠 DETECCIÓN DE TECHO: Si hay techo encima, forzar crouch
     const hasCeilingAbove = this.checkCeilingCollision();
+
+    // 🐛 DEBUG: Registrar cuando se activa crouch
+    if ((isCrouchPressed || hasCeilingAbove) && !wasCrouching) {
+      console.log("🔴 CROUCH ACTIVADO:", {
+        reason: hasCeilingAbove ? "TECHO DETECTADO" : "TECLA PRESIONADA",
+        keyboardCrouch,
+        joystickCrouch,
+        hasCeilingAbove,
+        keys: {
+          left: keyboardLeft,
+          right: keyboardRight,
+          down: keyboardDown,
+          shift: this.crouchKey!.isDown,
+        },
+        body: {
+          blockedLeft: body.blocked.left,
+          blockedRight: body.blocked.right,
+          blockedUp: body.blocked.up,
+          velocityX: body.velocity.x.toFixed(0),
+        },
+        joystick: this.mobileControls
+          ? {
+              x: this.mobileControls.joystickDirection.x.toFixed(2),
+              y: this.mobileControls.joystickDirection.y.toFixed(2),
+            }
+          : null,
+      });
+    }
 
     this.isCrouching = isCrouchPressed || hasCeilingAbove;
 
@@ -636,6 +686,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     ) {
       // Solo iniciar animación si no estaba agachado antes
       if (!wasCrouching) {
+        // 🐛 DEBUG: Log cuando se reproduce la animación CROUCH
+        console.log("🎬 REPRODUCIENDO ANIMACIÓN CROUCH", {
+          wasCrouching,
+          isCrouching: this.isCrouching,
+          currentAnimation: this.currentAnimation,
+          isOnGround: this.isOnGround,
+        });
         // 🎬 SIEMPRE reproducir la animación crouch primero (incluso en movimiento)
         this.playAnimation("penguin_crouch");
         // Cuando termine la animación crouch, cambiar a crawl si se está moviendo
@@ -763,25 +820,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const body = this.body as Phaser.Physics.Arcade.Body;
 
+    // 🎯 FIX: Solo detectar techo ARRIBA, no paredes laterales
     // Calcular la posición donde estaría la cabeza si se levanta (altura normal)
     const normalHeight = 110;
     const headY = this.y - normalHeight / 2; // Parte superior del hitbox normal
 
-    // Verificar tiles en 3 posiciones horizontales (izquierda, centro, derecha)
+    // 🔍 IMPORTANTE: Usar solo puntos que estén dentro del ancho del cuerpo actual
+    // para evitar detectar paredes laterales como techos
+    const bodyWidth = 40; // Ancho del cuerpo del jugador
     const checkPoints = [
-      { x: this.x - 30, y: headY }, // Izquierda
+      { x: this.x - bodyWidth / 3, y: headY }, // Izquierda (dentro del cuerpo)
       { x: this.x, y: headY }, // Centro
-      { x: this.x + 30, y: headY }, // Derecha
+      { x: this.x + bodyWidth / 3, y: headY }, // Derecha (dentro del cuerpo)
     ];
+
+    // 🐛 DEBUG: Registrar cuando se detecta techo
+    let ceilingDetected = false;
+    let detectionDetails: any[] = [];
 
     for (const point of checkPoints) {
       const tile = surfaceLayer.getTileAtWorldXY(point.x, point.y, true);
       if (tile && tile.properties?.collision === true) {
-        return true; // Hay techo, debe permanecer agachado
+        ceilingDetected = true;
+        detectionDetails.push({
+          tileX: tile.x,
+          tileY: tile.y,
+          pointX: point.x.toFixed(0),
+          pointY: point.y.toFixed(0),
+          playerY: this.y.toFixed(0),
+        });
       }
     }
 
-    return false; // No hay techo, puede levantarse
+    // Log solo cuando se detecta techo
+    if (ceilingDetected) {
+      console.log("🏠 TECHO DETECTADO:", {
+        playerPos: { x: this.x.toFixed(0), y: this.y.toFixed(0) },
+        headY: headY.toFixed(0),
+        checkPoints: detectionDetails,
+        bodyBlocked: {
+          up: body.blocked.up,
+          left: body.blocked.left,
+          right: body.blocked.right,
+        },
+      });
+    }
+
+    return ceilingDetected;
   }
 
   private throwSnowball(): void {
