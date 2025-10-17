@@ -101,15 +101,22 @@ class Roadmap extends Phaser.Scene {
   private modalBackground: Phaser.GameObjects.Graphics | null = null;
   private modalOverlay: Phaser.GameObjects.Graphics | null = null;
 
-  // Estado de los niveles
-  private levelsUnlocked: boolean[] = [
-    true, // Level 1
-    true, // Level 2 - ACTIVADO PARA TESTING
-    true, // Level 3 - ACTIVADO PARA TESTING
-    true, // Level 4 - ACTIVADO PARA TESTING
-    true, // Level 5 - ACTIVADO PARA TESTING
-    true, // Level 6 (Boss) - ACTIVADO PARA TESTING
-  ];
+  // Footer con score total y botones
+  private footerBackground!: Phaser.GameObjects.Rectangle;
+  private totalScoreText!: Phaser.GameObjects.Text;
+  private exitButtonGraphics!: Phaser.GameObjects.Graphics;
+  private exitButtonText!: Phaser.GameObjects.Text;
+  private exitButtonHitArea!: Phaser.GameObjects.Rectangle;
+  private infoButtonGraphics!: Phaser.GameObjects.Graphics;
+  private infoButtonText!: Phaser.GameObjects.Text;
+  private infoButtonHitArea!: Phaser.GameObjects.Rectangle;
+  private instructionsModal?: any; // Modal de instrucciones
+
+  // NOTA: Estado de niveles desbloqueados ahora se gestiona desde ScoreManager
+  // Para compatibilidad temporal durante migración
+  private get levelsUnlocked(): boolean[] {
+    return ScoreManager.getUnlockedLevelsAsBoolean();
+  }
 
   // Nivel actualmente seleccionado (null = ninguno)
   private selectedLevel: number | null = null;
@@ -133,6 +140,9 @@ class Roadmap extends Phaser.Scene {
     // Hacer el fondo responsive
     this.makeBackgroundResponsive();
 
+    // Crear el footer con Total Score y botón Save & Exit
+    this.createFooter();
+
     // Crear los botones con sus números
     this.createLevelButtons();
 
@@ -145,6 +155,18 @@ class Roadmap extends Phaser.Scene {
       volume: 0.5,
     });
     this.music.play();
+
+    // Actualizar el Total Score cuando se vuelve a esta escena
+    this.events.on("wake", this.updateTotalScore, this);
+  }
+
+  /**
+   * Actualizar el texto del Total Score
+   */
+  private updateTotalScore(): void {
+    const totalScore = this.calculateTotalScore();
+    this.totalScoreText.setText(`TOTAL SCORE: ${totalScore}`);
+    console.log(`📊 Total Score actualizado: ${totalScore}`);
   }
 
   /**
@@ -183,6 +205,365 @@ class Roadmap extends Phaser.Scene {
 
       // Reposicionar título
       this.titleText.setPosition(gameSize.width / 2, 100);
+
+      // Reposicionar footer
+      this.updateFooterPosition();
+    });
+  }
+
+  /**
+   * Crear footer con Total Score y botón Save & Exit
+   */
+  private createFooter(): void {
+    const { width, height } = this.cameras.main;
+    const footerHeight = 80;
+
+    // Fondo oscuro del footer (similar al header)
+    this.footerBackground = this.add.rectangle(
+      width / 2,
+      height - footerHeight / 2,
+      width,
+      footerHeight,
+      0x0d0d0d, // Oscuro
+      0.95
+    );
+    this.footerBackground.setOrigin(0.5, 0.5);
+    this.footerBackground.setScrollFactor(0);
+    this.footerBackground.setDepth(1000);
+
+    // Calcular Total Score sumando los mejores scores de todos los niveles
+    const totalScore = this.calculateTotalScore();
+
+    // Texto "TOTAL SCORE: XXXX" a la izquierda
+    this.totalScoreText = this.add.text(
+      30,
+      height - footerHeight / 2,
+      `TOTAL SCORE: ${totalScore}`,
+      {
+        fontFamily: "Fobble",
+        fontSize: "32px",
+        color: "#FFE66D", // Amarillo dorado
+        stroke: "#000000",
+        strokeThickness: 6,
+      }
+    );
+    this.totalScoreText.setOrigin(0, 0.5);
+    this.totalScoreText.setScrollFactor(0);
+    this.totalScoreText.setDepth(1001);
+
+    // Botón HELP a la derecha (antes del Exit)
+    const helpButtonWidth = 110;
+    const helpButtonHeight = 50;
+    const exitButtonWidth = 180;
+    const exitButtonX = width - exitButtonWidth / 2 - 30;
+    const helpButtonX =
+      exitButtonX - exitButtonWidth / 2 - helpButtonWidth / 2 - 15; // 15px de separación
+    const helpButtonY = height - footerHeight / 2;
+
+    // Graphics del botón HELP
+    this.infoButtonGraphics = this.add.graphics();
+    this.infoButtonGraphics.fillStyle(0xffaa00, 1); // Amarillo/naranja
+    this.infoButtonGraphics.fillRoundedRect(
+      helpButtonX - helpButtonWidth / 2,
+      helpButtonY - helpButtonHeight / 2,
+      helpButtonWidth,
+      helpButtonHeight,
+      12
+    );
+    this.infoButtonGraphics.lineStyle(4, 0x000000, 1); // Borde negro
+    this.infoButtonGraphics.strokeRoundedRect(
+      helpButtonX - helpButtonWidth / 2,
+      helpButtonY - helpButtonHeight / 2,
+      helpButtonWidth,
+      helpButtonHeight,
+      12
+    );
+    this.infoButtonGraphics.setScrollFactor(0);
+    this.infoButtonGraphics.setDepth(1001);
+
+    // Texto "HELP" del botón
+    this.infoButtonText = this.add.text(helpButtonX, helpButtonY, "HELP", {
+      fontFamily: "Fobble",
+      fontSize: "28px",
+      color: "#FFFFFF",
+      stroke: "#000000",
+      strokeThickness: 5,
+      fontStyle: "bold",
+    });
+    this.infoButtonText.setOrigin(0.5, 0.5);
+    this.infoButtonText.setScrollFactor(0);
+    this.infoButtonText.setDepth(1002);
+
+    // HitArea del botón HELP
+    this.infoButtonHitArea = this.add.rectangle(
+      helpButtonX,
+      helpButtonY,
+      helpButtonWidth,
+      helpButtonHeight,
+      0x000000,
+      0.01
+    );
+    this.infoButtonHitArea.setInteractive({ useHandCursor: true });
+    this.infoButtonHitArea.setScrollFactor(0);
+    this.infoButtonHitArea.setDepth(1002);
+
+    // Hover effects del botón HELP
+    this.infoButtonHitArea.on("pointerover", () => {
+      this.infoButtonGraphics.clear();
+      this.infoButtonGraphics.fillStyle(0xdd8800, 1); // Amarillo más oscuro
+      this.infoButtonGraphics.fillRoundedRect(
+        helpButtonX - helpButtonWidth / 2,
+        helpButtonY - helpButtonHeight / 2,
+        helpButtonWidth,
+        helpButtonHeight,
+        12
+      );
+      this.infoButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.infoButtonGraphics.strokeRoundedRect(
+        helpButtonX - helpButtonWidth / 2,
+        helpButtonY - helpButtonHeight / 2,
+        helpButtonWidth,
+        helpButtonHeight,
+        12
+      );
+      this.infoButtonText.setScale(1.05);
+    });
+
+    this.infoButtonHitArea.on("pointerout", () => {
+      this.infoButtonGraphics.clear();
+      this.infoButtonGraphics.fillStyle(0xffaa00, 1); // Amarillo normal
+      this.infoButtonGraphics.fillRoundedRect(
+        helpButtonX - helpButtonWidth / 2,
+        helpButtonY - helpButtonHeight / 2,
+        helpButtonWidth,
+        helpButtonHeight,
+        12
+      );
+      this.infoButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.infoButtonGraphics.strokeRoundedRect(
+        helpButtonX - helpButtonWidth / 2,
+        helpButtonY - helpButtonHeight / 2,
+        helpButtonWidth,
+        helpButtonHeight,
+        12
+      );
+      this.infoButtonText.setScale(1);
+    });
+
+    this.infoButtonHitArea.on("pointerdown", () => {
+      this.infoButtonText.setScale(0.95);
+    });
+
+    this.infoButtonHitArea.on("pointerup", () => {
+      this.infoButtonText.setScale(1.05);
+      this.showInstructionsModal();
+    });
+
+    // Botón "Save & Exit" a la derecha
+    const buttonWidth = exitButtonWidth;
+    const buttonHeight = 50;
+    const buttonX = exitButtonX;
+    const buttonY = helpButtonY;
+
+    // Graphics del botón
+    this.exitButtonGraphics = this.add.graphics();
+    this.exitButtonGraphics.fillStyle(0xff4444, 1); // Rojo
+    this.exitButtonGraphics.fillRoundedRect(
+      buttonX - buttonWidth / 2,
+      buttonY - buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      12
+    );
+    this.exitButtonGraphics.lineStyle(4, 0x000000, 1); // Borde negro
+    this.exitButtonGraphics.strokeRoundedRect(
+      buttonX - buttonWidth / 2,
+      buttonY - buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      12
+    );
+    this.exitButtonGraphics.setScrollFactor(0);
+    this.exitButtonGraphics.setDepth(1001);
+
+    // Texto del botón
+    this.exitButtonText = this.add.text(buttonX, buttonY, "SAVE & EXIT", {
+      fontFamily: "Fobble",
+      fontSize: "24px",
+      color: "#FFFFFF",
+    });
+    this.exitButtonText.setOrigin(0.5);
+    this.exitButtonText.setScrollFactor(0);
+    this.exitButtonText.setDepth(1002);
+
+    // Hit area para interactividad
+    this.exitButtonHitArea = this.add.rectangle(
+      buttonX,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      0x000000,
+      0
+    );
+    this.exitButtonHitArea.setInteractive({ useHandCursor: true });
+    this.exitButtonHitArea.setScrollFactor(0);
+    this.exitButtonHitArea.setDepth(1003);
+
+    // Efectos hover
+    this.exitButtonHitArea.on("pointerover", () => {
+      this.exitButtonGraphics.clear();
+      this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo más oscuro
+      this.exitButtonGraphics.fillRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        12
+      );
+      this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.exitButtonGraphics.strokeRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        12
+      );
+      this.exitButtonText.setScale(1.05);
+    });
+
+    this.exitButtonHitArea.on("pointerout", () => {
+      this.exitButtonGraphics.clear();
+      this.exitButtonGraphics.fillStyle(0xff4444, 1); // Rojo normal
+      this.exitButtonGraphics.fillRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        12
+      );
+      this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.exitButtonGraphics.strokeRoundedRect(
+        buttonX - buttonWidth / 2,
+        buttonY - buttonHeight / 2,
+        buttonWidth,
+        buttonHeight,
+        12
+      );
+      this.exitButtonText.setScale(1);
+    });
+
+    this.exitButtonHitArea.on("pointerdown", () => {
+      this.exitButtonText.setScale(0.95);
+    });
+
+    this.exitButtonHitArea.on("pointerup", () => {
+      this.exitButtonText.setScale(1.05);
+      this.onSaveAndExit();
+    });
+  }
+
+  /**
+   * Calcular el Total Score sumando los mejores scores de todos los niveles
+   */
+  private calculateTotalScore(): number {
+    let total = 0;
+    for (let i = 1; i <= 6; i++) {
+      const levelScore = ScoreManager.getScore(i);
+      if (levelScore) {
+        total += levelScore.score;
+      }
+    }
+    return total;
+  }
+
+  /**
+   * Actualizar la posición del footer cuando se redimensiona la pantalla
+   */
+  private updateFooterPosition(): void {
+    const { width, height } = this.cameras.main;
+    const footerHeight = 80;
+    const buttonWidth = 180;
+    const buttonHeight = 50;
+    const buttonX = width - buttonWidth / 2 - 30;
+    const buttonY = height - footerHeight / 2;
+
+    // Reposicionar footer background
+    this.footerBackground.setPosition(width / 2, height - footerHeight / 2);
+    this.footerBackground.setSize(width, footerHeight);
+
+    // Reposicionar texto de Total Score
+    this.totalScoreText.setPosition(30, height - footerHeight / 2);
+
+    // Reposicionar botón Save & Exit
+    this.exitButtonGraphics.clear();
+    this.exitButtonGraphics.fillStyle(0xff4444, 1);
+    this.exitButtonGraphics.fillRoundedRect(
+      buttonX - buttonWidth / 2,
+      buttonY - buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      12
+    );
+    this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+    this.exitButtonGraphics.strokeRoundedRect(
+      buttonX - buttonWidth / 2,
+      buttonY - buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      12
+    );
+
+    this.exitButtonText.setPosition(buttonX, buttonY);
+    this.exitButtonHitArea.setPosition(buttonX, buttonY);
+  }
+
+  /**
+   * Guardar scores en el SDK y lanzar el game over
+   */
+  private onSaveAndExit(): void {
+    console.log("💾 Guardando scores y saliendo del juego...");
+
+    // Calcular score total final
+    const finalScore = this.calculateTotalScore();
+
+    // Guardar todos los scores en el SDK (ya se hace automáticamente en ScoreManager)
+    // Pero podemos forzar una última sincronización si es necesario
+
+    // Llamar al SDK para finalizar el juego
+    if (window.FarcadeSDK) {
+      try {
+        // Enviar el score final al SDK
+        window.FarcadeSDK.singlePlayer.actions.gameOver({
+          score: finalScore,
+        });
+        console.log(`✅ Game Over enviado al SDK con score: ${finalScore}`);
+      } catch (error) {
+        console.error("❌ Error al enviar game over al SDK:", error);
+      }
+    } else {
+      console.warn("⚠️ FarcadeSDK no disponible, simulando game over local");
+      // En desarrollo local, podríamos mostrar un modal o volver al MainPage
+      alert(`Game Over!\nTotal Score: ${finalScore}`);
+    }
+  }
+
+  /**
+   * Mostrar modal de instrucciones
+   */
+  private showInstructionsModal(): void {
+    console.log("ℹ️ Mostrando instrucciones...");
+
+    // Cargar InstructionsModal dinámicamente
+    import("../objects/ui/InstructionsModal").then((module) => {
+      const InstructionsModal = module.default;
+
+      // Crear modal si no existe o reutilizar existente
+      if (!this.instructionsModal) {
+        this.instructionsModal = new InstructionsModal(this);
+      }
+
+      // Mostrar el modal
+      this.instructionsModal.show();
     });
   }
 
@@ -675,9 +1056,9 @@ class Roadmap extends Phaser.Scene {
    */
   public unlockNextLevel(currentLevelIndex: number): void {
     const nextLevelIndex = currentLevelIndex + 1;
-    if (nextLevelIndex < this.levelsUnlocked.length) {
-      this.levelsUnlocked[nextLevelIndex] = true;
-      // TODO: Aquí se integrará el SDK para guardar el progreso
+    if (nextLevelIndex < 6) {
+      // 6 niveles totales (índices 0-5)
+      ScoreManager.unlockLevel(nextLevelIndex);
       this.updateButtonStates();
     }
   }

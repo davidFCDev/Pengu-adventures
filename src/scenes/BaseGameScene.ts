@@ -873,6 +873,18 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     this.lifeSystem = new LifeSystem(this, 0, 0, showCounters, bossName);
 
+    // Configurar callbacks de botones (solo en niveles normales, no boss)
+    if (!bossName) {
+      // Callback del botón EXIT
+      this.lifeSystem.setExitCallback(() => {
+        // Abandonar el nivel sin guardar progreso y volver al Roadmap
+        console.log(
+          "EXIT button clicked - Returning to Roadmap without saving"
+        );
+        this.scene.start("Roadmap");
+      });
+    }
+
     // Inicializar contador de monedas en 0 (solo si los contadores están activos)
     if (showCounters) {
       this.lifeSystem.updateCoinCount(0);

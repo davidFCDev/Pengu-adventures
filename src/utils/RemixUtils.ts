@@ -58,8 +58,14 @@ export function initializeRemixSDK(game: Phaser.Game): void {
 
   // Setup play_again handler
   window.FarcadeSDK.on("play_again", () => {
-    // TODO: Restart the game
-    // Your game restart logic is called here
+    // Reiniciar el juego llevando al jugador de vuelta al Roadmap
+    console.log("🔄 Play Again - Volviendo al Roadmap...");
+
+    // Obtener el SceneManager
+    const sceneManager = game.scene;
+
+    // Ir directamente al Roadmap
+    sceneManager.start("Roadmap");
 
     // Attempt to bring focus back to the game canvas
     try {
@@ -134,5 +140,21 @@ function loadRemixPerformancePlugin(): void {
       });
   } catch (error) {
     // Silently fail if plugin loading fails
+  }
+}
+
+/**
+ * Helper function to trigger haptic feedback
+ * Can be called from anywhere in the game for important interactions
+ * Safely checks if SDK is available before calling
+ */
+export function triggerHapticFeedback(): void {
+  try {
+    if (window.FarcadeSDK) {
+      window.FarcadeSDK.singlePlayer.actions.hapticFeedback();
+    }
+  } catch (error) {
+    // Silently fail if SDK is not available
+    // This is expected in local development
   }
 }

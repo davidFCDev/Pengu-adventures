@@ -31,6 +31,12 @@ export class LifeSystem {
   private currentBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
   private maxBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
 
+  // Botón EXIT (solo visible en niveles normales, no en boss)
+  private exitButtonGraphics?: Phaser.GameObjects.Graphics;
+  private exitButtonText?: Phaser.GameObjects.Text;
+  private exitButtonHitArea?: Phaser.GameObjects.Rectangle;
+  private onExitCallback?: () => void; // Callback para manejar el exit desde la escena
+
   constructor(
     scene: Phaser.Scene,
     x: number = 0,
@@ -67,6 +73,9 @@ export class LifeSystem {
     // Crear barra de salud del boss si se proporciona un nombre
     if (bossName) {
       this.createBossHealthBar(bossName);
+    } else {
+      // Solo crear botón EXIT si NO es nivel de boss
+      this.createExitButton();
     }
 
     // Crear los corazones FUERA del header (debajo del header, centrados)
@@ -335,6 +344,152 @@ export class LifeSystem {
 
     // Agregar el contenedor al contenedor principal
     this.container.add(this.bossHealthContainer);
+  }
+
+  /**
+   * Crear botón EXIT (pequeño, rojo, debajo del header a la derecha)
+   */
+  private createExitButton(): void {
+    const buttonWidth = 100;
+    const buttonHeight = 40;
+    const buttonX = this.scene.cameras.main.width - buttonWidth - 20; // 20px de margen derecho
+    const buttonY = 90; // Debajo del header de 80px + 10px de margen
+
+    // Crear Graphics para el botón (rectángulo redondeado rojo)
+    this.exitButtonGraphics = this.scene.add.graphics();
+    this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo oscuro
+    this.exitButtonGraphics.fillRoundedRect(
+      buttonX,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      8
+    );
+    // Borde negro
+    this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
+    this.exitButtonGraphics.strokeRoundedRect(
+      buttonX,
+      buttonY,
+      buttonWidth,
+      buttonHeight,
+      8
+    );
+
+    // Texto "EXIT" en blanco
+    this.exitButtonText = this.scene.add.text(
+      buttonX + buttonWidth / 2,
+      buttonY + buttonHeight / 2,
+      "EXIT",
+      {
+        fontFamily: "Fobble",
+        fontSize: "24px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+        fontStyle: "bold",
+      }
+    );
+    this.exitButtonText.setOrigin(0.5, 0.5);
+
+    // Crear área interactiva (hitbox) - IMPORTANTE: necesita fillColor para ser clickable
+    this.exitButtonHitArea = this.scene.add.rectangle(
+      buttonX + buttonWidth / 2,
+      buttonY + buttonHeight / 2,
+      buttonWidth,
+      buttonHeight,
+      0x000000, // Color (invisible porque alpha será 0.01)
+      0.01 // Casi invisible pero clickable
+    );
+    this.exitButtonHitArea.setInteractive({ useHandCursor: true });
+    this.exitButtonHitArea.setOrigin(0.5, 0.5);
+    this.exitButtonHitArea.setScrollFactor(0); // No se mueve con la cámara
+    this.exitButtonHitArea.setDepth(1001); // Por encima del container (1000)
+
+    // Hover effect - rojo más oscuro
+    this.exitButtonHitArea.on("pointerover", () => {
+      if (this.exitButtonGraphics) {
+        this.exitButtonGraphics.clear();
+        this.exitButtonGraphics.fillStyle(0x990000, 1); // Rojo más oscuro
+        this.exitButtonGraphics.fillRoundedRect(
+          buttonX,
+          buttonY,
+          buttonWidth,
+          buttonHeight,
+          8
+        );
+        this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
+        this.exitButtonGraphics.strokeRoundedRect(
+          buttonX,
+          buttonY,
+          buttonWidth,
+          buttonHeight,
+          8
+        );
+      }
+    });
+
+    // Hover out - volver a rojo normal
+    this.exitButtonHitArea.on("pointerout", () => {
+      if (this.exitButtonGraphics) {
+        this.exitButtonGraphics.clear();
+        this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo normal
+        this.exitButtonGraphics.fillRoundedRect(
+          buttonX,
+          buttonY,
+          buttonWidth,
+          buttonHeight,
+          8
+        );
+        this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
+        this.exitButtonGraphics.strokeRoundedRect(
+          buttonX,
+          buttonY,
+          buttonWidth,
+          buttonHeight,
+          8
+        );
+      }
+    });
+
+    // Click event - llamar callback si existe
+    this.exitButtonHitArea.on("pointerdown", () => {
+      console.log("EXIT button clicked!"); // Debug
+      // Efecto de escala al hacer click
+      if (this.exitButtonText) {
+        this.scene.tweens.add({
+          targets: this.exitButtonText,
+          scaleX: 0.9,
+          scaleY: 0.9,
+          duration: 100,
+          yoyo: true,
+          onComplete: () => {
+            // Ejecutar callback después de la animación
+            if (this.onExitCallback) {
+              this.onExitCallback();
+            }
+          },
+        });
+      }
+    });
+
+    // NO agregar al container, configurar individualmente
+    // Graphics
+    this.exitButtonGraphics.setScrollFactor(0);
+    this.exitButtonGraphics.setDepth(1000);
+
+    // Text
+    this.exitButtonText.setScrollFactor(0);
+    this.exitButtonText.setDepth(1001);
+
+    // HitArea ya tiene scrollFactor(0) y depth(1001) configurados arriba
+  }
+
+  /**
+   * Establecer callback para el botón EXIT
+   * @param callback Función a ejecutar cuando se presione EXIT
+   */
+  public setExitCallback(callback: () => void): void {
+    this.onExitCallback = callback;
   }
 
   /**

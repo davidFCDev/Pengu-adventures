@@ -1,6 +1,5 @@
 // GameOverUI.ts - Modal de Game Over con estilo similar a LevelEndUI
 export default class GameOverUI extends Phaser.GameObjects.Container {
-  private scene: Phaser.Scene;
   private background!: Phaser.GameObjects.Graphics;
   private modalBackground!: Phaser.GameObjects.Graphics;
   private titleText!: Phaser.GameObjects.Text;
@@ -35,7 +34,6 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0);
-    this.scene = scene;
     this.createUI();
     this.setVisible(false);
     this.setScrollFactor(0);
