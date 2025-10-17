@@ -75,23 +75,61 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private lastWalkSoundTime: number = 0;
   private walkSoundCooldown: number = 300; // Cooldown para evitar spam del sonido de caminar
   private wasThrowKeyDown: boolean = false; // Para detectar tap en lugar de hold
+
+  // 🐛 DEBUG: Texto de información
+  private debugText?: Phaser.GameObjects.Text;
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
     super(scene, x, y, texture || "penguin_standing");
-    // Tamaño del sprite un poco más pequeño (110x110)
-    this.setDisplaySize(110, 110);
+    // Tamaño del sprite reducido (160x174 original)
+    this.setDisplaySize(110, 120); // Reducido ~15% de 130x142, mantiene proporción
+
     // Añadir al scene
     scene.add.existing(this);
     scene.physics.add.existing(this);
+
     // Configurar física
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setBounce(0.1, 0.1);
     body.setCollideWorldBounds(true);
     body.setDragX(1200); // Drag más alto para parada más rápida
     body.setMaxVelocity(300, 600);
-    // Ajustar el cuerpo de colisión compensando el margen inferior del sprite
-    body.setSize(95, 110); // Cuerpo un poco menos ajustado
-    body.setOffset(7, 5); // Offset más moderado para contacto natural con el suelo
+
+    // 🎯 Mantener origin en 0.5, 0.5 (centrado) como funcionaba con el sprite original
+    this.setOrigin(0.5, 0.5);
+
+    // Hitbox ajustada para que el borde inferior coincida con los pies del sprite
+    // Display: 130x142, con origin 0.5 significa que el centro está en Y + 0
+    // Pies del sprite están en: Y + (displayHeight / 2) = Y + 71
+    // Queremos hitbox bottom en: Y + 71
+    // Si hitbox height = 115, entonces offset Y = 71 - 115 = -44? NO
+    // Mejor: offset Y debe posicionar el hitbox para que: offset Y + height = 71
+    // Offset Y = 71 - 115 = -44 (negativo significa que sube)
+    // PERO en Phaser, offset Y positivo baja el hitbox
+    // Con origin 0.5 y displayHeight 142: top = Y - 71, bottom = Y + 71
+    // Queremos hitbox bottom = sprite bottom (Y + 71)
+    // hitbox top = hitbox bottom - height = (Y + 71) - 115 = Y - 44
+    // offset Y = (hitbox top - sprite top) = (Y - 44) - (Y - 71) = 27 ✓ (ya está bien)
+    // El problema es que el hitbox está bien pero el sprite es más grande de lo esperado
+    // Solución: aumentar offset Y para bajar el hitbox y que coincida con los pies reales
+    body.setSize(95, 115); // Hitbox grande
+    body.setOffset(17, 27 + 26); // Offset aumentado 26px para compensar los pies que salen
+
+    // 🐛 DEBUG: Mostrar hitbox visual
+    body.debugShowBody = true;
+    body.debugBodyColor = 0x00ff00; // Verde para el hitbox
+
+    // 🐛 DEBUG: Crear texto de información
+    this.debugText = scene.add.text(10, 10, "", {
+      fontSize: "14px",
+      color: "#00ff00",
+      backgroundColor: "#000000",
+      padding: { x: 5, y: 5 },
+    });
+    this.debugText.setScrollFactor(0); // Fijo en pantalla
+    this.debugText.setDepth(10000); // Por encima de todo
+
     // Crear textura para partículas de nieve si no existe
     this.createSnowParticleTexture();
     // Configurar controles
@@ -232,6 +270,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const speed = this.isSwimming ? this.swimSpeed : this.walkSpeed;
     // Detectar si está en el suelo
     this.isOnGround = body.touching.down || body.blocked.down;
+
+    // 🐛 DEBUG: Mostrar información del hitbox
+    if (this.debugText) {
+      const spriteBottom = this.y + this.displayHeight * (1 - this.originY);
+      const hitboxBottom = body.y + body.height;
+      const alignment = spriteBottom - hitboxBottom;
+
+      this.debugText.setText(
+        [
+          `🐛 PLAYER DEBUG`,
+          `━━━━━━━━━━━━━━━━━━━━━━━`,
+          `Display: ${this.displayWidth.toFixed(
+            0
+          )}x${this.displayHeight.toFixed(0)}`,
+          `Origin: (${this.originX.toFixed(2)}, ${this.originY.toFixed(2)})`,
+          `Hitbox: ${body.width}x${body.height}`,
+          `Offset: (${body.offset.x}, ${body.offset.y})`,
+          `━━━━━━━━━━━━━━━━━━━━━━━`,
+          `Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`,
+          `Sprite Bottom: ${spriteBottom.toFixed(1)}`,
+          `Hitbox Bottom: ${hitboxBottom.toFixed(1)}`,
+          `Alignment: ${alignment.toFixed(1)}px ${
+            alignment > 0.5
+              ? "❌ Sale por abajo"
+              : alignment < -0.5
+              ? "⚠️ No llega"
+              : "✅ Perfecto"
+          }`,
+          `━━━━━━━━━━━━━━━━━━━━━━━`,
+          `On Ground: ${this.isOnGround ? "✅" : "❌"}`,
+          `Touching Down: ${body.touching.down ? "✅" : "❌"}`,
+          `Blocked Down: ${body.blocked.down ? "✅" : "❌"}`,
+          `Velocity Y: ${body.velocity.y.toFixed(1)}`,
+        ].join("\n")
+      );
+    }
+
     // 🔒 ANTI-EXPLOIT: Marcar que tocó el suelo (para prevenir exploit de cambio de modo)
     if (this.isOnGround && !this.wasOnGroundLastFrame) {
       this.hasTouchedGroundSinceLastModeChange = true;
@@ -272,7 +347,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Cuando termine la animación, mantener el último frame
         this.once("animationcomplete-penguin_crouch", () => {
           this.anims.stop();
-          this.setFrame(2); // Frame 2 es el último frame de la animación crouch
+          this.setFrame(24); // Frame 24 es el último frame de la animación crouch (nuevo sprite)
           this.updateCrouchHitbox(true);
         });
       } else {
@@ -488,8 +563,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           this.playAnimation("penguin_swing");
         } else {
           // Restaurar el cuerpo físico original SOLO si no está en CRAWL
-          body.setSize(95, 110); // Altura original
-          body.setOffset(7, 5); // Offset original
+          body.setSize(95, 115); // Hitbox original
+          body.setOffset(17, 53); // Offset original (27 + 26)
           this.playAnimation("penguin_fall");
         }
       }
@@ -580,14 +655,33 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       // Solo iniciar animación si no estaba agachado antes
       if (!wasCrouching) {
         this.playAnimation("penguin_crouch");
-        // Cuando termine la animación, mantener el último frame
+        // Cuando termine la animación crouch, cambiar a crawl si se está moviendo
         this.once("animationcomplete-penguin_crouch", () => {
-          // Parar en el último frame
-          this.anims.stop();
-          this.setFrame(2); // Frame 2 es el último frame de la animación crouch
-          // 🏃‍♂️ ALTURA REDUCIDA: Cambiar hitbox a 32px de altura cuando está en CRAWL
+          // 🏃‍♂️ ALTURA REDUCIDA: Cambiar hitbox cuando está en CRAWL
           this.updateCrouchHitbox(true);
+          // Si se está moviendo, reproducir animación crawl
+          const body = this.body as Phaser.Physics.Arcade.Body;
+          if (Math.abs(body.velocity.x) > 10) {
+            this.playAnimation("penguin_crawl");
+          } else {
+            // Si está quieto, quedarse en el último frame de crouch
+            this.anims.stop();
+            this.setFrame(24); // Frame 24 es el último frame de la animación crouch
+          }
         });
+      } else {
+        // Si ya está agachado, mostrar crawl si se mueve o standing si está quieto
+        const body = this.body as Phaser.Physics.Arcade.Body;
+        if (Math.abs(body.velocity.x) > 10) {
+          if (this.currentAnimation !== "penguin_crawl") {
+            this.playAnimation("penguin_crawl");
+          }
+        } else {
+          if (this.currentAnimation === "penguin_crawl") {
+            this.anims.stop();
+            this.setFrame(24); // Último frame de crouch para estar quieto agachado
+          }
+        }
       }
       // Reducir la velocidad al agacharse
       const body = this.body as Phaser.Physics.Arcade.Body;
@@ -614,15 +708,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (isCrawling) {
       // Reducir altura a la mitad manteniendo los pies en el suelo
-      const originalHeight = 110;
-      const crouchHeight = 55; // Mitad de la altura original
+      const originalHeight = 115;
+      const crouchHeight = 58; // Aproximadamente mitad de la altura
       const heightDifference = originalHeight - crouchHeight;
-      body.setSize(95, crouchHeight); // Ancho original, altura reducida
-      body.setOffset(7, 5 + heightDifference); // Mover el hitbox hacia arriba para que los pies queden igual
+      body.setSize(95, crouchHeight); // Ancho igual, altura reducida
+      body.setOffset(17, 53 + heightDifference); // Mover el hitbox hacia arriba para que los pies queden igual
     } else {
       // Restaurar configuración original del constructor
-      body.setSize(95, 110);
-      body.setOffset(7, 5);
+      body.setSize(95, 115);
+      body.setOffset(17, 53); // 27 + 26 = 53
     }
   }
 
@@ -845,7 +939,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.handleGhostWaterContact();
       return; // No procesar natación en modo fantasma
     }
+
+    const wasSwimming = this.isSwimming;
     this.isSwimming = swimming;
+
     // Si está nadando, no puede estar trepando
     if (swimming) {
       this.isClimbing = false;
@@ -853,7 +950,20 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.collider) {
         this.collider.active = true;
       }
+
+      // Cambiar INMEDIATAMENTE a animación de nado al entrar al agua
+      if (!wasSwimming) {
+        this.playAnimation("penguin_swing");
+      }
+    } else if (wasSwimming) {
+      // Al salir del agua, cambiar INMEDIATAMENTE a standing o la animación que corresponda
+      if (this.isOnGround) {
+        this.playAnimation("penguin_standing");
+      } else if (body.velocity.y > 50) {
+        this.playAnimation("penguin_fall");
+      }
     }
+
     if (swimming) {
       // Gravedad más natural en agua:
       // La gravedad global es 800, usar -400 para gravedad efectiva de 400 (más realista)
