@@ -155,7 +155,8 @@ export class TemporaryPlatformSystem {
     // Usamos una verificación más amplia que solo el frame específico
     const isCrouching =
       (this.player as any).isCrouching === true ||
-      (this.player as any).currentAnimation === "penguin_crouch";
+      (this.player as any).currentAnimation === "penguin_crouch" ||
+      (this.player as any).currentAnimation === "penguin_crawl";
 
     this.platformStates.forEach((state, key) => {
       if (!state.sprite || !state.isVisible) return;

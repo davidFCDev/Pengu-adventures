@@ -163,7 +163,7 @@ export class MobileControlsSystem {
     this.buttonB.setPosition(buttonBX, buttonBY);
 
     this.buttonBText = this.scene.add.text(0, 0, "B", {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "44px", // Reducido de 48 a 44 para evitar cortes
       color: "#000000",
     });
@@ -192,7 +192,7 @@ export class MobileControlsSystem {
     this.buttonA.setPosition(buttonAX, buttonAY);
 
     this.buttonAText = this.scene.add.text(0, 0, "A", {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "44px", // Reducido de 48 a 44 para mantener consistencia
       color: "#000000",
     });

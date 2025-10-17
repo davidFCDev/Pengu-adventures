@@ -1,0 +1,29 @@
+/**
+ * Custom fonts for the game
+ * Add your .otf, .ttf, or .woff fonts here
+ */
+
+@font-face {
+  font-family: "Fobble";
+  src: url("Fobble_regular-Regular.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Asegurar que la fuente esté disponible globalmente */
+body,
+canvas {
+  font-family: "Fobble", sans-serif;
+}
+
+/* Ejemplo: Si tienes múltiples variantes */
+/*
+@font-face {
+  font-family: 'TuFuenteCustom';
+  src: url('./TuFuente-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+*/

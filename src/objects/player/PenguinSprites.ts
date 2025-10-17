@@ -17,7 +17,7 @@ export class PenguinSprites {
     // STANDING separado (160x174, 1 frame)
     STANDING: {
       key: "penguin_standing",
-      url: "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Standing-TbJNq2AaI7Hv3paRQEu03jnLlPP718.png?s47F",
+      url: "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/standing-s7AJ9yM2g2wW2eFB3X1d2357zeh8lO.png?Ux5h",
       frameWidth: this.PUDGY_FRAME_WIDTH,
       frameHeight: this.PUDGY_FRAME_HEIGHT,
       frames: 1,

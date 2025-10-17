@@ -3,8 +3,9 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "",
+    "activeFile": "Level1.tmx",
     "expandedProjectPaths": [
+        "."
     ],
     "fileStates": {
         "": {
@@ -36,11 +37,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.25,
-            "selectedLayer": 3,
+            "scale": 0.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 3868,
-                "y": 1204
+                "x": 1920,
+                "y": 1044
             }
         },
         "Level1.tmx#spritesheet-backgrounds-default": {
@@ -188,17 +189,18 @@
     "map.tileWidth": 64,
     "map.width": 12,
     "openFiles": [
+        "Level1.tmx"
     ],
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "Level1.tmx",
         "Level5.tmx",
         "FirstBoss.tmx",
         "Level4.tmx",
         "Level3.tmx",
         "LevelBaseToCopy.tmx",
         "Level2.tmx",
-        "Level1.tmx",
         "TestingMap.tmx",
         "LevelBase.tmx",
         "TestingMap.json"

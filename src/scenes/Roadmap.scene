@@ -16,7 +16,7 @@
             "id": "b3e51ebb-8a11-4452-b97d-2deb0912f7e9",
             "label": "image_1",
             "texture": {
-                "key": "frostland"
+                "key": "road-page"
             },
             "x": 384,
             "y": 512
@@ -28,10 +28,10 @@
             "texture": {
                 "key": "button-2"
             },
-            "x": 208,
-            "y": 960,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 128,
+            "y": 864,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
@@ -40,70 +40,70 @@
             "texture": {
                 "key": "button-3"
             },
-            "x": 464,
-            "y": 896,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 592,
+            "y": 752,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
-            "id": "7984551e-c566-4482-a378-e9e7e1487928",
+            "id": "23dd8353-f286-4e6c-bd12-014a0a1c7229",
             "label": "image_3",
             "texture": {
                 "key": "button-3"
             },
-            "x": 256,
-            "y": 752,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 336,
+            "y": 672,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
-            "id": "81cf4c58-3ed1-4fc6-970e-904e90bf739f",
+            "id": "4353b05c-c403-49df-b22f-1a31129e8e35",
             "label": "image_4",
             "texture": {
                 "key": "button-3"
             },
-            "x": 496,
-            "y": 672,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 208,
+            "y": 528,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
-            "id": "a32c67f7-b655-4c72-a723-c32cbf8a4076",
+            "id": "dd684c8d-83de-4de2-bf8c-c2bf78c7dc1c",
             "label": "image_5",
             "texture": {
                 "key": "button-3"
             },
-            "x": 304,
-            "y": 592,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 576,
+            "y": 464,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
-            "id": "f854bcc2-d465-4136-85b2-71c64eedaf9b",
+            "id": "746983c2-5206-4408-8a4f-1eb8bfa5ad85",
             "label": "image_6",
             "texture": {
                 "key": "button-3"
             },
-            "x": 464,
-            "y": 496,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 336,
+            "y": 384,
+            "scaleX": 0.6,
+            "scaleY": 0.6
         },
         {
             "type": "Image",
-            "id": "e3ad62b6-5870-4b4b-9f33-925c9f893eed",
+            "id": "7d4cb17a-ba4b-4e56-a711-e95ae0c9d368",
             "label": "image_7",
             "texture": {
-                "key": "a2"
+                "key": "nano-banana-2025-10-16T23-35-20 (1)"
             },
-            "x": 160,
-            "y": 528,
-            "scaleX": 0.7,
-            "scaleY": 0.7
+            "x": 384,
+            "y": 880,
+            "scaleX": 0.9,
+            "scaleY": 0.9
         }
     ],
     "plainObjects": [],

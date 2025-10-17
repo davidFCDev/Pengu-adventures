@@ -28,8 +28,8 @@ export class LifeSystem {
   private bossHealthBarBorder?: Phaser.GameObjects.Graphics;
   private bossNameText?: Phaser.GameObjects.Text;
   private bossHPText?: Phaser.GameObjects.Text; // Texto "HP"
-  private currentBossHealth: number = 100;
-  private maxBossHealth: number = 100;
+  private currentBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
+  private maxBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
 
   constructor(
     scene: Phaser.Scene,
@@ -136,13 +136,13 @@ export class LifeSystem {
       this.miniPinguIcon.setScale(0.6);
       this.miniPinguCountContainer.add(this.miniPinguIcon);
 
-      // Texto contador "0" con fuente Pixelify Sans
+      // Texto contador "0" con fuente Fobble
       this.miniPinguCountText = this.scene.add.text(15, 0, "0", {
-        fontSize: "28px",
-        fontFamily: "Pixelify Sans",
+        fontSize: "38px", // Aumentado de 28px a 38px
+        fontFamily: "Fobble",
         color: "#FFD700", // Amarillo dorado
         stroke: "#000000",
-        strokeThickness: 5,
+        strokeThickness: 6, // Aumentado de 5 a 6
       });
       this.miniPinguCountText.setOrigin(0, 0.5);
       this.miniPinguCountContainer.add(this.miniPinguCountText);
@@ -170,13 +170,13 @@ export class LifeSystem {
       this.coinIcon.setScale(0.8); // Aumentado para que se vea bien en el header
       this.coinCountContainer.add(this.coinIcon);
 
-      // Texto contador "0" con fuente Pixelify Sans
+      // Texto contador "0" con fuente Fobble
       this.coinCountText = this.scene.add.text(15, 0, "0", {
-        fontSize: "28px",
-        fontFamily: "Pixelify Sans",
+        fontSize: "38px", // Aumentado de 28px a 38px
+        fontFamily: "Fobble",
         color: "#FFD700",
         stroke: "#000000",
-        strokeThickness: 5,
+        strokeThickness: 6, // Aumentado de 5 a 6
       });
       this.coinCountText.setOrigin(0, 0.5);
       this.coinCountContainer.add(this.coinCountText);
@@ -234,13 +234,13 @@ export class LifeSystem {
       this.keyIcon.setScale(0.9);
       this.keyCountContainer.add(this.keyIcon);
 
-      // Texto contador "0" con fuente Pixelify Sans
+      // Texto contador "0" con fuente Fobble
       this.keyCountText = this.scene.add.text(15, 0, "0", {
-        fontSize: "28px",
-        fontFamily: "Pixelify Sans",
+        fontSize: "38px", // Aumentado de 28px a 38px
+        fontFamily: "Fobble",
         color: "#FFD700",
         stroke: "#000000",
-        strokeThickness: 5,
+        strokeThickness: 6, // Aumentado de 5 a 6
       });
       this.keyCountText.setOrigin(0, 0.5);
       this.keyCountContainer.add(this.keyCountText);
@@ -305,11 +305,11 @@ export class LifeSystem {
       0,
       "HP",
       {
-        fontFamily: "Pixelify Sans",
-        fontSize: "26px", // Ajustado a 26px
+        fontFamily: "Fobble",
+        fontSize: "36px", // Aumentado de 26px a 36px
         color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 6,
+        strokeThickness: 7, // Aumentado de 6 a 7
         fontStyle: "bold",
       }
     );
@@ -322,11 +322,11 @@ export class LifeSystem {
       0,
       "BOSS",
       {
-        fontFamily: "Pixelify Sans",
-        fontSize: "26px", // Mismo tamaño que HP
+        fontFamily: "Fobble",
+        fontSize: "36px", // Aumentado de 26px a 36px (mismo que HP)
         color: "#ffaa00", // Color naranja/dorado
         stroke: "#000000",
-        strokeThickness: 6, // Mismo grosor que HP
+        strokeThickness: 7, // Aumentado de 6 a 7 (mismo que HP)
         fontStyle: "bold",
       }
     );

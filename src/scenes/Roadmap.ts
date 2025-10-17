@@ -13,59 +13,77 @@ class Roadmap extends Phaser.Scene {
   }
 
   editorCreate(): void {
-    // image_1 - Fondo responsive (ocupa todo el canvas)
-    const background = this.add.image(
-      this.cameras.main.width / 2,
-      this.cameras.main.height / 2,
-      "frostland"
+    // Fondo del roadmap (será ajustado en create() para ser responsive)
+    this.backgroundImage = this.add.image(384, 512, "road-page");
+    this.backgroundImage.setOrigin(0.5, 0.5);
+
+    // Título principal "FROSTLAND" (sin subtítulo)
+    this.titleText = this.add.text(384, 100, "FROSTLAND", {
+      fontFamily: "Fobble",
+      fontSize: "120px",
+      color: "#FFE66D", // Amarillo
+      stroke: "#000000", // Borde negro
+      strokeThickness: 12,
+      shadow: {
+        offsetX: 6,
+        offsetY: 6,
+        color: "#000000",
+        blur: 10,
+        fill: true,
+      },
+      padding: { right: 10 },
+    });
+    this.titleText.setOrigin(0.5, 0.5);
+
+    // Level 1 Button
+    this.level1Button = this.add.image(128, 864, "button-2");
+    this.level1Button.scaleX = 0.6;
+    this.level1Button.scaleY = 0.6;
+
+    // Level 2 Button
+    this.level2Button = this.add.image(592, 752, "button-3");
+    this.level2Button.scaleX = 0.6;
+    this.level2Button.scaleY = 0.6;
+
+    // Level 3 Button
+    this.level3Button = this.add.image(336, 672, "button-3");
+    this.level3Button.scaleX = 0.6;
+    this.level3Button.scaleY = 0.6;
+
+    // Level 4 Button
+    this.level4Button = this.add.image(208, 528, "button-3");
+    this.level4Button.scaleX = 0.6;
+    this.level4Button.scaleY = 0.6;
+
+    // Level 5 Button
+    this.level5Button = this.add.image(576, 464, "button-3");
+    this.level5Button.scaleX = 0.6;
+    this.level5Button.scaleY = 0.6;
+
+    // Level 6 Button (Boss)
+    this.level6Button = this.add.image(336, 384, "button-3");
+    this.level6Button.scaleX = 0.6;
+    this.level6Button.scaleY = 0.6;
+
+    // Pingüino decorativo
+    const penguImage = this.add.image(
+      384,
+      880,
+      "nano-banana-2025-10-16T23-35-20 (1)"
     );
-    // Escalar la imagen para que cubra todo el canvas manteniendo proporción
-    const scaleX = this.cameras.main.width / background.width;
-    const scaleY = this.cameras.main.height / background.height;
-    const scale = Math.max(scaleX, scaleY);
-    background.setScale(scale);
-
-    // image_2 - Level 1 (desbloqueado por defecto)
-    const level1Button = this.add.image(208, 960, "button-2");
-    level1Button.scaleX = 0.7;
-    level1Button.scaleY = 0.7;
-
-    // image - Level 2
-    const level2Button = this.add.image(464, 896, "button-3");
-    level2Button.scaleX = 0.7;
-    level2Button.scaleY = 0.7;
-
-    // image_3 - Level 3
-    const level3Button = this.add.image(256, 752, "button-3");
-    level3Button.scaleX = 0.7;
-    level3Button.scaleY = 0.7;
-
-    // image_4 - Level 4
-    const level4Button = this.add.image(496, 672, "button-3");
-    level4Button.scaleX = 0.7;
-    level4Button.scaleY = 0.7;
-
-    // image_5 - Level 5
-    const level5Button = this.add.image(304, 592, "button-3");
-    level5Button.scaleX = 0.7;
-    level5Button.scaleY = 0.7;
-
-    // image_6 - Boss Level (Level 6)
-    const level6Button = this.add.image(464, 496, "button-3");
-    level6Button.scaleX = 0.7;
-    level6Button.scaleY = 0.7;
-
-    this.level1Button = level1Button;
-    this.level2Button = level2Button;
-    this.level3Button = level3Button;
-    this.level4Button = level4Button;
-    this.level5Button = level5Button;
-    this.level6Button = level6Button;
+    penguImage.scaleX = 0.9;
+    penguImage.scaleY = 0.9;
 
     this.events.emit("scene-awake");
   }
 
   /* START-USER-CODE */
+
+  // Imagen de fondo
+  private backgroundImage!: Phaser.GameObjects.Image;
+
+  // Título
+  private titleText!: Phaser.GameObjects.Text;
 
   // Referencias a los botones de nivel
   private level1Button!: Phaser.GameObjects.Image;
@@ -112,6 +130,9 @@ class Roadmap extends Phaser.Scene {
   create() {
     this.editorCreate();
 
+    // Hacer el fondo responsive
+    this.makeBackgroundResponsive();
+
     // Crear los botones con sus números
     this.createLevelButtons();
 
@@ -124,6 +145,45 @@ class Roadmap extends Phaser.Scene {
       volume: 0.5,
     });
     this.music.play();
+  }
+
+  /**
+   * Hacer que el fondo sea responsive y ocupe todo el height
+   */
+  private makeBackgroundResponsive(): void {
+    const { width, height } = this.cameras.main;
+
+    // Centrar la imagen en el canvas
+    this.backgroundImage.setPosition(width / 2, height / 2);
+
+    // Obtener las dimensiones originales de la imagen
+    const imageWidth = this.backgroundImage.width;
+    const imageHeight = this.backgroundImage.height;
+
+    // Calcular la escala necesaria para cubrir toda la pantalla
+    // Usamos Math.max para asegurar que cubra tanto width como height
+    const scaleX = width / imageWidth;
+    const scaleY = height / imageHeight;
+    const scale = Math.max(scaleX, scaleY);
+
+    // Aplicar la escala
+    this.backgroundImage.setScale(scale);
+
+    // Posicionar título de manera responsive
+    this.titleText.setPosition(width / 2, 100);
+
+    // Opcional: Hacer que la imagen se ajuste si cambia el tamaño de la ventana
+    this.scale.on("resize", (gameSize: { width: number; height: number }) => {
+      const newScaleX = gameSize.width / imageWidth;
+      const newScaleY = gameSize.height / imageHeight;
+      const newScale = Math.max(newScaleX, newScaleY);
+
+      this.backgroundImage.setPosition(gameSize.width / 2, gameSize.height / 2);
+      this.backgroundImage.setScale(newScale);
+
+      // Reposicionar título
+      this.titleText.setPosition(gameSize.width / 2, 100);
+    });
   }
 
   /**
@@ -148,7 +208,7 @@ class Roadmap extends Phaser.Scene {
       // Para el nivel 6 (Boss), mostrar "BOSS" en lugar de número
       if (index === 5) {
         const bossText = this.add.text(button.x, button.y - 80, "BOSS", {
-          fontFamily: "Bangers",
+          fontFamily: "Fobble",
           fontSize: "56px",
           color: "#ffffff", // Blanco como los números
           stroke: "#333333", // Negro suave
@@ -171,7 +231,7 @@ class Roadmap extends Phaser.Scene {
           button.y - 80, // Aumentado de -60 a -80 para más separación
           `${levelNumber}`,
           {
-            fontFamily: "Bangers",
+            fontFamily: "Fobble",
             fontSize: "72px", // Aumentado para compensar el estilo de Bangers
             color: "#ffffff",
             stroke: "#333333", // Negro suave (no 100% oscuro)
@@ -225,8 +285,8 @@ class Roadmap extends Phaser.Scene {
       // Efecto de escala al hacer hover
       this.tweens.add({
         targets: button,
-        scaleX: 0.75,
-        scaleY: 0.75,
+        scaleX: 0.7,
+        scaleY: 0.7,
         duration: 100,
         ease: "Power2",
       });
@@ -242,8 +302,8 @@ class Roadmap extends Phaser.Scene {
       // Volver a la escala normal
       this.tweens.add({
         targets: button,
-        scaleX: 0.7,
-        scaleY: 0.7,
+        scaleX: 0.6,
+        scaleY: 0.6,
         duration: 100,
         ease: "Power2",
       });
@@ -371,7 +431,7 @@ class Roadmap extends Phaser.Scene {
 
     // Título del nivel (blanco - fuente Bangers)
     const titleText = this.add.text(0, -200, levelName, {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "56px",
       color: "#ffffff", // Blanco
       padding: { right: 10 }, // Padding para evitar cortes por inclinación
@@ -381,7 +441,7 @@ class Roadmap extends Phaser.Scene {
 
     // Subtítulo del nivel (blanco suave - fuente Bangers)
     const subtitleText = this.add.text(0, -145, subtitle, {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "32px",
       color: "#CCCCCC", // Blanco suave (antes Cyan)
       padding: { right: 10 },
@@ -407,7 +467,7 @@ class Roadmap extends Phaser.Scene {
       -65,
       scoreData ? "YOUR BEST RUN:" : "NOT PLAYED YET",
       {
-        fontFamily: "Bangers",
+        fontFamily: "Fobble",
         fontSize: "32px",
         color: scoreData ? "#00D9FF" : "#888888", // Cyan si hay datos, gris si no
         stroke: "#000000",
@@ -445,7 +505,7 @@ class Roadmap extends Phaser.Scene {
         statsY,
         `${miniPinguCount}/${totalMiniPingus}`,
         {
-          fontFamily: "Bangers",
+          fontFamily: "Fobble",
           fontSize: "36px",
           color: "#ffffff", // Blanco
           padding: { right: 10 }, // Padding para evitar cortes por inclinación
@@ -472,7 +532,7 @@ class Roadmap extends Phaser.Scene {
         statsY,
         `${coinCount}/${totalCoins}`,
         {
-          fontFamily: "Bangers",
+          fontFamily: "Fobble",
           fontSize: "36px",
           color: "#ffffff", // Blanco
           padding: { right: 10 }, // Padding para evitar cortes por inclinación
@@ -505,7 +565,7 @@ class Roadmap extends Phaser.Scene {
 
       // SCORE del mejor run (más grande y destacado)
       const scoreText = this.add.text(0, 130, `SCORE: ${scoreData.score}`, {
-        fontFamily: "Bangers",
+        fontFamily: "Fobble",
         fontSize: "48px",
         color: "#FFDE59", // Amarillo destacado
         stroke: "#000000",
@@ -527,7 +587,7 @@ class Roadmap extends Phaser.Scene {
 
     // Texto del botón START (negro - fuente Bangers)
     const startText = this.add.text(0, startButtonY, "START", {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "40px",
       color: "#000000", // Negro
       padding: { right: 10 }, // Padding para evitar cortes por inclinación

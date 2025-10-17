@@ -76,9 +76,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private walkSoundCooldown: number = 300; // Cooldown para evitar spam del sonido de caminar
   private wasThrowKeyDown: boolean = false; // Para detectar tap en lugar de hold
 
-  // 🐛 DEBUG: Texto de información
-  private debugText?: Phaser.GameObjects.Text;
-
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
     super(scene, x, y, texture || "penguin_standing");
@@ -99,36 +96,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // 🎯 Mantener origin en 0.5, 0.5 (centrado) como funcionaba con el sprite original
     this.setOrigin(0.5, 0.5);
 
-    // Hitbox ajustada para que el borde inferior coincida con los pies del sprite
-    // Display: 130x142, con origin 0.5 significa que el centro está en Y + 0
-    // Pies del sprite están en: Y + (displayHeight / 2) = Y + 71
-    // Queremos hitbox bottom en: Y + 71
-    // Si hitbox height = 115, entonces offset Y = 71 - 115 = -44? NO
-    // Mejor: offset Y debe posicionar el hitbox para que: offset Y + height = 71
-    // Offset Y = 71 - 115 = -44 (negativo significa que sube)
-    // PERO en Phaser, offset Y positivo baja el hitbox
-    // Con origin 0.5 y displayHeight 142: top = Y - 71, bottom = Y + 71
-    // Queremos hitbox bottom = sprite bottom (Y + 71)
-    // hitbox top = hitbox bottom - height = (Y + 71) - 115 = Y - 44
-    // offset Y = (hitbox top - sprite top) = (Y - 44) - (Y - 71) = 27 ✓ (ya está bien)
-    // El problema es que el hitbox está bien pero el sprite es más grande de lo esperado
-    // Solución: aumentar offset Y para bajar el hitbox y que coincida con los pies reales
+    // Hitbox ajustada para colisión perfecta con el suelo
     body.setSize(95, 115); // Hitbox grande
-    body.setOffset(17, 27 + 26); // Offset aumentado 26px para compensar los pies que salen
-
-    // 🐛 DEBUG: Mostrar hitbox visual
-    body.debugShowBody = true;
-    body.debugBodyColor = 0x00ff00; // Verde para el hitbox
-
-    // 🐛 DEBUG: Crear texto de información
-    this.debugText = scene.add.text(10, 10, "", {
-      fontSize: "14px",
-      color: "#00ff00",
-      backgroundColor: "#000000",
-      padding: { x: 5, y: 5 },
-    });
-    this.debugText.setScrollFactor(0); // Fijo en pantalla
-    this.debugText.setDepth(10000); // Por encima de todo
+    body.setOffset(17, 53); // Offset para que los pies toquen el suelo correctamente
 
     // Crear textura para partículas de nieve si no existe
     this.createSnowParticleTexture();
@@ -227,6 +197,16 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const isSpecialAnimation =
       animationKey === "penguin_climb" || animationKey === "penguin_swing";
 
+    // 🏃‍♂️ PROTEGER animación CROUCH cuando está en transición inicial (primera vez agachándose)
+    // Esto previene que se interrumpa antes de completarse
+    if (
+      this.currentAnimation === "penguin_crouch" &&
+      this.anims.isPlaying &&
+      animationKey !== "penguin_crouch"
+    ) {
+      return; // No interrumpir crouch mientras se está reproduciendo
+    }
+
     if (
       !isSpecialAnimation &&
       ((this.isPlayingThrow && animationKey !== "penguin_throw") ||
@@ -271,43 +251,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Detectar si está en el suelo
     this.isOnGround = body.touching.down || body.blocked.down;
 
-    // 🐛 DEBUG: Mostrar información del hitbox
-    if (this.debugText) {
-      const spriteBottom = this.y + this.displayHeight * (1 - this.originY);
-      const hitboxBottom = body.y + body.height;
-      const alignment = spriteBottom - hitboxBottom;
-
-      this.debugText.setText(
-        [
-          `🐛 PLAYER DEBUG`,
-          `━━━━━━━━━━━━━━━━━━━━━━━`,
-          `Display: ${this.displayWidth.toFixed(
-            0
-          )}x${this.displayHeight.toFixed(0)}`,
-          `Origin: (${this.originX.toFixed(2)}, ${this.originY.toFixed(2)})`,
-          `Hitbox: ${body.width}x${body.height}`,
-          `Offset: (${body.offset.x}, ${body.offset.y})`,
-          `━━━━━━━━━━━━━━━━━━━━━━━`,
-          `Position: (${this.x.toFixed(0)}, ${this.y.toFixed(0)})`,
-          `Sprite Bottom: ${spriteBottom.toFixed(1)}`,
-          `Hitbox Bottom: ${hitboxBottom.toFixed(1)}`,
-          `Alignment: ${alignment.toFixed(1)}px ${
-            alignment > 0.5
-              ? "❌ Sale por abajo"
-              : alignment < -0.5
-              ? "⚠️ No llega"
-              : "✅ Perfecto"
-          }`,
-          `━━━━━━━━━━━━━━━━━━━━━━━`,
-          `On Ground: ${this.isOnGround ? "✅" : "❌"}`,
-          `Touching Down: ${body.touching.down ? "✅" : "❌"}`,
-          `Blocked Down: ${body.blocked.down ? "✅" : "❌"}`,
-          `Velocity Y: ${body.velocity.y.toFixed(1)}`,
-        ].join("\n")
-      );
-    }
-
-    // 🔒 ANTI-EXPLOIT: Marcar que tocó el suelo (para prevenir exploit de cambio de modo)
+    //  ANTI-EXPLOIT: Marcar que tocó el suelo (para prevenir exploit de cambio de modo)
     if (this.isOnGround && !this.wasOnGroundLastFrame) {
       this.hasTouchedGroundSinceLastModeChange = true;
     }
@@ -397,6 +341,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         // Reproducir sonido de caminar
         this.playWalkSound();
       }
+      // 🏃‍♂️ Si está agachado y moviéndose, mantener CRAWL al girar
+      else if (
+        this.isCrouching &&
+        this.isOnGround &&
+        this.currentAnimation === "penguin_crawl"
+      ) {
+        // Al girar en CRAWL, asegurar que la animación se reinicia para evitar frame estático
+        const isActuallyMoving =
+          Math.abs(body.velocity.x) > 10 &&
+          (body.blocked.none || (!body.blocked.left && !body.blocked.right));
+
+        if (isActuallyMoving) {
+          // Reiniciar animación CRAWL al cambiar dirección
+          if (!this.anims.isPlaying || this.anims.isPaused) {
+            this.playAnimation("penguin_crawl");
+          }
+        }
+      }
     } else if (isMovingRight) {
       body.setVelocityX(currentSpeed);
       this.isFacingRight = true;
@@ -415,6 +377,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.createSnowWalkEffect();
         // Reproducir sonido de caminar
         this.playWalkSound();
+      }
+      // 🏃‍♂️ Si está agachado y moviéndose, mantener CRAWL al girar
+      else if (
+        this.isCrouching &&
+        this.isOnGround &&
+        this.currentAnimation === "penguin_crawl"
+      ) {
+        // Al girar en CRAWL, asegurar que la animación se reinicia para evitar frame estático
+        const isActuallyMoving =
+          Math.abs(body.velocity.x) > 10 &&
+          (body.blocked.none || (!body.blocked.left && !body.blocked.right));
+
+        if (isActuallyMoving) {
+          // Reiniciar animación CRAWL al cambiar dirección
+          if (!this.anims.isPlaying || this.anims.isPaused) {
+            this.playAnimation("penguin_crawl");
+          }
+        }
       }
     } else {
       if (!this.isGhost) {
@@ -558,15 +538,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
       // Animación de caída - pero cambiar a swim si estamos en agua
       // 🏃‍♂️ NO interferir si está en modo CRAWL
-      if (body.velocity.y > 50 && !this.isOnGround && !this.isCrouching) {
-        if (this.isSwimming) {
-          this.playAnimation("penguin_swing");
-        } else {
-          // Restaurar el cuerpo físico original SOLO si no está en CRAWL
-          body.setSize(95, 115); // Hitbox original
-          body.setOffset(17, 53); // Offset original (27 + 26)
-          this.playAnimation("penguin_fall");
-        }
+      // ⛔ IMPORTANTE: Solo activar FALL si está en el aire Y no está agachado
+      if (
+        body.velocity.y > 50 &&
+        !this.isOnGround &&
+        !this.isCrouching &&
+        !this.isSwimming
+      ) {
+        // Restaurar el cuerpo físico original SOLO si no está en CRAWL
+        body.setSize(95, 115); // Hitbox original
+        body.setOffset(17, 53); // Offset original (27 + 26)
+        this.playAnimation("penguin_fall");
       }
     }
     // Actualizar animaciones basadas en el estado
@@ -654,17 +636,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     ) {
       // Solo iniciar animación si no estaba agachado antes
       if (!wasCrouching) {
+        // 🎬 SIEMPRE reproducir la animación crouch primero (incluso en movimiento)
         this.playAnimation("penguin_crouch");
         // Cuando termine la animación crouch, cambiar a crawl si se está moviendo
         this.once("animationcomplete-penguin_crouch", () => {
           // 🏃‍♂️ ALTURA REDUCIDA: Cambiar hitbox cuando está en CRAWL
           this.updateCrouchHitbox(true);
-          // Si se está moviendo, reproducir animación crawl
+          // Si se está moviendo Y presionando agacharse, reproducir animación crawl
           const body = this.body as Phaser.Physics.Arcade.Body;
-          if (Math.abs(body.velocity.x) > 10) {
+          const hasVelocity = Math.abs(body.velocity.x) > 10;
+
+          // Detectar si está empujando una pared en la dirección del movimiento
+          const isPushingWall =
+            (body.velocity.x > 10 && body.blocked.right) || // Empujando pared derecha
+            (body.velocity.x < -10 && body.blocked.left); // Empujando pared izquierda
+
+          const isActuallyMoving = hasVelocity && !isPushingWall;
+
+          if (isActuallyMoving && isCrouchPressed) {
             this.playAnimation("penguin_crawl");
           } else {
-            // Si está quieto, quedarse en el último frame de crouch
+            // Si está quieto o empujando pared, quedarse en el último frame de crouch
             this.anims.stop();
             this.setFrame(24); // Frame 24 es el último frame de la animación crouch
           }
@@ -672,12 +664,53 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       } else {
         // Si ya está agachado, mostrar crawl si se mueve o standing si está quieto
         const body = this.body as Phaser.Physics.Arcade.Body;
-        if (Math.abs(body.velocity.x) > 10) {
+
+        // 🚫 NO activar CRAWL si está empujando una pared
+        // Verificar que realmente se está moviendo (no solo tiene velocidad por input)
+        const hasVelocity = Math.abs(body.velocity.x) > 10;
+
+        // Detectar si está empujando una pared en la dirección del movimiento
+        const isPushingWall =
+          (body.velocity.x > 10 && body.blocked.right) || // Empujando pared derecha
+          (body.velocity.x < -10 && body.blocked.left); // Empujando pared izquierda
+
+        const isActuallyMoving = hasVelocity && !isPushingWall;
+
+        // 🐛 DEBUG COMPLETO
+        if (isCrouchPressed) {
+          console.log("📊 ESTADO CROUCH:", {
+            velocity: body.velocity.x.toFixed(0),
+            hasVelocity,
+            isPushingWall,
+            isActuallyMoving,
+            currentAnim: this.currentAnimation,
+            blockedL: body.blocked.left,
+            blockedR: body.blocked.right,
+          });
+        }
+
+        if (isPushingWall && isCrouchPressed) {
+          // 🚫 Si está empujando pared, mostrar animación WALK normal (no CRAWL ni CROUCH)
+          console.log("🚫 → ACTIVANDO WALK (empujando pared)");
+          this.playAnimation("penguin_walk");
+        } else if (isActuallyMoving && isCrouchPressed) {
+          // Solo CRAWL si presiona agacharse Y se está moviendo libremente
+          // 🏃‍♂️ Mantener animación CRAWL activa mientras se mueve agachado
           if (this.currentAnimation !== "penguin_crawl") {
+            // Iniciar CRAWL si no está activo
+            console.log("🏃 → INICIANDO CRAWL");
+            this.updateCrouchHitbox(true);
             this.playAnimation("penguin_crawl");
           }
-        } else {
+          // Si ya está en CRAWL, asegurar que la animación está reproduciéndose (no parada)
+          else if (!this.anims.isPlaying) {
+            console.log("🔄 → REINICIANDO CRAWL");
+            this.playAnimation("penguin_crawl");
+          }
+        } else if (!hasVelocity) {
+          // Solo mantener frame estático si está completamente quieto (sin velocity)
           if (this.currentAnimation === "penguin_crawl") {
+            console.log("💤 → FRAME ESTÁTICO CROUCH");
             this.anims.stop();
             this.setFrame(24); // Último frame de crouch para estar quieto agachado
           }
@@ -772,7 +805,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // La bola aparece cuando el pingüino está en medio del lanzamiento
     this.scene.time.delayedCall(300, () => {
       const direction = this.isFacingRight ? 1 : -1;
-      const offsetX = direction * 50; // Más alejado del player para evitar colisiones
+      const offsetX = direction * 30; // Reducido de 50 a 30 para estar más cerca del player
       // Intentar obtener el layer de superficie para colisiones
       let collisionLayer: Phaser.Tilemaps.TilemapLayer | undefined;
       // Buscar el layer de superficie en la escena
@@ -783,7 +816,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const snowball = new Snowball(
         this.scene,
         this.x + offsetX,
-        this.y - 30, // Más arriba para evitar colisiones inmediatas
+        this.y - 20, // Reducido de -30 a -20 para estar más cerca verticalmente
         direction,
         collisionLayer
       );

@@ -1,4 +1,4 @@
-ï»¿import { FreezableEnemy } from "../objects/enemies/FreezableEnemy";
+import { FreezableEnemy } from "../objects/enemies/FreezableEnemy";
 import { CoinSystem } from "../systems/CoinSystem";
 import { DoorSystem } from "../systems/DoorSystem";
 import { KeySystem } from "../systems/KeySystem";
@@ -31,19 +31,19 @@ export class Level4 extends BaseGameScene {
       ],
       playerStartPosition: { x: 100, y: 2080 },
       musicKey: "level4_music",
-      // ðŸ”¥ Habilitar sistema de cajas con pinchos
+      // ?? Habilitar sistema de cajas con pinchos
       enableSpikeBoxes: true,
       spikeBoxConfig: {
         spikeBoxTileIds: [287], // GID de las cajas con pinchos en el tileset
-        moveInterval: 800, // Pausa mÃ¡s corta (0.8s) para movimiento fluido
-        moveSpeed: 250, // Velocidad de movimiento (mÃ¡s rÃ¡pido y explosivo)
+        moveInterval: 800, // Pausa más corta (0.8s) para movimiento fluido
+        moveSpeed: 250, // Velocidad de movimiento (más rápido y explosivo)
         damage: 1, // Quitar 1 vida
-        knockbackForce: 300, // Fuerza de repulsiÃ³n
+        knockbackForce: 300, // Fuerza de repulsión
       },
-      // â±ï¸ Habilitar sistema de plataformas temporales
+      // ?? Habilitar sistema de plataformas temporales
       enableTemporaryPlatforms: true,
       temporaryPlatformConfig: {
-        temporaryPlatformGID: 215, // GID del tile con signo de exclamaciÃ³n
+        temporaryPlatformGID: 215, // GID del tile con signo de exclamación
         disappearDelay: 1000, // 1 segundo antes de desaparecer
         disappearDuration: 300, // 300ms de fade out
         invisibleDuration: 4000, // 4 segundos invisible
@@ -52,14 +52,14 @@ export class Level4 extends BaseGameScene {
         blinkRepeat: 5, // 5 parpadeos
         blinkAlpha: 0.3, // 30% opacidad en parpadeo
       },
-      // ðŸ›— Habilitar sistema de elevadores
+      // ?? Habilitar sistema de elevadores
       enableElevators: true,
       elevatorConfig: {
         leftTileGID: 20, // GID = firstgid(1) + tileID(19)
         rightTileGID: 2, // GID = firstgid(1) + tileID(1)
-        moveSpeed: 100, // Velocidad de movimiento vertical continuo (pÃ­xeles/segundo)
+        moveSpeed: 100, // Velocidad de movimiento vertical continuo (píxeles/segundo)
       },
-      // ðŸŸ Habilitar sistema de enemigos acuÃ¡ticos
+      // ?? Habilitar sistema de enemigos acuáticos
       enableAquaticEnemies: true,
       aquaticEnemyConfig: {
         manualPositions: [
@@ -84,14 +84,14 @@ export class Level4 extends BaseGameScene {
   }
 
   /**
-   * MÃ©todo requerido por BaseGameScene
+   * Método requerido por BaseGameScene
    * Crear el mapa y asignar los layers
    */
   protected createMap(): void {
     // Crear el tilemap desde el JSON cargado
     this.tilemap = this.make.tilemap({ key: this.config.tilemapKey });
 
-    // AÃ±adir los tilesets
+    // Añadir los tilesets
     const tilesets = this.config.tilesets || [];
     tilesets.forEach((tilesetConfig) => {
       this.tilemap.addTilesetImage(tilesetConfig.name, tilesetConfig.imageKey);
@@ -245,7 +245,7 @@ export class Level4 extends BaseGameScene {
       );
       this.freezableEnemies.push(enemy);
 
-      // Configurar colisiÃ³n con el player
+      // Configurar colisión con el player
       this.time.delayedCall(100, () => {
         if (this.player) {
           this.physics.add.overlap(
@@ -276,7 +276,7 @@ export class Level4 extends BaseGameScene {
    * Configurar colisiones entre enemigos y proyectiles
    */
   private setupEnemyProjectileCollisions(): void {
-    // Escuchar cuando se crea una nueva snowball y configurar colisiÃ³n con cada enemigo
+    // Escuchar cuando se crea una nueva snowball y configurar colisión con cada enemigo
     this.events.on("snowballCreated", (snowball: any) => {
       this.freezableEnemies.forEach((enemy) => {
         this.physics.add.overlap(
@@ -333,7 +333,7 @@ export class Level4 extends BaseGameScene {
 
     const scoreBreakdown = calculateLevelScore(stats);
 
-    console.log("ðŸ“Š Level 4 Score:", scoreBreakdown);
+    console.log("?? Level 4 Score:", scoreBreakdown);
 
     return {
       ...stats,

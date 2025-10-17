@@ -84,7 +84,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
 
     // Texto gracioso aleatorio - se actualizará en show()
     this.titleText = this.scene.add.text(centerX, centerY - 50, "", {
-      fontFamily: "Bangers",
+      fontFamily: "Fobble",
       fontSize: "42px",
       color: "#FFFFFF",
       align: "center",
@@ -115,8 +115,8 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
 
     // Texto del botón con fuente Bangers
     this.backButtonText = this.scene.add.text(x, y, "BACK", {
-      fontFamily: "Bangers",
-      fontSize: "28px",
+      fontFamily: "Fobble",
+      fontSize: "32px", // Aumentado de 28px a 32px
       color: "#FFFFFF", // Blanco
       padding: { right: 10 },
     });
@@ -178,8 +178,8 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
 
     // Texto del botón con fuente Bangers
     this.retryButtonText = this.scene.add.text(x, y, "RETRY", {
-      fontFamily: "Bangers",
-      fontSize: "28px",
+      fontFamily: "Fobble",
+      fontSize: "32px", // Aumentado de 28px a 32px
       color: "#000000", // Negro
       padding: { right: 10 },
     });

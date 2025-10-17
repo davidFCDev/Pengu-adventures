@@ -9,12 +9,21 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
   private buttonText!: Phaser.GameObjects.Text;
   private buttonHitArea!: Phaser.GameObjects.Rectangle;
   private scoreData: any; // Datos del score calculado
+  private titleText: string; // Texto del título (customizable)
+  private isBossLevel: boolean; // Indica si es el nivel del boss
 
-  constructor(scene: Phaser.Scene, scoreData?: any) {
+  constructor(
+    scene: Phaser.Scene,
+    scoreData?: any,
+    titleText?: string,
+    isBossLevel: boolean = false
+  ) {
     super(scene, 0, 0);
     scene.add.existing(this);
 
     this.scoreData = scoreData || null;
+    this.titleText = titleText || "LEVEL COMPLETE!"; // Default o customizado
+    this.isBossLevel = isBossLevel; // Guardar flag de boss level
 
     // Fijar al centro de la cámara
     this.setScrollFactor(0);
@@ -61,14 +70,14 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     modalBg.setScrollFactor(0);
     this.add(modalBg);
 
-    // Texto "LEVEL COMPLETE!" con fuente Bangers (más arriba sin sprite)
+    // Texto "LEVEL COMPLETE!" (o texto customizado) con fuente Fobble (más arriba sin sprite)
     const completeText = this.scene.add.text(
       centerX,
       centerY - modalHeight / 2 + 80,
-      "LEVEL COMPLETE!",
+      this.titleText,
       {
-        fontFamily: "Bangers",
-        fontSize: "56px", // Aumentado de 48px a 56px
+        fontFamily: "Fobble",
+        fontSize: "60px", // Aumentado de 56px a 60px
         color: "#ffffff",
         padding: { right: 10 },
       }
@@ -108,15 +117,15 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       return `x${mult.toFixed(1)}`;
     };
 
-    // 1. Monedas
-    if (this.scoreData.coinsCollected !== undefined) {
+    // 1. Monedas (solo mostrar si NO es boss level)
+    if (!this.isBossLevel && this.scoreData.coinsCollected !== undefined) {
       const coinsText = this.scene.add.text(
         startX,
         currentY,
         `Coins: ${this.scoreData.coinsCollected}/${this.scoreData.totalCoins}  (+${this.scoreData.coinPoints})`,
         {
-          fontFamily: "Bangers",
-          fontSize: "32px", // Aumentado de 28px a 32px
+          fontFamily: "Fobble",
+          fontSize: "36px", // Aumentado de 32px a 36px
           color: "#FFD700", // Dorado para monedas
         }
       );
@@ -126,15 +135,15 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       currentY += lineHeight;
     }
 
-    // 2. Mini-Pingus
-    if (this.scoreData.miniPingusCollected !== undefined) {
+    // 2. Mini-Pingus (solo mostrar si NO es boss level)
+    if (!this.isBossLevel && this.scoreData.miniPingusCollected !== undefined) {
       const pinguText = this.scene.add.text(
         startX,
         currentY,
         `Mini-Pingus: ${this.scoreData.miniPingusCollected}/${this.scoreData.totalMiniPingus}  (+${this.scoreData.miniPinguPoints})`,
         {
-          fontFamily: "Bangers",
-          fontSize: "32px", // Aumentado de 28px a 32px
+          fontFamily: "Fobble",
+          fontSize: "36px", // Aumentado de 32px a 36px
           color: "#00D9FF", // Celeste para mini-pingus
         }
       );
@@ -146,15 +155,18 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     // 3. Tiempo
     if (this.scoreData.timeInSeconds !== undefined) {
+      const timeMultiplierText = this.scoreData.timeMultiplier
+        ? `  (${formatMultiplier(this.scoreData.timeMultiplier)})`
+        : "";
       const timeText = this.scene.add.text(
         startX,
         currentY,
-        `Time: ${formatTime(this.scoreData.timeInSeconds)}  (${formatMultiplier(
-          this.scoreData.timeMultiplier
-        )})`,
+        `Time: ${formatTime(
+          this.scoreData.timeInSeconds
+        )}${timeMultiplierText}`,
         {
-          fontFamily: "Bangers",
-          fontSize: "32px", // Aumentado de 28px a 32px
+          fontFamily: "Fobble",
+          fontSize: "36px", // Aumentado de 32px a 36px
           color: "#FFFFFF",
         }
       );
@@ -166,15 +178,16 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     // 4. Vidas perdidas
     if (this.scoreData.livesMissed !== undefined) {
+      const livesMultiplierText = this.scoreData.livesMultiplier
+        ? `  (${formatMultiplier(this.scoreData.livesMultiplier)})`
+        : "";
       const livesText = this.scene.add.text(
         startX,
         currentY,
-        `Lives Lost: ${this.scoreData.livesMissed}  (${formatMultiplier(
-          this.scoreData.livesMultiplier
-        )})`,
+        `Lives Lost: ${this.scoreData.livesMissed}${livesMultiplierText}`,
         {
-          fontFamily: "Bangers",
-          fontSize: "32px", // Aumentado de 28px a 32px
+          fontFamily: "Fobble",
+          fontSize: "36px", // Aumentado de 32px a 36px
           color: "#FF6B6B", // Rojo suave para vidas
         }
       );
@@ -201,8 +214,8 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       currentY,
       `SCORE: ${this.scoreData.finalScore}`,
       {
-        fontFamily: "Bangers",
-        fontSize: "48px", // Aumentado de 44px a 48px
+        fontFamily: "Fobble",
+        fontSize: "52px", // Aumentado de 48px a 52px
         color: "#FFDE59", // Amarillo como los botones
         stroke: "#000000",
         strokeThickness: 4,
@@ -223,10 +236,11 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     this.buttonGraphics.setDepth(1001);
     this.add(this.buttonGraphics);
 
-    // Texto del botón con fuente Bangers
-    this.buttonText = this.scene.add.text(x, y, "NEXT LEVEL", {
-      fontFamily: "Bangers",
-      fontSize: "32px",
+    // Texto del botón con fuente Bangers (cambia según si es boss level)
+    const buttonLabel = this.isBossLevel ? "BACK" : "NEXT LEVEL";
+    this.buttonText = this.scene.add.text(x, y, buttonLabel, {
+      fontFamily: "Fobble",
+      fontSize: "36px", // Aumentado de 32px a 36px
       color: "#000000", // Negro
       padding: { right: 10 },
     });
@@ -270,16 +284,23 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
   private onNextLevel(): void {
     // Guardar score si existe
     if (this.scoreData && this.scoreData.finalScore !== undefined) {
+      // Para boss level, usar levelNumber 6 (FirstBoss es el nivel 6)
+      const levelNumber = this.isBossLevel ? 6 : this.scoreData.levelNumber;
+
       ScoreManager.saveScore({
-        levelNumber: this.scoreData.levelNumber,
+        levelNumber: levelNumber,
         score: this.scoreData.finalScore,
-        coinsCollected: this.scoreData.coinsCollected,
-        totalCoins: this.scoreData.totalCoins,
-        miniPingusCollected: this.scoreData.miniPingusCollected,
-        totalMiniPingus: this.scoreData.totalMiniPingus,
+        coinsCollected: this.scoreData.coinsCollected || 0,
+        totalCoins: this.scoreData.totalCoins || 0,
+        miniPingusCollected: this.scoreData.miniPingusCollected || 0,
+        totalMiniPingus: this.scoreData.totalMiniPingus || 0,
         timeInSeconds: this.scoreData.timeInSeconds,
         livesMissed: this.scoreData.livesMissed,
       });
+
+      console.log(
+        `✅ Score guardado para nivel ${levelNumber} (Boss: ${this.isBossLevel})`
+      );
     }
 
     // Ocultar UI primero
@@ -287,17 +308,23 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     const currentScene = this.scene;
     currentScene.time.delayedCall(200, () => {
-      // Obtener el índice del nivel actual
+      // Si es boss level, siempre volver al Roadmap
+      if (this.isBossLevel) {
+        console.log("🎯 Boss derrotado! Volviendo al Roadmap...");
+        currentScene.scene.start("Roadmap");
+        return;
+      }
+
+      // Para niveles normales, obtener el índice del nivel actual
       const sceneKey = currentScene.scene.key;
       const levelIndex = this.getLevelIndexFromSceneKey(sceneKey);
 
-      // Desbloquear el siguiente nivel (sin localStorage por ahora)
+      // Desbloquear el siguiente nivel
       if (levelIndex !== -1 && levelIndex < 5) {
         // 0-4 son Level1-5, 5 es FirstBoss
         console.log(
           `Level ${levelIndex + 1} completed! Next level: ${levelIndex + 2}`
         );
-        // TODO: Aquí se integrará el SDK para guardar el progreso
       }
 
       // Redirigir al Roadmap

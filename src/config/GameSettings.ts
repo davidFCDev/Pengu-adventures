@@ -7,7 +7,8 @@ export const GameSettings = {
   debug: true,
 
   // Modo desarrollo: mostrar controles móviles en PC para testing
-  forceShowMobileControls: true,
+  // true = mostrar siempre | false = solo en dispositivos móviles
+  forceShowMobileControls: false,
 
   canvas: {
     width: 720,

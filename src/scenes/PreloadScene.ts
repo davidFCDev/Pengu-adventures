@@ -217,11 +217,30 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fondo-boss1%20%281%29-U8P7eQTsQxFpS4M0XjRYrsKkw50uRd.png?eKHL"
     );
 
+    // ========== MAIN PAGE ASSETS ==========
+    // Fondo de la página principal
+    this.load.image(
+      "main-page",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/main-page-wMofn4QjUP95i18k5yE1CnzxXa24du.png?6J2W"
+    );
+
     // ========== ROADMAP (Level Select) ASSETS ==========
     // Fondo de la pantalla de selección de niveles
     this.load.image(
       "frostland",
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/frostland-x6CyuIIlNEH3kZJXLxFbCJT8yCgmje.png?YYUC"
+    );
+
+    // Nuevo fondo del roadmap
+    this.load.image(
+      "road-page",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/road-page-1Poplm08pZD29Nirk5BDdeoSd28mE4.png?k297"
+    );
+
+    // Pingüino decorativo del roadmap
+    this.load.image(
+      "nano-banana-2025-10-16T23-35-20 (1)",
+      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/pengu-back-49tBchKjV4BbDdu5GCEgiu2mazavYE.png?VdT5"
     );
 
     // Botón de nivel seleccionado (button-1)
@@ -428,11 +447,15 @@ export class PreloadScene extends Phaser.Scene {
     // Set black background
     this.cameras.main.setBackgroundColor("#000000");
 
-    // Load Pixelify font and Bangers font and wait for them to load
+    // Load Pixelify font, Bangers font and custom Fobble font
     if ((window as any).WebFont) {
       (window as any).WebFont.load({
         google: {
           families: ["Pixelify Sans:400,700", "Bangers"],
+        },
+        custom: {
+          families: ["Fobble"],
+          urls: ["./assets/fonts/custom-fonts.css"],
         },
         active: () => {
           // Font loaded, create content
@@ -601,8 +624,8 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioText = null;
     }
 
-    // Iniciar Roadmap (pantalla de selección de niveles)
-    this.scene.start("Roadmap");
+    // Iniciar MainPage (pantalla principal)
+    this.scene.start("MainPage");
   }
 
   private loadingComplete(): void {

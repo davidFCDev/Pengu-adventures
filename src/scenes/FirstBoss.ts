@@ -326,7 +326,7 @@ class FirstBoss extends BaseGameScene {
       540, // Centro Y (1080/2)
       "DANGER!",
       {
-        fontFamily: "Arial Black",
+        fontFamily: "Fobble",
         fontSize: "80px",
         color: "#ff0000",
         stroke: "#000000",
@@ -1157,21 +1157,41 @@ class FirstBoss extends BaseGameScene {
       const bossBounds = this.bossBat.getBounds();
       const snowballBounds = snowball.getBounds();
 
-      // Detectar colisión AABB
+      // Calcular la distancia entre el centro del boss y el centro de la snowball
+      const bossCenterX = this.bossBat.x;
+      const bossCenterY = this.bossBat.y;
+      const snowballCenterX = snowball.x;
+      const snowballCenterY = snowball.y;
+
+      const distance = Phaser.Math.Distance.Between(
+        snowballCenterX,
+        snowballCenterY,
+        bossCenterX,
+        bossCenterY
+      );
+
+      // Solo destruir la bola cuando esté muy cerca del centro (menos de 60px del centro)
+      // Esto permite que la bola viaje más hacia el centro antes de destruirse
+      const collisionRadius = 60;
+
+      // Detectar colisión AABB básica primero
       if (
         Phaser.Geom.Intersects.RectangleToRectangle(bossBounds, snowballBounds)
       ) {
-        console.log("❄️ Boss impactado por bola de nieve!");
+        // Solo aplicar daño y destruir si está cerca del centro
+        if (distance < collisionRadius) {
+          console.log("❄️ Boss impactado por bola de nieve!");
 
-        // Aplicar daño al boss (3 de daño por bola de nieve - reducido aún más)
-        // Con 100 de salud, necesitará ~34 impactos (8-9 estados confusos)
-        this.damageBoss(3);
+          // Aplicar daño al boss (3 de daño por bola de nieve - reducido aún más)
+          // Con 100 de salud, necesitará ~34 impactos (8-9 estados confusos)
+          this.damageBoss(3);
 
-        // Aplicar efecto de parpadeo
-        this.applyBossHitEffect();
+          // Aplicar efecto de parpadeo
+          this.applyBossHitEffect();
 
-        // Destruir la bola de nieve
-        snowball.destroy();
+          // Destruir la bola de nieve
+          snowball.destroy();
+        }
       }
     });
   }
@@ -1239,7 +1259,7 @@ class FirstBoss extends BaseGameScene {
     // Reproducir animación de muerte del boss
     this.bossBat.play("boss-bat-die");
 
-    // Cuando termine la animación de muerte, hacer fade out y transición
+    // Cuando termine la animación de muerte, mostrar modal de victoria
     this.bossBat.once("animationcomplete", () => {
       console.log("💀 Animación de muerte completada");
 
@@ -1249,10 +1269,48 @@ class FirstBoss extends BaseGameScene {
         alpha: 0,
         duration: 1000,
         onComplete: () => {
-          console.log(
-            "✅ Boss desaparecido - TODO: Transición al siguiente nivel"
-          );
-          // TODO: Añadir transición al siguiente nivel o pantalla de victoria
+          console.log("✅ Boss desaparecido - Mostrando modal de victoria");
+
+          // Pausar música del boss
+          if (this.bossMusic && this.bossMusic.isPlaying) {
+            this.bossMusic.pause();
+          }
+
+          // Calcular tiempo del nivel
+          this.levelEndTime = this.time.now;
+          const timeInSeconds =
+            (this.levelEndTime - this.levelStartTime) / 1000;
+
+          // Crear scoreData para el modal (sin coins ni mini-pingus)
+          const levelScore = {
+            timeInSeconds,
+            livesMissed: this.livesMissedDuringLevel || 0,
+            coins: 0, // Sin monedas en boss level
+            miniPingus: 0, // Sin mini-pingus en boss level
+            finalScore: Math.max(
+              0,
+              1000 -
+                Math.floor(timeInSeconds) * 10 -
+                this.livesMissedDuringLevel * 100
+            ),
+          };
+
+          // Pausar la física del juego para que el jugador no pueda morir
+          this.physics.pause();
+          console.log("⏸️ Física pausada - El jugador está protegido");
+
+          // Mostrar UI de fin de nivel con "Congratulations!"
+          this.time.delayedCall(300, () => {
+            import("../objects/ui/LevelEndUI").then(({ LevelEndUI }) => {
+              this.levelEndUI = new LevelEndUI(
+                this,
+                levelScore,
+                "Congratulations!",
+                true // isBossLevel = true
+              );
+              this.levelEndUI.show();
+            });
+          });
         },
       });
     });
