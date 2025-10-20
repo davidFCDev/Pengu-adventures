@@ -1,4 +1,5 @@
 // You can write more code here
+import InstructionsModal from "../objects/ui/InstructionsModal";
 import { ScoreManager } from "../systems/ScoreManager";
 
 /* START OF COMPILED CODE */
@@ -19,7 +20,7 @@ class Roadmap extends Phaser.Scene {
 
     // Título principal "FROSTLAND" (sin subtítulo)
     this.titleText = this.add.text(384, 100, "FROSTLAND", {
-      fontFamily: "Fobble",
+      fontFamily: "TT-Trailers",
       fontSize: "120px",
       color: "#FFE66D", // Amarillo
       stroke: "#000000", // Borde negro
@@ -104,6 +105,7 @@ class Roadmap extends Phaser.Scene {
   // Footer con score total y botones
   private footerBackground!: Phaser.GameObjects.Rectangle;
   private totalScoreText!: Phaser.GameObjects.Text;
+  private totalScoreNumber!: Phaser.GameObjects.Text; // Número del score en negro
   private exitButtonGraphics!: Phaser.GameObjects.Graphics;
   private exitButtonText!: Phaser.GameObjects.Text;
   private exitButtonHitArea!: Phaser.GameObjects.Rectangle;
@@ -150,14 +152,17 @@ class Roadmap extends Phaser.Scene {
     this.updateButtonStates();
 
     // Reproducir música del Roadmap
-    this.music = this.sound.add("roadmap_music", {
-      loop: true,
-      volume: 0.5,
-    });
-    this.music.play();
+    this.setupRoadmapMusic();
 
-    // Actualizar el Total Score cuando se vuelve a esta escena
-    this.events.on("wake", this.updateTotalScore, this);
+    // Actualizar el Total Score y música cuando se vuelve a esta escena
+    this.events.on(
+      "wake",
+      () => {
+        this.updateTotalScore();
+        this.setupRoadmapMusic(); // Reiniciar música al volver
+      },
+      this
+    );
   }
 
   /**
@@ -165,8 +170,37 @@ class Roadmap extends Phaser.Scene {
    */
   private updateTotalScore(): void {
     const totalScore = this.calculateTotalScore();
-    this.totalScoreText.setText(`TOTAL SCORE: ${totalScore}`);
+    this.totalScoreNumber.setText(`${totalScore}`);
     console.log(`📊 Total Score actualizado: ${totalScore}`);
+  }
+
+  /**
+   * Configurar música del Roadmap (evita duplicación)
+   */
+  private setupRoadmapMusic(): void {
+    // 1. Detener y destruir música anterior si existe
+    if (this.music) {
+      if (this.music.isPlaying) {
+        this.music.stop();
+      }
+      this.music.destroy();
+    }
+
+    // 2. Detener TODAS las instancias de roadmap_music que puedan estar sonando
+    this.sound.getAllPlaying().forEach((sound) => {
+      if (sound.key === "roadmap_music") {
+        sound.stop();
+        sound.destroy();
+      }
+    });
+
+    // 3. Crear y reproducir nueva música
+    console.log("🎵 Iniciando música del Roadmap");
+    this.music = this.sound.add("roadmap_music", {
+      loop: true,
+      volume: 0.5,
+    });
+    this.music.play();
   }
 
   /**
@@ -182,13 +216,25 @@ class Roadmap extends Phaser.Scene {
     const imageWidth = this.backgroundImage.width;
     const imageHeight = this.backgroundImage.height;
 
-    // Calcular la escala necesaria para cubrir toda la pantalla
-    // Usamos Math.max para asegurar que cubra tanto width como height
-    const scaleX = width / imageWidth;
-    const scaleY = height / imageHeight;
-    const scale = Math.max(scaleX, scaleY);
+    // 🎨 Calcular aspect ratios
+    const imageAspect = imageWidth / imageHeight;
+    const screenAspect = width / height;
 
-    // Aplicar la escala
+    // 📐 Mantener aspect ratio y hacer zoom para cubrir (como object-fit: cover)
+    // Usa la escala que cubra completamente sin estirar
+    let scale: number;
+    if (screenAspect > imageAspect) {
+      // Pantalla más ancha que la imagen: escalar por ancho
+      scale = width / imageWidth;
+    } else {
+      // Pantalla más alta que la imagen: escalar por altura con zoom mínimo
+      scale = height / imageHeight;
+    }
+
+    // 🔍 Aplicar un zoom adicional del 5% para evitar bordes y cubrir mejor
+    scale *= 1.05;
+
+    // Aplicar la escala uniforme (sin estirar)
     this.backgroundImage.setScale(scale);
 
     // Posicionar título de manera responsive
@@ -196,9 +242,17 @@ class Roadmap extends Phaser.Scene {
 
     // Opcional: Hacer que la imagen se ajuste si cambia el tamaño de la ventana
     this.scale.on("resize", (gameSize: { width: number; height: number }) => {
-      const newScaleX = gameSize.width / imageWidth;
-      const newScaleY = gameSize.height / imageHeight;
-      const newScale = Math.max(newScaleX, newScaleY);
+      const newScreenAspect = gameSize.width / gameSize.height;
+
+      let newScale: number;
+      if (newScreenAspect > imageAspect) {
+        newScale = gameSize.width / imageWidth;
+      } else {
+        newScale = gameSize.height / imageHeight;
+      }
+
+      // Aplicar zoom del 5%
+      newScale *= 1.05;
 
       this.backgroundImage.setPosition(gameSize.width / 2, gameSize.height / 2);
       this.backgroundImage.setScale(newScale);
@@ -218,38 +272,66 @@ class Roadmap extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const footerHeight = 80;
 
-    // Fondo oscuro del footer (similar al header)
+    // Fondo claro del footer (estilo Pudgy)
     this.footerBackground = this.add.rectangle(
       width / 2,
       height - footerHeight / 2,
       width,
       footerHeight,
-      0x0d0d0d, // Oscuro
-      0.95
+      0xe8f4f8, // Blanco/celeste claro (estilo Pudgy)
+      1
     );
     this.footerBackground.setOrigin(0.5, 0.5);
     this.footerBackground.setScrollFactor(0);
     this.footerBackground.setDepth(1000);
 
+    // Borde superior negro (estilo Pudgy)
+    const footerBorder = this.add.graphics();
+    footerBorder.lineStyle(6, 0x000000, 1);
+    footerBorder.beginPath();
+    footerBorder.moveTo(0, height - footerHeight);
+    footerBorder.lineTo(width, height - footerHeight);
+    footerBorder.strokePath();
+    footerBorder.setScrollFactor(0);
+    footerBorder.setDepth(1000);
+
     // Calcular Total Score sumando los mejores scores de todos los niveles
     const totalScore = this.calculateTotalScore();
 
-    // Texto "TOTAL SCORE: XXXX" a la izquierda
+    // Texto "TOTAL SCORE:" a la izquierda (blanco con stroke negro)
     this.totalScoreText = this.add.text(
       30,
       height - footerHeight / 2,
-      `TOTAL SCORE: ${totalScore}`,
+      "TOTAL SCORE: ",
       {
-        fontFamily: "Fobble",
-        fontSize: "32px",
-        color: "#FFE66D", // Amarillo dorado
+        fontFamily: "TT-Trailers",
+        fontSize: "42px",
+        color: "#ffffff", // Blanco con stroke negro (estilo Pudgy)
         stroke: "#000000",
-        strokeThickness: 6,
+        strokeThickness: 8,
       }
     );
     this.totalScoreText.setOrigin(0, 0.5);
     this.totalScoreText.setScrollFactor(0);
     this.totalScoreText.setDepth(1001);
+
+    // Número del score (blanco con stroke negro)
+    const textWidth = this.totalScoreText.width;
+    this.totalScoreNumber = this.add.text(
+      30 + textWidth,
+      height - footerHeight / 2,
+      `${totalScore}`,
+      {
+        fontFamily: "TT-Trailers",
+        fontSize: "42px",
+        color: "#ffffff", // Blanco con stroke negro (estilo Pudgy)
+        stroke: "#000000",
+        strokeThickness: 8,
+      }
+    );
+    this.totalScoreNumber.setOrigin(0, 0.5);
+    this.totalScoreNumber.setScrollFactor(0);
+    this.totalScoreNumber.setDepth(1001);
 
     // Botón HELP a la derecha (antes del Exit)
     const helpButtonWidth = 110;
@@ -260,9 +342,9 @@ class Roadmap extends Phaser.Scene {
       exitButtonX - exitButtonWidth / 2 - helpButtonWidth / 2 - 15; // 15px de separación
     const helpButtonY = height - footerHeight / 2;
 
-    // Graphics del botón HELP
+    // Graphics del botón HELP - estilo Pudgy (amarillo suave)
     this.infoButtonGraphics = this.add.graphics();
-    this.infoButtonGraphics.fillStyle(0xffaa00, 1); // Amarillo/naranja
+    this.infoButtonGraphics.fillStyle(0xffd966, 1); // Amarillo suave (estilo Pudgy)
     this.infoButtonGraphics.fillRoundedRect(
       helpButtonX - helpButtonWidth / 2,
       helpButtonY - helpButtonHeight / 2,
@@ -270,7 +352,7 @@ class Roadmap extends Phaser.Scene {
       helpButtonHeight,
       12
     );
-    this.infoButtonGraphics.lineStyle(4, 0x000000, 1); // Borde negro
+    this.infoButtonGraphics.lineStyle(5, 0x000000, 1); // Borde negro grueso
     this.infoButtonGraphics.strokeRoundedRect(
       helpButtonX - helpButtonWidth / 2,
       helpButtonY - helpButtonHeight / 2,
@@ -283,9 +365,9 @@ class Roadmap extends Phaser.Scene {
 
     // Texto "HELP" del botón
     this.infoButtonText = this.add.text(helpButtonX, helpButtonY, "HELP", {
-      fontFamily: "Fobble",
-      fontSize: "28px",
-      color: "#FFFFFF",
+      fontFamily: "TT-Trailers",
+      fontSize: "36px",
+      color: "#ffffff", // Blanco con stroke negro (estilo Pudgy)
       stroke: "#000000",
       strokeThickness: 5,
       fontStyle: "bold",
@@ -307,10 +389,10 @@ class Roadmap extends Phaser.Scene {
     this.infoButtonHitArea.setScrollFactor(0);
     this.infoButtonHitArea.setDepth(1002);
 
-    // Hover effects del botón HELP
+    // Hover effects del botón HELP - amarillo más claro
     this.infoButtonHitArea.on("pointerover", () => {
       this.infoButtonGraphics.clear();
-      this.infoButtonGraphics.fillStyle(0xdd8800, 1); // Amarillo más oscuro
+      this.infoButtonGraphics.fillStyle(0xffe699, 1); // Amarillo más claro en hover
       this.infoButtonGraphics.fillRoundedRect(
         helpButtonX - helpButtonWidth / 2,
         helpButtonY - helpButtonHeight / 2,
@@ -318,7 +400,7 @@ class Roadmap extends Phaser.Scene {
         helpButtonHeight,
         12
       );
-      this.infoButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.infoButtonGraphics.lineStyle(5, 0x000000, 1);
       this.infoButtonGraphics.strokeRoundedRect(
         helpButtonX - helpButtonWidth / 2,
         helpButtonY - helpButtonHeight / 2,
@@ -331,7 +413,7 @@ class Roadmap extends Phaser.Scene {
 
     this.infoButtonHitArea.on("pointerout", () => {
       this.infoButtonGraphics.clear();
-      this.infoButtonGraphics.fillStyle(0xffaa00, 1); // Amarillo normal
+      this.infoButtonGraphics.fillStyle(0xffd966, 1); // Amarillo suave normal
       this.infoButtonGraphics.fillRoundedRect(
         helpButtonX - helpButtonWidth / 2,
         helpButtonY - helpButtonHeight / 2,
@@ -339,7 +421,7 @@ class Roadmap extends Phaser.Scene {
         helpButtonHeight,
         12
       );
-      this.infoButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.infoButtonGraphics.lineStyle(5, 0x000000, 1);
       this.infoButtonGraphics.strokeRoundedRect(
         helpButtonX - helpButtonWidth / 2,
         helpButtonY - helpButtonHeight / 2,
@@ -365,9 +447,9 @@ class Roadmap extends Phaser.Scene {
     const buttonX = exitButtonX;
     const buttonY = helpButtonY;
 
-    // Graphics del botón
+    // Graphics del botón Save & Exit - estilo Pudgy (verde menta)
     this.exitButtonGraphics = this.add.graphics();
-    this.exitButtonGraphics.fillStyle(0xff4444, 1); // Rojo
+    this.exitButtonGraphics.fillStyle(0x00d4aa, 1); // Verde menta (botón primario)
     this.exitButtonGraphics.fillRoundedRect(
       buttonX - buttonWidth / 2,
       buttonY - buttonHeight / 2,
@@ -375,7 +457,7 @@ class Roadmap extends Phaser.Scene {
       buttonHeight,
       12
     );
-    this.exitButtonGraphics.lineStyle(4, 0x000000, 1); // Borde negro
+    this.exitButtonGraphics.lineStyle(5, 0x000000, 1); // Borde negro grueso
     this.exitButtonGraphics.strokeRoundedRect(
       buttonX - buttonWidth / 2,
       buttonY - buttonHeight / 2,
@@ -388,9 +470,11 @@ class Roadmap extends Phaser.Scene {
 
     // Texto del botón
     this.exitButtonText = this.add.text(buttonX, buttonY, "SAVE & EXIT", {
-      fontFamily: "Fobble",
-      fontSize: "24px",
-      color: "#FFFFFF",
+      fontFamily: "TT-Trailers",
+      fontSize: "32px",
+      color: "#ffffff", // Blanco con stroke negro (estilo Pudgy)
+      stroke: "#000000",
+      strokeThickness: 5,
     });
     this.exitButtonText.setOrigin(0.5);
     this.exitButtonText.setScrollFactor(0);
@@ -409,10 +493,10 @@ class Roadmap extends Phaser.Scene {
     this.exitButtonHitArea.setScrollFactor(0);
     this.exitButtonHitArea.setDepth(1003);
 
-    // Efectos hover
+    // Efectos hover - mantener verde menta
     this.exitButtonHitArea.on("pointerover", () => {
       this.exitButtonGraphics.clear();
-      this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo más oscuro
+      this.exitButtonGraphics.fillStyle(0x00f0c8, 1); // Verde menta más claro
       this.exitButtonGraphics.fillRoundedRect(
         buttonX - buttonWidth / 2,
         buttonY - buttonHeight / 2,
@@ -420,7 +504,7 @@ class Roadmap extends Phaser.Scene {
         buttonHeight,
         12
       );
-      this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.exitButtonGraphics.lineStyle(5, 0x000000, 1);
       this.exitButtonGraphics.strokeRoundedRect(
         buttonX - buttonWidth / 2,
         buttonY - buttonHeight / 2,
@@ -433,7 +517,7 @@ class Roadmap extends Phaser.Scene {
 
     this.exitButtonHitArea.on("pointerout", () => {
       this.exitButtonGraphics.clear();
-      this.exitButtonGraphics.fillStyle(0xff4444, 1); // Rojo normal
+      this.exitButtonGraphics.fillStyle(0x00d4aa, 1); // Verde menta normal
       this.exitButtonGraphics.fillRoundedRect(
         buttonX - buttonWidth / 2,
         buttonY - buttonHeight / 2,
@@ -441,7 +525,7 @@ class Roadmap extends Phaser.Scene {
         buttonHeight,
         12
       );
-      this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+      this.exitButtonGraphics.lineStyle(5, 0x000000, 1);
       this.exitButtonGraphics.strokeRoundedRect(
         buttonX - buttonWidth / 2,
         buttonY - buttonHeight / 2,
@@ -477,44 +561,74 @@ class Roadmap extends Phaser.Scene {
   }
 
   /**
-   * Actualizar la posición del footer cuando se redimensiona la pantalla
+   * Actualizar posición del footer en resize
    */
   private updateFooterPosition(): void {
     const { width, height } = this.cameras.main;
     const footerHeight = 80;
-    const buttonWidth = 180;
+    const exitButtonWidth = 180;
+    const helpButtonWidth = 110;
     const buttonHeight = 50;
-    const buttonX = width - buttonWidth / 2 - 30;
+
+    // Calcular posiciones de botones
+    const exitButtonX = width - exitButtonWidth / 2 - 30;
+    const helpButtonX =
+      exitButtonX - exitButtonWidth / 2 - helpButtonWidth / 2 - 15;
     const buttonY = height - footerHeight / 2;
 
     // Reposicionar footer background
     this.footerBackground.setPosition(width / 2, height - footerHeight / 2);
     this.footerBackground.setSize(width, footerHeight);
 
-    // Reposicionar texto de Total Score
+    // Reposicionar texto de Total Score y número
     this.totalScoreText.setPosition(30, height - footerHeight / 2);
+    const textWidth = this.totalScoreText.width;
+    this.totalScoreNumber.setPosition(
+      30 + textWidth,
+      height - footerHeight / 2
+    );
 
-    // Reposicionar botón Save & Exit
+    // Redibujar botón HELP (amarillo suave - estilo Pudgy)
+    this.infoButtonGraphics.clear();
+    this.infoButtonGraphics.fillStyle(0xffd966, 1); // Amarillo suave
+    this.infoButtonGraphics.fillRoundedRect(
+      helpButtonX - helpButtonWidth / 2,
+      buttonY - buttonHeight / 2,
+      helpButtonWidth,
+      buttonHeight,
+      12
+    );
+    this.infoButtonGraphics.lineStyle(5, 0x000000, 1);
+    this.infoButtonGraphics.strokeRoundedRect(
+      helpButtonX - helpButtonWidth / 2,
+      buttonY - buttonHeight / 2,
+      helpButtonWidth,
+      buttonHeight,
+      12
+    );
+    this.infoButtonText.setPosition(helpButtonX, buttonY);
+    this.infoButtonHitArea.setPosition(helpButtonX, buttonY);
+
+    // Redibujar botón SAVE & EXIT (verde menta - estilo Pudgy)
     this.exitButtonGraphics.clear();
-    this.exitButtonGraphics.fillStyle(0xff4444, 1);
+    this.exitButtonGraphics.fillStyle(0x00d4aa, 1); // Verde menta
     this.exitButtonGraphics.fillRoundedRect(
-      buttonX - buttonWidth / 2,
+      exitButtonX - exitButtonWidth / 2,
       buttonY - buttonHeight / 2,
-      buttonWidth,
+      exitButtonWidth,
       buttonHeight,
       12
     );
-    this.exitButtonGraphics.lineStyle(4, 0x000000, 1);
+    this.exitButtonGraphics.lineStyle(5, 0x000000, 1);
     this.exitButtonGraphics.strokeRoundedRect(
-      buttonX - buttonWidth / 2,
+      exitButtonX - exitButtonWidth / 2,
       buttonY - buttonHeight / 2,
-      buttonWidth,
+      exitButtonWidth,
       buttonHeight,
       12
     );
-
-    this.exitButtonText.setPosition(buttonX, buttonY);
-    this.exitButtonHitArea.setPosition(buttonX, buttonY);
+    this.exitButtonText.setPosition(exitButtonX, buttonY);
+    this.exitButtonHitArea.setPosition(exitButtonX, buttonY);
   }
 
   /**
@@ -553,18 +667,13 @@ class Roadmap extends Phaser.Scene {
   private showInstructionsModal(): void {
     console.log("ℹ️ Mostrando instrucciones...");
 
-    // Cargar InstructionsModal dinámicamente
-    import("../objects/ui/InstructionsModal").then((module) => {
-      const InstructionsModal = module.default;
+    // Crear modal si no existe o reutilizar existente
+    if (!this.instructionsModal) {
+      this.instructionsModal = new InstructionsModal(this);
+    }
 
-      // Crear modal si no existe o reutilizar existente
-      if (!this.instructionsModal) {
-        this.instructionsModal = new InstructionsModal(this);
-      }
-
-      // Mostrar el modal
-      this.instructionsModal.show();
-    });
+    // Mostrar el modal inmediatamente
+    this.instructionsModal.show();
   }
 
   /**
@@ -589,7 +698,7 @@ class Roadmap extends Phaser.Scene {
       // Para el nivel 6 (Boss), mostrar "BOSS" en lugar de número
       if (index === 5) {
         const bossText = this.add.text(button.x, button.y - 80, "BOSS", {
-          fontFamily: "Fobble",
+          fontFamily: "TT-Trailers",
           fontSize: "56px",
           color: "#ffffff", // Blanco como los números
           stroke: "#333333", // Negro suave
@@ -612,7 +721,7 @@ class Roadmap extends Phaser.Scene {
           button.y - 80, // Aumentado de -60 a -80 para más separación
           `${levelNumber}`,
           {
-            fontFamily: "Fobble",
+            fontFamily: "TT-Trailers",
             fontSize: "72px", // Aumentado para compensar el estilo de Bangers
             color: "#ffffff",
             stroke: "#333333", // Negro suave (no 100% oscuro)
@@ -734,9 +843,9 @@ class Roadmap extends Phaser.Scene {
   }
 
   /**
-   * Iniciar un nivel específico
+   * Iniciar un nivel específico (con lazy loading de assets)
    */
-  private startLevel(levelIndex: number): void {
+  private async startLevel(levelIndex: number): Promise<void> {
     const sceneKeys = [
       "Level1",
       "Level2",
@@ -752,6 +861,44 @@ class Roadmap extends Phaser.Scene {
     // Detener música del Roadmap antes de cambiar de escena
     if (this.music) {
       this.music.stop();
+    }
+
+    // Lazy load assets for levels 2-5 and Boss
+    if (levelIndex >= 1) {
+      const { AssetLoader } = await import("../utils/AssetLoader");
+
+      // Show loading text
+      const loadingText = this.add
+        .text(384, 512, "Loading...", {
+          fontFamily: "Pixelify Sans",
+          fontSize: "32px",
+          color: "#ffffff",
+        })
+        .setOrigin(0.5);
+
+      try {
+        switch (levelIndex) {
+          case 1:
+            await AssetLoader.loadLevel2Assets(this);
+            break;
+          case 2:
+            await AssetLoader.loadLevel3Assets(this);
+            break;
+          case 3:
+            await AssetLoader.loadLevel4Assets(this);
+            break;
+          case 4:
+            await AssetLoader.loadLevel5Assets(this);
+            break;
+          case 5:
+            await AssetLoader.loadFirstBossAssets(this);
+            break;
+        }
+      } catch (error) {
+        console.error(`Error loading assets for ${sceneKey}:`, error);
+      }
+
+      loadingText.destroy();
     }
 
     this.scene.start(sceneKey);
@@ -775,9 +922,9 @@ class Roadmap extends Phaser.Scene {
     ];
     const subtitle = levelSubtitles[levelIndex];
 
-    // Crear overlay oscuro de fondo (responsive - ocupa todo el canvas)
+    // Crear overlay oscuro de fondo (responsive - ocupa todo el canvas) - estilo Pudgy
     this.modalOverlay = this.add.graphics();
-    this.modalOverlay.fillStyle(0x000000, 0.65); // Reducido de 0.7 a 0.65
+    this.modalOverlay.fillStyle(0x000000, 0.7);
     this.modalOverlay.fillRect(
       0,
       0,
@@ -802,57 +949,76 @@ class Roadmap extends Phaser.Scene {
     );
     this.modalContainer.setDepth(1001);
 
-    // Fondo del modal (negro suave con borde negro) - Aumentado height ligeramente
+    // Fondo del modal (blanco/celeste claro con borde negro) - MUCHO MÁS GRANDE
+    const modalWidth = 600; // Aumentado de 450 a 600
+    const modalHeight = 700; // Aumentado de 520 a 700
+    const halfWidth = modalWidth / 2;
+    const halfHeight = modalHeight / 2;
+
     this.modalBackground = this.add.graphics();
-    this.modalBackground.fillStyle(0x000000, 0.8); // Reducido de 0.85 a 0.8
-    this.modalBackground.fillRoundedRect(-225, -260, 450, 520, 20); // Aumentado de 500 a 520
-    this.modalBackground.lineStyle(8, 0x000000, 1); // Borde negro 100%
-    this.modalBackground.strokeRoundedRect(-225, -260, 450, 520, 20);
+    this.modalBackground.fillStyle(0xe8f4f8, 1); // Blanco/celeste claro
+    this.modalBackground.fillRoundedRect(
+      -halfWidth,
+      -halfHeight,
+      modalWidth,
+      modalHeight,
+      25
+    ); // Bordes más redondeados
+    this.modalBackground.lineStyle(8, 0x000000, 1); // Borde más grueso (de 6 a 8)
+    this.modalBackground.strokeRoundedRect(
+      -halfWidth,
+      -halfHeight,
+      modalWidth,
+      modalHeight,
+      25
+    );
     this.modalContainer.add(this.modalBackground);
 
-    // Título del nivel (blanco - fuente Bangers)
-    const titleText = this.add.text(0, -200, levelName, {
-      fontFamily: "Fobble",
-      fontSize: "56px",
-      color: "#ffffff", // Blanco
-      padding: { right: 10 }, // Padding para evitar cortes por inclinación
+    // Título del nivel (turquesa con stroke negro) - MÁS GRANDE
+    const titleText = this.add.text(0, -280, levelName, {
+      // Ajustado posición Y
+      fontFamily: "TT-Trailers",
+      fontSize: "72px", // Aumentado de 56px a 72px
+      color: "#00D4AA", // Turquesa/verde menta
+      stroke: "#000000",
+      strokeThickness: 10, // Aumentado de 8 a 10
     });
     titleText.setOrigin(0.5, 0.5);
     this.modalContainer.add(titleText);
 
-    // Subtítulo del nivel (blanco suave - fuente Bangers)
-    const subtitleText = this.add.text(0, -145, subtitle, {
-      fontFamily: "Fobble",
-      fontSize: "32px",
-      color: "#CCCCCC", // Blanco suave (antes Cyan)
-      padding: { right: 10 },
+    // Subtítulo del nivel - MÁS GRANDE
+    const subtitleText = this.add.text(0, -195, subtitle, {
+      // Ajustado posición Y
+      fontFamily: "TT-Trailers",
+      fontSize: "36px", // Aumentado de 28px a 36px
+      color: "#2d2d2d", // Gris oscuro
     });
     subtitleText.setOrigin(0.5, 0.5);
     this.modalContainer.add(subtitleText);
 
-    // Línea divisoria debajo del subtítulo
+    // Línea divisoria debajo del subtítulo - MÁS LARGA Y GRUESA
     const dividerLine = this.add.graphics();
-    dividerLine.lineStyle(3, 0xffffff, 0.5);
+    dividerLine.lineStyle(4, 0x000000, 0.4); // Más gruesa y visible
     dividerLine.beginPath();
-    dividerLine.moveTo(-150, -110);
-    dividerLine.lineTo(150, -110);
+    dividerLine.moveTo(-220, -150); // Más larga
+    dividerLine.lineTo(220, -150); // Ajustado posición Y
     dividerLine.strokePath();
     this.modalContainer.add(dividerLine);
 
     // Obtener datos del mejor run
     const scoreData = ScoreManager.getScore(levelNumber);
 
-    // Texto "Your Best Run:" o "Not Played Yet"
+    // Texto "Your Best Run:" o "Not Played Yet" - MÁS GRANDE
     const bestRunText = this.add.text(
       0,
-      -65,
+      -95, // Ajustado posición Y
       scoreData ? "YOUR BEST RUN:" : "NOT PLAYED YET",
       {
-        fontFamily: "Fobble",
-        fontSize: "32px",
-        color: scoreData ? "#00D9FF" : "#888888", // Cyan si hay datos, gris si no
+        fontFamily: "TT-Trailers",
+        fontSize: "44px", // Aumentado de 32px a 44px
+        color: "#ffffff", // Blanco con stroke negro
         stroke: "#000000",
-        strokeThickness: 3,
+        strokeThickness: 8, // Aumentado de 6 a 8
       }
     );
     bestRunText.setOrigin(0.5, 0.5);
@@ -860,75 +1026,76 @@ class Roadmap extends Phaser.Scene {
 
     // Solo mostrar stats si hay scoreData
     if (scoreData) {
-      // Sección de estadísticas en fila (Mini-Pengus y Coins del mejor run)
-      const statsY = -5; // Aumentado gap desde -10 a -5
-      const modalWidth = 450; // Actualizado al nuevo ancho
+      // Sección de estadísticas en fila - MÁS GRANDE Y SEPARADO
+      const statsY = -15; // Ajustado posición Y
 
       // Más espacio entre mini-pingus y coins
-      const leftGroupX = -70; // Posición izquierda para mini-pingu
-      const rightGroupX = 70; // Posición derecha para coins (más separación)
+      const leftGroupX = -90; // Posición izquierda para mini-pingu (más separado)
+      const rightGroupX = 90; // Posición derecha para coins (más separado)
 
-      // Grupo Mini-Pingu (centrado en leftGroupX)
+      // Grupo Mini-Pingu - ÍCONO MÁS GRANDE
       const miniPinguIcon = this.add.image(
-        leftGroupX - 30,
+        leftGroupX - 35, // Ajustado
         statsY,
         "mini-pingu"
       );
-      miniPinguIcon.setScale(1.0);
+      miniPinguIcon.setScale(1.3); // Aumentado de 1.0 a 1.3
       miniPinguIcon.setOrigin(0.5, 0.5);
       this.modalContainer.add(miniPinguIcon);
 
-      // Mini-Pingu count (blanco - fuente Bangers, a la derecha del icono)
+      // Mini-Pingu count - TEXTO MÁS GRANDE
       const miniPinguCount = scoreData.miniPingusCollected ?? 0;
       const totalMiniPingus = this.levelTotals[levelIndex].miniPingus;
       const miniPinguText = this.add.text(
-        leftGroupX + 10,
+        leftGroupX + 15, // Ajustado
         statsY,
         `${miniPinguCount}/${totalMiniPingus}`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px",
-          color: "#ffffff", // Blanco
-          padding: { right: 10 }, // Padding para evitar cortes por inclinación
+          fontFamily: "TT-Trailers",
+          fontSize: "42px", // Aumentado de 32px a 42px
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       miniPinguText.setOrigin(0, 0.5);
       this.modalContainer.add(miniPinguText);
 
-      // Grupo Coins (centrado en rightGroupX)
+      // Grupo Coins - ÍCONO MÁS GRANDE
       const coinIcon = this.add.image(
-        rightGroupX - 30,
+        rightGroupX - 35, // Ajustado
         statsY,
         "PT_TOKEN_MASTER_001"
       );
-      coinIcon.setScale(1.4); // Más grande que mini-pingu
+      coinIcon.setScale(1.8); // Aumentado de 1.4 a 1.8
       coinIcon.setOrigin(0.5, 0.5);
       this.modalContainer.add(coinIcon);
 
-      // Coin count (blanco - fuente Bangers, a la derecha del icono)
+      // Coin count - TEXTO MÁS GRANDE
       const coinCount = scoreData.coinsCollected ?? 0;
       const totalCoins = this.levelTotals[levelIndex].coins;
       const coinText = this.add.text(
-        rightGroupX + 10,
+        rightGroupX + 15, // Ajustado
         statsY,
         `${coinCount}/${totalCoins}`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px",
-          color: "#ffffff", // Blanco
-          padding: { right: 10 }, // Padding para evitar cortes por inclinación
+          fontFamily: "TT-Trailers",
+          fontSize: "42px", // Aumentado de 32px a 42px
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       coinText.setOrigin(0, 0.5);
       this.modalContainer.add(coinText);
 
-      // Sección de vidas (corazones) - entre stats y score
-      const livesY = 55; // Ajustado para el nuevo espaciado
+      // Sección de vidas (corazones) - MÁS GRANDE Y SEPARADO
+      const livesY = 100; // Ajustado para el nuevo espaciado
       const livesRemaining = 3 - (scoreData.livesMissed ?? 0); // Calcular vidas restantes
-      const heartSpacing = 50; // Espacio entre corazones
+      const heartSpacing = 65; // Aumentado de 50 a 65 - Más espacio entre corazones
       const startHeartX = -heartSpacing; // Centrar los 3 corazones
 
-      // Crear 3 corazones (ligeramente más grandes)
+      // Crear 3 corazones - MÁS GRANDES
       for (let i = 0; i < 3; i++) {
         const heartX = startHeartX + i * heartSpacing;
         // Frame 0 = lleno, Frame 2 = vacío (Frame 1 es semi-lleno)
@@ -939,45 +1106,68 @@ class Roadmap extends Phaser.Scene {
           "heart_spritesheet",
           heartFrame
         );
-        heart.setScale(1.3); // Aumentado de 1.2 a 1.3
+        heart.setScale(1.6); // Aumentado de 1.3 a 1.6
         heart.setOrigin(0.5, 0.5);
         this.modalContainer.add(heart);
       }
 
-      // SCORE del mejor run (más grande y destacado)
-      const scoreText = this.add.text(0, 130, `SCORE: ${scoreData.score}`, {
-        fontFamily: "Fobble",
-        fontSize: "48px",
-        color: "#FFDE59", // Amarillo destacado
+      // SCORE del mejor run - MÁS GRANDE
+      const scoreText = this.add.text(0, 185, `SCORE: ${scoreData.score}`, {
+        // Ajustado posición Y
+        fontFamily: "TT-Trailers",
+        fontSize: "62px", // Aumentado de 48px a 62px
+        color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 4,
+        strokeThickness: 10, // Aumentado de 8 a 10
       });
       scoreText.setOrigin(0.5, 0.5);
       this.modalContainer.add(scoreText);
     }
 
-    // Botón START (amarillo #FFDE59 con borde negro)
-    // Modal va de -260 a +260, botón en la misma posición siempre
-    const startButtonY = 210; // Posición fija para ambos casos
+    // Botón START - MUCHO MÁS GRANDE
+    const startButtonY = 280; // Ajustado posición Y
+    const buttonWidth = 280; // Aumentado de 200 a 280
+    const buttonHeight = 80; // Aumentado de 60 a 80
+    const halfButtonWidth = buttonWidth / 2;
+    const halfButtonHeight = buttonHeight / 2;
+
     const startButton = this.add.graphics();
-    startButton.fillStyle(0xffde59, 1); // Amarillo #FFDE59
-    startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
-    startButton.lineStyle(6, 0x000000, 1); // Borde negro
-    startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
+    startButton.fillStyle(0x00d4aa, 1); // Verde menta
+    startButton.fillRoundedRect(
+      -halfButtonWidth,
+      startButtonY - halfButtonHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    ); // Bordes más redondeados
+    startButton.lineStyle(6, 0x000000, 1); // Borde más grueso
+    startButton.strokeRoundedRect(
+      -halfButtonWidth,
+      startButtonY - halfButtonHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
     this.modalContainer.add(startButton);
 
-    // Texto del botón START (negro - fuente Bangers)
+    // Texto del botón START - MÁS GRANDE
     const startText = this.add.text(0, startButtonY, "START", {
-      fontFamily: "Fobble",
-      fontSize: "40px",
-      color: "#000000", // Negro
-      padding: { right: 10 }, // Padding para evitar cortes por inclinación
+      fontFamily: "TT-Trailers",
+      fontSize: "54px", // Aumentado de 40px a 54px
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 7, // Aumentado de 5 a 7
     });
     startText.setOrigin(0.5, 0.5);
     this.modalContainer.add(startText);
 
     // Hacer el botón START interactivo
-    const startButtonHitArea = this.add.rectangle(0, startButtonY, 200, 60);
+    const startButtonHitArea = this.add.rectangle(
+      0,
+      startButtonY,
+      buttonWidth,
+      buttonHeight
+    );
     startButtonHitArea.setInteractive({ useHandCursor: true });
     this.modalContainer.add(startButtonHitArea);
 
@@ -991,18 +1181,42 @@ class Roadmap extends Phaser.Scene {
 
     startButtonHitArea.on("pointerover", () => {
       startButton.clear();
-      startButton.fillStyle(0xffd040, 1); // Amarillo más oscuro en hover
-      startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
-      startButton.lineStyle(6, 0x000000, 1); // Borde negro
-      startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
+      startButton.fillStyle(0x00f0c8, 1); // Verde menta más claro en hover
+      startButton.fillRoundedRect(
+        -halfButtonWidth,
+        startButtonY - halfButtonHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
+      startButton.lineStyle(6, 0x000000, 1); // Borde negro grueso
+      startButton.strokeRoundedRect(
+        -halfButtonWidth,
+        startButtonY - halfButtonHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
     });
 
     startButtonHitArea.on("pointerout", () => {
       startButton.clear();
-      startButton.fillStyle(0xffde59, 1); // Volver al amarillo original
-      startButton.fillRoundedRect(-100, startButtonY - 30, 200, 60, 15);
-      startButton.lineStyle(6, 0x000000, 1); // Borde negro
-      startButton.strokeRoundedRect(-100, startButtonY - 30, 200, 60, 15);
+      startButton.fillStyle(0x00d4aa, 1); // Volver al verde menta
+      startButton.fillRoundedRect(
+        -halfButtonWidth,
+        startButtonY - halfButtonHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
+      startButton.lineStyle(6, 0x000000, 1); // Borde negro grueso
+      startButton.strokeRoundedRect(
+        -halfButtonWidth,
+        startButtonY - halfButtonHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
     });
 
     // Click fuera del modal para cerrarlo
@@ -1061,6 +1275,32 @@ class Roadmap extends Phaser.Scene {
       ScoreManager.unlockLevel(nextLevelIndex);
       this.updateButtonStates();
     }
+  }
+
+  /**
+   * Cleanup cuando se destruye la escena
+   */
+  shutdown(): void {
+    console.log("🔄 Limpiando Roadmap...");
+
+    // Detener música del Roadmap
+    if (this.music) {
+      if (this.music.isPlaying) {
+        this.music.stop();
+      }
+      this.music.destroy();
+    }
+
+    // Detener TODAS las músicas que puedan estar sonando
+    this.sound.getAllPlaying().forEach((sound) => {
+      if (sound.key === "roadmap_music") {
+        sound.stop();
+        sound.destroy();
+      }
+    });
+
+    // Remover listeners
+    this.events.removeAllListeners();
   }
 
   /* END-USER-CODE */

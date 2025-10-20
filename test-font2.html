@@ -1,0 +1,26 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <link rel='stylesheet' href='./assets/fonts/custom-fonts.css' />
+    <style>
+        body { padding: 20px; background: #333; color: white; }
+        .test { font-size: 48px; margin: 20px 0; }
+        .fobble { font-family: 'Fobble'; }
+        .tttrailers { font-family: 'TTTrailers'; }
+    </style>
+</head>
+<body>
+    <h1>Font Test</h1>
+    <div class='test fobble'>Fobble: INSTRUCTIONS</div>
+    <div class='test tttrailers'>TTTrailers: INSTRUCTIONS</div>
+    <script>
+        console.log('Checking fonts...');
+        document.fonts.ready.then(() => {
+            console.log('Fonts loaded:');
+            document.fonts.forEach(font => {
+                console.log('- ' + font.family);
+            });
+        });
+    </script>
+</body>
+</html>

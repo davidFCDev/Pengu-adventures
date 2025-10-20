@@ -10,7 +10,8 @@
     "dev:its": "node scripts/dev-server-its.js",
     "preview": "vite preview",
     "build": "node scripts/build.js",
-    "build:standalone": "npm run build && node scripts/embed-font.js"
+    "build:standalone": "npm run build && node scripts/embed-font.js",
+    "build:standalone:beautified": "set BUILD_BEAUTIFIED=true && npm run build && node scripts/embed-font.js"
   },
   "keywords": [
     "game",
@@ -21,7 +22,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@farcade/game-sdk": "^0.0.13",
+    "@farcade/game-sdk": "^0.2.1",
     "@tailwindcss/vite": "^4.1.12",
     "@types/node": "^22.13.14",
     "@types/react": "^19.1.10",

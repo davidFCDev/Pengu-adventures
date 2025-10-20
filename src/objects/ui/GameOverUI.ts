@@ -1,4 +1,10 @@
 // GameOverUI.ts - Modal de Game Over con estilo similar a LevelEndUI
+import { ScoreManager } from "../../systems/ScoreManager";
+import {
+  calculateLevelScore,
+  type LevelStats,
+} from "../../systems/ScoreSystem";
+
 export default class GameOverUI extends Phaser.GameObjects.Container {
   private background!: Phaser.GameObjects.Graphics;
   private modalBackground!: Phaser.GameObjects.Graphics;
@@ -37,7 +43,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.createUI();
     this.setVisible(false);
     this.setScrollFactor(0);
-    this.setDepth(1000);
+    this.setDepth(20000);
     scene.add.existing(this);
   }
 
@@ -45,9 +51,9 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     const centerX = this.scene.cameras.main.width / 2;
     const centerY = this.scene.cameras.main.height / 2;
 
-    // Fondo negro con 85% opacidad
+    // Fondo oscuro semi-transparente (overlay) - MUCHO MÁS OSCURO
     this.background = this.scene.add.graphics();
-    this.background.fillStyle(0x000000, 0.85);
+    this.background.fillStyle(0x000000, 0.85); // Aumentado de 0.7 a 0.85
     this.background.fillRect(
       0,
       0,
@@ -58,65 +64,88 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.background.setDepth(999);
     this.add(this.background);
 
-    // Modal negro con borde negro 100%
+    // Modal blanco/celeste claro con borde negro - MUCHO MÁS GRANDE
+    const modalWidth = 550; // Aumentado de 400 a 550
+    const modalHeight = 550; // Aumentado de 400 a 550
+    const halfWidth = modalWidth / 2;
+    const halfHeight = modalHeight / 2;
+
     this.modalBackground = this.scene.add.graphics();
-    this.modalBackground.fillStyle(0x000000, 0.85);
+    this.modalBackground.fillStyle(0xe8f4f8, 1); // Blanco/celeste claro
     this.modalBackground.fillRoundedRect(
-      centerX - 200,
-      centerY - 200,
-      400,
-      400,
-      20
+      centerX - halfWidth,
+      centerY - halfHeight,
+      modalWidth,
+      modalHeight,
+      25 // Bordes más redondeados
     );
-    this.modalBackground.lineStyle(8, 0x000000, 1);
+    this.modalBackground.lineStyle(8, 0x000000, 1); // Borde más grueso (de 6 a 8)
     this.modalBackground.strokeRoundedRect(
-      centerX - 200,
-      centerY - 200,
-      400,
-      400,
-      20
+      centerX - halfWidth,
+      centerY - halfHeight,
+      modalWidth,
+      modalHeight,
+      25
     );
     this.modalBackground.setScrollFactor(0);
     this.modalBackground.setDepth(1000);
     this.add(this.modalBackground);
 
-    // Texto gracioso aleatorio - se actualizará en show()
-    this.titleText = this.scene.add.text(centerX, centerY - 50, "", {
+    // Texto gracioso aleatorio - MUCHO MÁS GRANDE
+    this.titleText = this.scene.add.text(centerX, centerY - 70, "", {
       fontFamily: "Fobble",
-      fontSize: "42px",
-      color: "#FFFFFF",
+      fontSize: "60px", // Aumentado de 42px a 60px
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 10, // Aumentado de 8 a 10
       align: "center",
-      lineSpacing: 5,
+      lineSpacing: 8, // Más espacio entre líneas
     });
     this.titleText.setOrigin(0.5);
     this.titleText.setScrollFactor(0);
     this.titleText.setDepth(1000);
     this.add(this.titleText);
 
-    // Botón "VOLVER" (izquierda)
-    this.createBackButton(centerX - 90, centerY + 100);
-
-    // Botón "REINTENTAR" (derecha)
-    this.createRetryButton(centerX + 90, centerY + 100);
+    // Botones más separados y más grandes
+    this.createBackButton(centerX - 120, centerY + 130); // Más abajo y más separados
+    this.createRetryButton(centerX + 120, centerY + 130);
   }
 
   private createBackButton(x: number, y: number): void {
-    // Botón con Graphics (estilo Roadmap) - Gris para "volver"
+    // Botón blanco (secundario) - MUCHO MÁS GRANDE
+    const buttonWidth = 200; // Aumentado de 150 a 200
+    const buttonHeight = 75; // Aumentado de 60 a 75
+    const halfWidth = buttonWidth / 2;
+    const halfHeight = buttonHeight / 2;
+
     this.backButtonGraphics = this.scene.add.graphics();
-    this.backButtonGraphics.fillStyle(0x888888, 1); // Gris
-    this.backButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
-    this.backButtonGraphics.lineStyle(6, 0x000000, 1); // Borde negro
-    this.backButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+    this.backButtonGraphics.fillStyle(0xffffff, 1); // Blanco
+    this.backButtonGraphics.fillRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
+    this.backButtonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
+    this.backButtonGraphics.strokeRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
     this.backButtonGraphics.setScrollFactor(0);
     this.backButtonGraphics.setDepth(1001);
     this.add(this.backButtonGraphics);
 
-    // Texto del botón con fuente Bangers
+    // Texto del botón - MUCHO MÁS GRANDE
     this.backButtonText = this.scene.add.text(x, y, "BACK", {
       fontFamily: "Fobble",
-      fontSize: "32px", // Aumentado de 28px a 32px
-      color: "#FFFFFF", // Blanco
-      padding: { right: 10 },
+      fontSize: "46px", // Aumentado de 32px a 46px
+      color: "#2d2d2d", // Gris oscuro
+      stroke: "#000000",
+      strokeThickness: 5, // Aumentado de 3 a 5
     });
     this.backButtonText.setOrigin(0.5);
     this.backButtonText.setScrollFactor(0);
@@ -127,8 +156,8 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.backButtonHitArea = this.scene.add.rectangle(
       x,
       y,
-      150,
-      60,
+      buttonWidth,
+      buttonHeight,
       0x000000,
       0
     );
@@ -137,21 +166,45 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.backButtonHitArea.setDepth(1003);
     this.add(this.backButtonHitArea);
 
-    // Efectos hover
+    // Efectos hover - blanco/gris
     this.backButtonHitArea.on("pointerover", () => {
       this.backButtonGraphics.clear();
-      this.backButtonGraphics.fillStyle(0x666666, 1); // Gris más oscuro en hover
-      this.backButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.backButtonGraphics.fillStyle(0xf0f0f0, 1); // Gris muy claro en hover
+      this.backButtonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.backButtonGraphics.lineStyle(6, 0x000000, 1);
-      this.backButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.backButtonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.backButtonText.setScale(1.05);
     });
     this.backButtonHitArea.on("pointerout", () => {
       this.backButtonGraphics.clear();
-      this.backButtonGraphics.fillStyle(0x888888, 1); // Volver al gris original
-      this.backButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.backButtonGraphics.fillStyle(0xffffff, 1); // Volver al blanco
+      this.backButtonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.backButtonGraphics.lineStyle(6, 0x000000, 1);
-      this.backButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.backButtonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.backButtonText.setScale(1);
     });
     this.backButtonHitArea.on("pointerdown", () => {
@@ -164,22 +217,40 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
   }
 
   private createRetryButton(x: number, y: number): void {
-    // Botón amarillo con Graphics (estilo Roadmap)
+    // Botón amarillo (primario) - MUCHO MÁS GRANDE
+    const buttonWidth = 200; // Aumentado de 150 a 200
+    const buttonHeight = 75; // Aumentado de 60 a 75
+    const halfWidth = buttonWidth / 2;
+    const halfHeight = buttonHeight / 2;
+
     this.retryButtonGraphics = this.scene.add.graphics();
-    this.retryButtonGraphics.fillStyle(0xffde59, 1); // Amarillo #FFDE59
-    this.retryButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
-    this.retryButtonGraphics.lineStyle(6, 0x000000, 1); // Borde negro
-    this.retryButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+    this.retryButtonGraphics.fillStyle(0xffd966, 1); // Amarillo suave
+    this.retryButtonGraphics.fillRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
+    this.retryButtonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
+    this.retryButtonGraphics.strokeRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
     this.retryButtonGraphics.setScrollFactor(0);
     this.retryButtonGraphics.setDepth(1001);
     this.add(this.retryButtonGraphics);
 
-    // Texto del botón con fuente Bangers
+    // Texto del botón - MUCHO MÁS GRANDE
     this.retryButtonText = this.scene.add.text(x, y, "RETRY", {
       fontFamily: "Fobble",
-      fontSize: "32px", // Aumentado de 28px a 32px
-      color: "#000000", // Negro
-      padding: { right: 10 },
+      fontSize: "46px", // Aumentado de 32px a 46px
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 7, // Aumentado de 5 a 7
     });
     this.retryButtonText.setOrigin(0.5);
     this.retryButtonText.setScrollFactor(0);
@@ -190,8 +261,8 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.retryButtonHitArea = this.scene.add.rectangle(
       x,
       y,
-      150,
-      60,
+      buttonWidth,
+      buttonHeight,
       0x000000,
       0
     );
@@ -200,21 +271,45 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.retryButtonHitArea.setDepth(1003);
     this.add(this.retryButtonHitArea);
 
-    // Efectos hover
+    // Efectos hover - amarillo suave
     this.retryButtonHitArea.on("pointerover", () => {
       this.retryButtonGraphics.clear();
-      this.retryButtonGraphics.fillStyle(0xffd040, 1); // Amarillo más oscuro en hover
-      this.retryButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.retryButtonGraphics.fillStyle(0xffe699, 1); // Amarillo más claro en hover
+      this.retryButtonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.retryButtonGraphics.lineStyle(6, 0x000000, 1);
-      this.retryButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.retryButtonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.retryButtonText.setScale(1.05);
     });
     this.retryButtonHitArea.on("pointerout", () => {
       this.retryButtonGraphics.clear();
-      this.retryButtonGraphics.fillStyle(0xffde59, 1); // Volver al amarillo original
-      this.retryButtonGraphics.fillRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.retryButtonGraphics.fillStyle(0xffd966, 1); // Volver al amarillo suave
+      this.retryButtonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.retryButtonGraphics.lineStyle(6, 0x000000, 1);
-      this.retryButtonGraphics.strokeRoundedRect(x - 75, y - 30, 150, 60, 15);
+      this.retryButtonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.retryButtonText.setScale(1);
     });
     this.retryButtonHitArea.on("pointerdown", () => {
@@ -242,81 +337,73 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     this.scene.scene.restart();
   }
 
-  public show(): void {
-    this.setVisible(true);
-    this.setAlpha(0);
+  /**
+   * Enviar score total al SDK cuando pierdes las 3 vidas
+   */
+  private sendScoreToSDK(currentLevelStats?: any): void {
+    console.log("🎮 Game Over - Enviando score automáticamente al SDK...");
 
-    // Seleccionar mensaje gracioso aleatorio
-    const randomMessage =
-      this.funnyMessages[Math.floor(Math.random() * this.funnyMessages.length)];
-    this.titleText.setText(randomMessage);
+    // Si hay stats del nivel actual, calcular el score y guardarlo
+    if (currentLevelStats && currentLevelStats.levelNumber) {
+      console.log("📊 Stats del nivel actual:", currentLevelStats);
 
-    // Fade in del fondo y modal
-    this.scene.tweens.add({
-      targets: this,
-      alpha: 1,
-      duration: 500,
-      ease: "Power2",
-    });
-    // Animar texto del título
-    this.titleText.setAlpha(0);
-    this.scene.tweens.add({
-      targets: this.titleText,
-      alpha: 1,
-      duration: 500,
-      delay: 200,
-      ease: "Power2",
-    });
-    // Animar botón "Volver"
-    this.backButtonGraphics.setAlpha(0);
-    this.backButtonText.setScale(0);
-    this.backButtonHitArea.setAlpha(0);
-    this.scene.tweens.add({
-      targets: this.backButtonGraphics,
-      alpha: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Power2",
-    });
-    this.scene.tweens.add({
-      targets: this.backButtonText,
-      scale: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Back.easeOut",
-    });
-    this.scene.tweens.add({
-      targets: this.backButtonHitArea,
-      alpha: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Power2",
-    });
-    // Animar botón "Reintentar"
-    this.retryButtonGraphics.setAlpha(0);
-    this.retryButtonText.setScale(0);
-    this.retryButtonHitArea.setAlpha(0);
-    this.scene.tweens.add({
-      targets: this.retryButtonGraphics,
-      alpha: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Power2",
-    });
-    this.scene.tweens.add({
-      targets: this.retryButtonText,
-      scale: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Back.easeOut",
-    });
-    this.scene.tweens.add({
-      targets: this.retryButtonHitArea,
-      alpha: 1,
-      duration: 500,
-      delay: 400,
-      ease: "Power2",
-    });
+      // Extraer LevelStats sin el levelNumber
+      const { levelNumber, ...levelStats } = currentLevelStats;
+
+      // Calcular el score usando el sistema de puntuación
+      const scoreBreakdown = calculateLevelScore(levelStats as LevelStats);
+      console.log("🎯 Score calculado para nivel actual:", scoreBreakdown);
+
+      // Crear objeto completo para guardar (con 'score' en vez de 'finalScore')
+      const fullStats = {
+        ...levelStats,
+        ...scoreBreakdown,
+        score: scoreBreakdown.finalScore, // ScoreManager espera 'score', no 'finalScore'
+        levelNumber: levelNumber,
+      };
+
+      console.log("💾 Guardando stats completos:", fullStats);
+      // NO desbloquear siguiente nivel cuando se pierde (unlockNext: false)
+      ScoreManager.saveScore(fullStats, false);
+    }
+
+    // Obtener el score total acumulado (suma de MEJORES scores de TODOS los niveles)
+    const totalScore = ScoreManager.getTotalScore();
+    console.log("💯 Total Score a enviar:", totalScore);
+
+    // ⏱️ IMPORTANTE: Esperar un momento para que updateGameState se complete
+    // antes de enviar gameOver (que puede cerrar la app inmediatamente)
+    setTimeout(() => {
+      // Enviar al SDK con gameOver
+      if (window.FarcadeSDK) {
+        try {
+          window.FarcadeSDK.singlePlayer.actions.gameOver({
+            score: totalScore,
+          });
+          console.log(
+            "✅ Score enviado al SDK después de guardar:",
+            totalScore
+          );
+        } catch (error) {
+          console.error("❌ Error al enviar score al SDK:", error);
+        }
+      } else {
+        console.warn("⚠️ SDK no disponible - Score no enviado");
+      }
+    }, 500); // 500ms debería ser suficiente para que updateGameState se complete
+  }
+
+  public show(currentLevelStats?: any): void {
+    // 🎮 ENVÍO AUTOMÁTICO DE SCORE AL PERDER
+    // Solo enviamos el score al SDK, NO mostramos ningún modal
+    // El SDK mostrará su propia pantalla de "Play Again"
+    console.log(
+      "🎮 Game Over - Enviando score y esperando pantalla del SDK..."
+    );
+    this.sendScoreToSDK(currentLevelStats);
+
+    // NO mostrar ningún modal, el SDK maneja la UI
+    // La pantalla queda congelada hasta que el SDK muestre su interfaz
   }
 
   public hide(): void {

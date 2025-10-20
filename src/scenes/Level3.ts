@@ -12,13 +12,18 @@ import { BaseGameScene, GameSceneConfig } from "./BaseGameScene";
  */
 export class Level3 extends BaseGameScene {
   // Sistemas de coleccionables
-  private coinSystem!: CoinSystem;
   private keySystem!: KeySystem;
   private doorSystem!: DoorSystem;
-  private miniPinguSystem!: MiniPinguSystem;
 
   // Array de enemigos congelables para gestionar colisiones
   private freezableEnemies: FreezableEnemy[] = [];
+
+  /**
+   * Retorna el número del nivel (requerido por BaseGameScene)
+   */
+  protected getLevelNumber(): number {
+    return 3;
+  }
 
   constructor() {
     // Configuración del nivel
@@ -209,12 +214,12 @@ export class Level3 extends BaseGameScene {
     ];
 
     // Crear las monedas
-    this.coinSystem.createCoins(coinPositions);
+    this.coinSystem!.createCoins(coinPositions);
 
     // Configurar colisión con el jugador
     this.time.delayedCall(100, () => {
       if (this.player) {
-        this.coinSystem.setupPlayerCollision(this.player);
+        this.coinSystem!.setupPlayerCollision(this.player);
       }
     });
   }
@@ -243,12 +248,12 @@ export class Level3 extends BaseGameScene {
     ];
 
     // Crear los mini-pingüinos
-    this.miniPinguSystem.createMiniPingus(miniPinguPositions);
+    this.miniPinguSystem!.createMiniPingus(miniPinguPositions);
 
     // Configurar colisión con el jugador
     this.time.delayedCall(100, () => {
       if (this.player) {
-        this.miniPinguSystem.setupPlayerCollision(this.player);
+        this.miniPinguSystem!.setupPlayerCollision(this.player);
       }
     });
   }
@@ -504,10 +509,10 @@ export class Level3 extends BaseGameScene {
     const timeInSeconds = (this.levelEndTime - this.levelStartTime) / 1000;
 
     const stats: LevelStats = {
-      coinsCollected: this.coinSystem.getCollectedCoins(),
-      totalCoins: this.coinSystem.getTotalCoins(),
-      miniPingusCollected: this.miniPinguSystem.getCollectedMiniPingus(),
-      totalMiniPingus: this.miniPinguSystem.getTotalMiniPingus(),
+      coinsCollected: this.coinSystem!.getCollectedCoins(),
+      totalCoins: this.coinSystem!.getTotalCoins(),
+      miniPingusCollected: this.miniPinguSystem!.getCollectedMiniPingus(),
+      totalMiniPingus: this.miniPinguSystem!.getTotalMiniPingus(),
       timeInSeconds: timeInSeconds,
       livesMissed: this.livesMissedDuringLevel,
     };

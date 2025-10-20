@@ -34,7 +34,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     // Fijar al centro de la cámara
     this.setScrollFactor(0);
-    this.setDepth(1000);
+    this.setDepth(20000);
     this.createUI();
     this.setVisible(false);
   }
@@ -42,51 +42,52 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     const centerX = this.scene.cameras.main.width / 2;
     const centerY = this.scene.cameras.main.height / 2;
 
-    // Fondo overlay oscuro
+    // Fondo overlay oscuro - estilo Pudgy
     this.background = this.scene.add.rectangle(
       centerX,
       centerY,
       this.scene.cameras.main.width,
       this.scene.cameras.main.height,
       0x000000,
-      0.65 // Reducido de 0.7 a 0.65
+      0.8 // Aumentado de 0.7 a 0.8 para más contraste
     );
     this.background.setScrollFactor(0);
     this.add(this.background);
 
-    // Contenedor del modal (más grande para el desglose del score)
-    const modalWidth = 500; // Aumentado de 400 a 500
-    const modalHeight = this.scoreData ? 550 : 400; // Más alto si hay scoreData
+    // Contenedor del modal (MUCHO MÁS GRANDE) - estilo Pudgy
+    const modalWidth = 650; // Aumentado de 500 a 650
+    const modalHeight = this.scoreData ? 700 : 550; // Aumentado de 550/400 a 700/550
     const modalBg = this.scene.add.graphics();
-    modalBg.fillStyle(0x000000, 0.8); // Reducido de 0.85 a 0.8
+    modalBg.fillStyle(0xe8f4f8, 1); // Blanco/celeste claro (estilo Pudgy)
     modalBg.fillRoundedRect(
       centerX - modalWidth / 2,
       centerY - modalHeight / 2,
       modalWidth,
       modalHeight,
-      20
+      25 // Bordes más redondeados
     );
-    modalBg.lineStyle(8, 0x000000, 1); // Borde negro 100%
+    modalBg.lineStyle(8, 0x000000, 1); // Borde más grueso (de 6 a 8)
     modalBg.strokeRoundedRect(
       centerX - modalWidth / 2,
       centerY - modalHeight / 2,
       modalWidth,
       modalHeight,
-      20
+      25
     );
     modalBg.setScrollFactor(0);
     this.add(modalBg);
 
-    // Texto "LEVEL COMPLETE!" (o texto customizado) con fuente Fobble (más arriba sin sprite)
+    // Texto "LEVEL COMPLETE!" - MUCHO MÁS GRANDE
     const completeText = this.scene.add.text(
       centerX,
-      centerY - modalHeight / 2 + 80,
+      centerY - modalHeight / 2 + 100, // Más espacio desde arriba
       this.titleText,
       {
-        fontFamily: "Fobble",
-        fontSize: "60px", // Aumentado de 56px a 60px
+        fontFamily: "TT-Trailers",
+        fontSize: "80px", // Aumentado de 60px a 80px
         color: "#ffffff",
-        padding: { right: 10 },
+        stroke: "#000000",
+        strokeThickness: 10, // Aumentado de 8 a 10
       }
     );
     completeText.setOrigin(0.5, 0.5);
@@ -95,13 +96,13 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
 
     // Mostrar desglose del score si existe
     if (this.scoreData) {
-      this.createScoreBreakdown(centerX, centerY - modalHeight / 2 + 140);
+      this.createScoreBreakdown(centerX, centerY - modalHeight / 2 + 180); // Ajustado
     }
 
     // Botón "Next Level"
     const buttonY = this.scoreData
-      ? centerY + modalHeight / 2 - 60
-      : centerY + 140;
+      ? centerY + modalHeight / 2 - 80 // Más espacio desde abajo
+      : centerY + 180;
     this.createNextButton(centerX, buttonY);
   }
 
@@ -109,7 +110,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
    * Crear desglose visual del score
    */
   private createScoreBreakdown(startX: number, startY: number): void {
-    const lineHeight = 36; // Aumentado de 32 a 36
+    const lineHeight = 55; // Aumentado de 42 a 55 para más espacio
     let currentY = startY;
 
     // Helper para formatear tiempo
@@ -124,7 +125,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       return `x${mult.toFixed(1)}`;
     };
 
-    // 1. Monedas (solo mostrar si NO es boss level)
+    // 1. Monedas (solo mostrar si NO es boss level) - amarillo dorado con stroke
     console.log(
       "🪙 Verificando monedas - isBossLevel:",
       this.isBossLevel,
@@ -137,9 +138,11 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         currentY,
         `Coins: ${this.scoreData.coinsCollected}/${this.scoreData.totalCoins}  (+${this.scoreData.coinPoints})`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px", // Aumentado de 32px a 36px
-          color: "#FFD700", // Dorado para monedas
+          fontFamily: "TT-Trailers",
+          fontSize: "46px", // Aumentado de 36px a 46px
+          color: "#FFD700", // Amarillo dorado
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       coinsText.setOrigin(0.5);
@@ -148,7 +151,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       currentY += lineHeight;
     }
 
-    // 2. Mini-Pingus (solo mostrar si NO es boss level)
+    // 2. Mini-Pingus (solo mostrar si NO es boss level) - celeste con stroke
     console.log(
       "🐧 Verificando mini-pingus - isBossLevel:",
       this.isBossLevel,
@@ -161,9 +164,11 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         currentY,
         `Mini-Pingus: ${this.scoreData.miniPingusCollected}/${this.scoreData.totalMiniPingus}  (+${this.scoreData.miniPinguPoints})`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px", // Aumentado de 32px a 36px
-          color: "#00D9FF", // Celeste para mini-pingus
+          fontFamily: "TT-Trailers",
+          fontSize: "46px", // Aumentado de 36px a 46px
+          color: "#00D9FF", // Celeste brillante
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       pinguText.setOrigin(0.5);
@@ -172,7 +177,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       currentY += lineHeight;
     }
 
-    // 3. Tiempo
+    // 3. Tiempo - blanco con stroke
     if (this.scoreData.timeInSeconds !== undefined) {
       const timeMultiplierText = this.scoreData.timeMultiplier
         ? `  (${formatMultiplier(this.scoreData.timeMultiplier)})`
@@ -184,9 +189,11 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
           this.scoreData.timeInSeconds
         )}${timeMultiplierText}`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px", // Aumentado de 32px a 36px
-          color: "#FFFFFF",
+          fontFamily: "TT-Trailers",
+          fontSize: "46px", // Aumentado de 36px a 46px
+          color: "#ffffff", // Blanco
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       timeText.setOrigin(0.5);
@@ -195,7 +202,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       currentY += lineHeight;
     }
 
-    // 4. Vidas perdidas
+    // 4. Vidas perdidas - rojo suave con stroke
     if (this.scoreData.livesMissed !== undefined) {
       const livesMultiplierText = this.scoreData.livesMultiplier
         ? `  (${formatMultiplier(this.scoreData.livesMultiplier)})`
@@ -205,39 +212,41 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         currentY,
         `Lives Lost: ${this.scoreData.livesMissed}${livesMultiplierText}`,
         {
-          fontFamily: "Fobble",
-          fontSize: "36px", // Aumentado de 32px a 36px
-          color: "#FF6B6B", // Rojo suave para vidas
+          fontFamily: "TT-Trailers",
+          fontSize: "46px", // Aumentado de 36px a 46px
+          color: "#FF6B6B", // Rojo suave
+          stroke: "#000000",
+          strokeThickness: 6, // Aumentado de 5 a 6
         }
       );
       livesText.setOrigin(0.5);
       livesText.setScrollFactor(0);
       this.add(livesText);
-      currentY += lineHeight + 15; // Aumentado el espacio extra antes del total
+      currentY += lineHeight + 20; // Aumentado de 15 a 20
     }
 
-    // Línea separadora
+    // Línea separadora - estilo Pudgy
     const line = this.scene.add.graphics();
-    line.lineStyle(3, 0xffffff, 0.5);
+    line.lineStyle(4, 0x000000, 0.4); // Más gruesa y visible
     line.beginPath();
-    line.moveTo(startX - 150, currentY);
-    line.lineTo(startX + 150, currentY);
+    line.moveTo(startX - 200, currentY); // Más larga
+    line.lineTo(startX + 200, currentY);
     line.strokePath();
     line.setScrollFactor(0);
     this.add(line);
-    currentY += 30; // Aumentado de 20 a 30 para más espacio
+    currentY += 50; // Aumentado de 40 a 50 para más espacio antes del score
 
-    // 5. Score Final (más grande y destacado)
+    // 5. Score Final - blanco con stroke negro (estilo Pudgy) - MUY GRANDE
     const finalScoreText = this.scene.add.text(
       startX,
       currentY,
       `SCORE: ${this.scoreData.finalScore}`,
       {
-        fontFamily: "Fobble",
-        fontSize: "52px", // Aumentado de 48px a 52px
-        color: "#FFDE59", // Amarillo como los botones
+        fontFamily: "TT-Trailers",
+        fontSize: "70px", // Aumentado de 52px a 70px
+        color: "#ffffff", // Blanco con stroke negro
         stroke: "#000000",
-        strokeThickness: 4,
+        strokeThickness: 10, // Aumentado de 8 a 10
       }
     );
     finalScoreText.setOrigin(0.5);
@@ -245,23 +254,41 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     this.add(finalScoreText);
   }
   private createNextButton(x: number, y: number): void {
-    // Botón amarillo con Graphics (estilo Roadmap)
+    // Botón verde menta (primario) - MUCHO MÁS GRANDE
+    const buttonWidth = 280; // Aumentado de 200 a 280
+    const buttonHeight = 80; // Aumentado de 60 a 80
+    const halfWidth = buttonWidth / 2;
+    const halfHeight = buttonHeight / 2;
+
     this.buttonGraphics = this.scene.add.graphics();
-    this.buttonGraphics.fillStyle(0xffde59, 1); // Amarillo #FFDE59
-    this.buttonGraphics.fillRoundedRect(x - 100, y - 30, 200, 60, 15);
-    this.buttonGraphics.lineStyle(6, 0x000000, 1); // Borde negro
-    this.buttonGraphics.strokeRoundedRect(x - 100, y - 30, 200, 60, 15);
+    this.buttonGraphics.fillStyle(0x00d4aa, 1); // Verde menta
+    this.buttonGraphics.fillRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
+    this.buttonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
+    this.buttonGraphics.strokeRoundedRect(
+      x - halfWidth,
+      y - halfHeight,
+      buttonWidth,
+      buttonHeight,
+      15
+    );
     this.buttonGraphics.setScrollFactor(0);
     this.buttonGraphics.setDepth(1001);
     this.add(this.buttonGraphics);
 
-    // Texto del botón con fuente Bangers (cambia según si es boss level)
+    // Texto del botón - MUCHO MÁS GRANDE
     const buttonLabel = this.isBossLevel ? "BACK" : "NEXT LEVEL";
     this.buttonText = this.scene.add.text(x, y, buttonLabel, {
-      fontFamily: "Fobble",
-      fontSize: "36px", // Aumentado de 32px a 36px
-      color: "#000000", // Negro
-      padding: { right: 10 },
+      fontFamily: "TT-Trailers",
+      fontSize: "50px", // Aumentado de 36px a 50px
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 7, // Aumentado de 5 a 7
     });
     this.buttonText.setOrigin(0.5);
     this.buttonText.setScrollFactor(0);
@@ -269,27 +296,58 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     this.add(this.buttonText);
 
     // Hit area invisible para interactividad
-    this.buttonHitArea = this.scene.add.rectangle(x, y, 200, 60, 0x000000, 0);
+    this.buttonHitArea = this.scene.add.rectangle(
+      x,
+      y,
+      buttonWidth,
+      buttonHeight,
+      0x000000,
+      0
+    );
     this.buttonHitArea.setInteractive({ useHandCursor: true });
     this.buttonHitArea.setScrollFactor(0);
     this.buttonHitArea.setDepth(1003);
     this.add(this.buttonHitArea);
 
-    // Efectos hover
+    // Efectos hover - verde menta
     this.buttonHitArea.on("pointerover", () => {
       this.buttonGraphics.clear();
-      this.buttonGraphics.fillStyle(0xffd040, 1); // Amarillo más oscuro en hover
-      this.buttonGraphics.fillRoundedRect(x - 100, y - 30, 200, 60, 15);
+      this.buttonGraphics.fillStyle(0x00f0c8, 1); // Verde menta más claro en hover
+      this.buttonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.buttonGraphics.lineStyle(6, 0x000000, 1);
-      this.buttonGraphics.strokeRoundedRect(x - 100, y - 30, 200, 60, 15);
+      this.buttonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.buttonText.setScale(1.05);
     });
     this.buttonHitArea.on("pointerout", () => {
       this.buttonGraphics.clear();
-      this.buttonGraphics.fillStyle(0xffde59, 1); // Volver al amarillo original
-      this.buttonGraphics.fillRoundedRect(x - 100, y - 30, 200, 60, 15);
+      this.buttonGraphics.fillStyle(0x00d4aa, 1); // Volver al verde menta
+      this.buttonGraphics.fillRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.buttonGraphics.lineStyle(6, 0x000000, 1);
-      this.buttonGraphics.strokeRoundedRect(x - 100, y - 30, 200, 60, 15);
+      this.buttonGraphics.strokeRoundedRect(
+        x - halfWidth,
+        y - halfHeight,
+        buttonWidth,
+        buttonHeight,
+        15
+      );
       this.buttonText.setScale(1);
     });
     this.buttonHitArea.on("pointerdown", () => {
@@ -306,16 +364,19 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       // Para boss level, usar levelNumber 6 (FirstBoss es el nivel 6)
       const levelNumber = this.isBossLevel ? 6 : this.scoreData.levelNumber;
 
-      ScoreManager.saveScore({
-        levelNumber: levelNumber,
-        score: this.scoreData.finalScore,
-        coinsCollected: this.scoreData.coinsCollected || 0,
-        totalCoins: this.scoreData.totalCoins || 0,
-        miniPingusCollected: this.scoreData.miniPingusCollected || 0,
-        totalMiniPingus: this.scoreData.totalMiniPingus || 0,
-        timeInSeconds: this.scoreData.timeInSeconds,
-        livesMissed: this.scoreData.livesMissed,
-      });
+      ScoreManager.saveScore(
+        {
+          levelNumber: levelNumber,
+          score: this.scoreData.finalScore,
+          coinsCollected: this.scoreData.coinsCollected || 0,
+          totalCoins: this.scoreData.totalCoins || 0,
+          miniPingusCollected: this.scoreData.miniPingusCollected || 0,
+          totalMiniPingus: this.scoreData.totalMiniPingus || 0,
+          timeInSeconds: this.scoreData.timeInSeconds,
+          livesMissed: this.scoreData.livesMissed,
+        },
+        true
+      ); // unlockNext: true porque completó el nivel exitosamente
 
       console.log(
         `✅ Score guardado para nivel ${levelNumber} (Boss: ${this.isBossLevel})`

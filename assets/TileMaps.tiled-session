@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Level1.tmx",
+    "activeFile": "Level2.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -37,11 +37,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.5,
+            "scale": 0.25,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 1920,
-                "y": 1044
+                "x": 2100,
+                "y": 1164
             }
         },
         "Level1.tmx#spritesheet-backgrounds-default": {
@@ -53,10 +53,10 @@
         },
         "Level2.tmx": {
             "scale": 0.33,
-            "selectedLayer": 1,
+            "selectedLayer": 3,
             "viewCenter": {
-                "x": 5204.545454545454,
-                "y": 1039.3939393939395
+                "x": 3530.30303030303,
+                "y": 1351.5151515151517
             }
         },
         "Level2.tmx#spritesheet-backgrounds-default": {
@@ -88,11 +88,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.33,
+            "scale": 0.25,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 3142.424242424242,
-                "y": 1021.2121212121212
+                "x": 2460,
+                "y": 1052
             }
         },
         "Level4.tmx#spritesheet-backgrounds-default": {
@@ -106,10 +106,10 @@
                 4
             ],
             "scale": 0.33,
-            "selectedLayer": 3,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 2848.4848484848485,
-                "y": 978.7878787878788
+                "x": 2215.151515151515,
+                "y": 1287.8787878787878
             }
         },
         "Level5.tmx#spritesheet-backgrounds-default": {
@@ -189,18 +189,18 @@
     "map.tileWidth": 64,
     "map.width": 12,
     "openFiles": [
-        "Level1.tmx"
+        "Level2.tmx"
     ],
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "Level2.tmx",
         "Level1.tmx",
         "Level5.tmx",
-        "FirstBoss.tmx",
         "Level4.tmx",
+        "FirstBoss.tmx",
         "Level3.tmx",
         "LevelBaseToCopy.tmx",
-        "Level2.tmx",
         "TestingMap.tmx",
         "LevelBase.tmx",
         "TestingMap.json"

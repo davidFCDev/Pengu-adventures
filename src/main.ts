@@ -1,3 +1,4 @@
+import * as Phaser from "phaser";
 import { initializeSDKMock } from "../.remix/mocks/RemixSDKMock";
 import GameSettings from "./config/GameSettings";
 import FirstBoss from "./scenes/FirstBoss";
@@ -17,13 +18,13 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GameSettings.canvas.width,
   height: GameSettings.canvas.height,
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.FIT, // FIT mantiene aspect ratio sin distorsión y sin zoom
     parent: document.body,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GameSettings.canvas.width,
     height: GameSettings.canvas.height,
     // Mejoras para móvil: expandir para llenar la pantalla
-    expandParent: true,
+    expandParent: false, // Desactivado para prevenir zoom en Android
     fullscreenTarget: document.body,
   },
   backgroundColor: "#1a1a1a",
@@ -50,12 +51,13 @@ const config: Phaser.Types.Core.GameConfig = {
   fps: {
     target: 60,
   },
-  // Additional WebGL settings
-  pixelArt: false,
-  antialias: true,
-  // Preserve drawing buffer for underglow effect
+  // Render configuration for smooth graphics
   render: {
     preserveDrawingBuffer: true,
+    antialias: true, // Enable antialiasing for smooth edges
+    antialiasGL: true, // Enable antialiasing in WebGL
+    pixelArt: false, // Disable pixel art mode for smooth scaling
+    roundPixels: false, // Don't round pixel positions (causes pixelation)
   },
 };
 

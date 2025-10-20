@@ -2,52 +2,138 @@ import GameSettings from "../config/GameSettings";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 
 export class PreloadScene extends Phaser.Scene {
+  private progressBarElement?: HTMLElement;
+  private assetsLoaded: boolean = false;
+  private fontsReady: boolean = false;
+
   constructor() {
     super({ key: "PreloadScene" });
   }
 
-  preload(): void {
-    // Load Google Font first
-    this.load.script(
-      "webfont",
-      "https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"
-    );
+  init(): void {
+    // Crear la pantalla de branding CON la barra de progreso ANTES de cargar assets
+    this.cameras.main.setBackgroundColor("#000000");
+    this.createStudioBranding();
 
-    // ========== PRELOAD GAME ASSETS HERE ==========
-    // Cargar el mapa Level1 desde GitHub
+    // Verificar que las fuentes estén listas
+    this.checkFonts();
+  }
+
+  private async checkFonts(): Promise<void> {
+    const fontFamily = "TT-Trailers";
+    const heavyVariant = `800 140px "${fontFamily}"`;
+    const lightVariant = `800 32px "${fontFamily}"`;
+
+    try {
+      if (this.canUseDocumentFonts()) {
+        await Promise.all([
+          document.fonts.ready,
+          document.fonts.load(heavyVariant),
+          document.fonts.load(lightVariant),
+        ]);
+
+        const loadedViaSet =
+          document.fonts.check(heavyVariant) ||
+          document.fonts.check(lightVariant) ||
+          Array.from(document.fonts.values()).some(
+            (font) =>
+              font.family.includes(fontFamily) && font.status === "loaded"
+          );
+
+        if (!loadedViaSet) {
+          console.warn(
+            "⚠️ TT-Trailers no fue confirmada via FontFaceSet, aplicando fallback"
+          );
+          await this.loadFontFallback(fontFamily);
+        }
+      } else {
+        await this.loadFontFallback(fontFamily);
+      }
+
+      await this.forceFontPaint(fontFamily);
+      this.fontsReady = true;
+      console.log("✅ TT-Trailers cargada y verificada");
+    } catch (error) {
+      console.warn("⚠️ Error al cargar fuentes en PreloadScene:", error);
+      try {
+        await this.loadFontFallback(fontFamily);
+        await this.forceFontPaint(fontFamily);
+      } catch (fallbackError) {
+        console.warn(
+          "⚠️ Fallback de fuente también falló, continuando igualmente:",
+          fallbackError
+        );
+      }
+      this.fontsReady = true; // Continuar de todos modos
+    }
+  }
+
+  private canUseDocumentFonts(): boolean {
+    return (
+      typeof document !== "undefined" &&
+      "fonts" in document &&
+      typeof document.fonts?.load === "function"
+    );
+  }
+
+  private async loadFontFallback(fontFamily: string): Promise<void> {
+    if (typeof FontFace === "undefined") {
+      return;
+    }
+
+    const fontUrl = this.getTTTrailersUrl();
+    const fontFace = new FontFace(fontFamily, `url(${fontUrl})`, {
+      weight: "800",
+      style: "normal",
+    });
+
+    const loadedFace = await fontFace.load();
+    if (this.canUseDocumentFonts()) {
+      document.fonts.add(loadedFace);
+    }
+  }
+
+  private async forceFontPaint(fontFamily: string): Promise<void> {
+    const tempText = document.createElement("div");
+    tempText.style.fontFamily = fontFamily;
+    tempText.style.fontSize = "140px";
+    tempText.style.fontWeight = "800";
+    tempText.style.position = "absolute";
+    tempText.style.left = "-9999px";
+    tempText.textContent = "I AM PENGU";
+    document.body.appendChild(tempText);
+
+    tempText.offsetHeight;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.body.removeChild(tempText);
+  }
+
+  private getTTTrailersUrl(): string {
+    return new URL("../../assets/fonts/TT-Trailers-ExtraBold.otf", import.meta.url)
+      .href;
+  }
+
+  preload(): void {
+    // Setup loading progress listeners (la barra ya está creada en init())
+    this.load.on("progress", (value: number) => {
+      this.updateProgressBar(value);
+    });
+
+    // Listener cuando la carga está 100% completa
+    this.load.on("complete", () => {
+      console.log("✅ Todos los assets cargados al 100%");
+      this.assetsLoaded = true;
+      this.updateProgressBar(1); // Asegurar que la barra esté al 100%
+    });
+
+    // ========== CRITICAL ASSETS ONLY (MainPage, Roadmap, Level1) ==========
+    // Level2-5 and FirstBoss are loaded on-demand via AssetLoader utility
+
+    // Cargar SOLO el mapa Level1 desde GitHub (nivel inicial)
     this.load.tilemapTiledJSON(
       "Level1",
       "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level1.json"
-    );
-
-    // Cargar el mapa Level2 desde GitHub
-    this.load.tilemapTiledJSON(
-      "Level2",
-      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level2.json"
-    );
-
-    // Cargar el mapa Level3 (desde GitHub)
-    this.load.tilemapTiledJSON(
-      "Level3",
-      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level3.json"
-    );
-
-    // Cargar el mapa Level4 (desde GitHub)
-    this.load.tilemapTiledJSON(
-      "Level4",
-      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level4.json"
-    );
-
-    // Cargar el mapa Level5 (desde GitHub)
-    this.load.tilemapTiledJSON(
-      "Level5",
-      "https://raw.githubusercontent.com/davidFCDev/Pengu-adventures/refs/heads/main/assets/Level5.json"
-    );
-
-    // Cargar el mapa FirstBoss - BOSS LEVEL (desde GitHub raw)
-    this.load.tilemapTiledJSON(
-      "FirstBoss",
-      "https://raw.githubusercontent.com/davidFCDev/remix-base-startup/main/assets/FirstBoss.json"
     );
 
     // Cargar los tilesets como imágenes (necesario para el tilemap) - DESDE VERCEL
@@ -169,53 +255,10 @@ export class PreloadScene extends Phaser.Scene {
       }
     );
 
-    // ========== BOSS ENEMIES ==========
-    // BOSS BAT - Murciélago jefe del FirstBoss
-    // Dimensiones totales: 6090x1554 (10 columnas por fila)
-    // Frame size: 609x518 cada uno (1554/3 = 518)
-    // Fila 1 (frames 0-9): HURT - Cuando recibe daño (10 frames)
-    // Fila 2 (frames 10-18): WAKE - Despertar del estado dormido (9 frames)
-    // Fila 3 (frames 20-27): FLYING - Estado de vuelo en batalla (8 frames)
-    this.load.spritesheet(
-      "boss-bat-spritesheet",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-YhgPBVXu7j9tscC446Augx1rAUiz2h.png?XgJC",
-      {
-        frameWidth: 609,
-        frameHeight: 518,
-      }
-    );
-
-    // Cargar spritesheet de muerte del Boss Bat (DIE animation)
-    this.load.spritesheet(
-      "boss-bat-die-spritesheet",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/die_bat-Z60vTPdcbzWxxw04gnjzNmwit9KL86.png?xSuv",
-      {
-        frameWidth: 609,
-        frameHeight: 518,
-      }
-    );
-
-    // Cargar spritesheet de estado confuso (para el boss aturdido)
-    this.load.spritesheet(
-      "confused-status-spritesheet",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/confused_status-lDP44E0A9zwjU7uok5OsSUpkpReilW.png?pEz6",
-      {
-        frameWidth: 670, // 10720 / 16 frames = 670px por frame
-        frameHeight: 392,
-      }
-    );
-
-    // Cargar imagen de bola de nieve rodante (FirstBoss)
-    this.load.image(
-      "roller-snowball",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/roller-snowball-7Qny1WDOwxpF0zGLnHYmgXlKAdrjm0.png?nIAV"
-    );
-
-    // Cargar imagen de fondo para FirstBoss (768×1024px - ajustada al tamaño del tilemap)
-    this.load.image(
-      "fondo-boss1",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/fondo-boss1%20%281%29-U8P7eQTsQxFpS4M0XjRYrsKkw50uRd.png?eKHL"
-    );
+    // ========== BOSS ENEMIES (LAZY LOADED) ==========
+    // Boss assets are loaded on-demand via AssetLoader.loadFirstBossAssets()
+    // - boss-bat-spritesheet, boss-bat-die-spritesheet
+    // - confused-status-spritesheet, roller-snowball, fondo-boss1
 
     // ========== MAIN PAGE ASSETS ==========
     // Fondo de la página principal
@@ -274,12 +317,6 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-oFuFEHvgIOYOwUItEyjAzmuKezGcyo.mp3"
     );
 
-    // Cargar música del boss (FirstBoss)
-    this.load.audio(
-      "boss_music",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-music-Uc0TBbcOXiNZTFHe8IImIh6vzL17hD.mp3?ZGgU"
-    );
-
     // Cargar música del Roadmap (selección de nivel)
     this.load.audio(
       "roadmap_music",
@@ -287,17 +324,7 @@ export class PreloadScene extends Phaser.Scene {
     );
 
     // ========== SONIDOS DE EFECTOS ==========
-    // Sonido de despertar del Boss Bat
-    this.load.audio(
-      "boss_bat_wake",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss_bat-Wni2i2yqMdyNmed5q9T6lOQL5BjO9T.mp3?TCwy"
-    );
-
-    // Sonido de confusión del Boss Bat
-    this.load.audio(
-      "boss_confused",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/boss-confused-5MnQmN0K0PPmO331Tm915ms3IKHKJR.mp3?KUxB"
-    );
+    // Boss sounds (boss_music, boss_bat_wake, boss_confused) are lazy loaded
 
     // ========== SONIDOS DEL PLAYER ==========
     // Sonido de colisión de bola de nieve (también usado para caminar)
@@ -356,29 +383,10 @@ export class PreloadScene extends Phaser.Scene {
       "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level1-V1uFKODckgpJTx5QhnfpfC80ElhEEm.mp3?AAC8"
     );
 
-    // Música de fondo para Level2
-    this.load.audio(
-      "level2_music",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/Level2-0LVHTXGqK32B0P41WqB0n10sKfVHiQ.mp3?UVgv"
-    );
-
-    // Música de fondo para Level3
-    this.load.audio(
-      "level3_music",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level3-DLjjuoN0wbyyUpLi1eIlS2pRqOWygZ.mp3?TNx1"
-    );
-
-    // Música de fondo para Level4
-    this.load.audio(
-      "level4_music",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level4-iuK3YADEvREOfYhxREOFsBExNCT7vv.mp3?4xQd"
-    );
-
-    // Música de fondo para Level5
-    this.load.audio(
-      "level5_music",
-      "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/level5-8173QPSZmk28WxNRr9LLVuXaseEBm8.mp3?ipax"
-    );
+    // ========== LAZY LOADED MUSIC (Level2-5 and Boss) ==========
+    // These are loaded on-demand via AssetLoader utility when level is selected
+    // - level2_music, level3_music, level4_music, level5_music
+    // - boss_music, boss_bat_wake, boss_confused
 
     // ========== SONIDOS DE PUERTAS ==========
     // Sonido al abrir/desaparecer puerta con llave
@@ -458,32 +466,8 @@ export class PreloadScene extends Phaser.Scene {
       graphics.destroy();
     }
 
-    // Set black background
-    this.cameras.main.setBackgroundColor("#000000");
-
-    // Load Pixelify font, Bangers font and custom Fobble font
-    if ((window as any).WebFont) {
-      (window as any).WebFont.load({
-        google: {
-          families: ["Pixelify Sans:400,700", "Bangers"],
-        },
-        custom: {
-          families: ["Fobble"],
-          urls: ["./assets/fonts/custom-fonts.css"],
-        },
-        active: () => {
-          // Font loaded, create content
-          this.createStudioBranding();
-        },
-        inactive: () => {
-          // Fallback if font fails to load
-          this.createStudioBranding();
-        },
-      });
-    } else {
-      // No WebFont available, proceed with fallback
-      this.createStudioBranding();
-    }
+    // La barra ya se creó en init() y se llenó durante preload()
+    // Ahora solo esperamos la transición
   }
 
   private createStudioBranding(): void {
@@ -544,18 +528,48 @@ export class PreloadScene extends Phaser.Scene {
     `;
     brandMain.textContent = "HELLBOUND";
 
-    // Green line separator
-    const greenLine = document.createElement("div");
-    greenLine.style.cssText = `
-      width: 160px;
-      height: 12px;
-      background: linear-gradient(to bottom, #b7ff00 0%, #a0e600 50%, #b7ff00 100%);
+    // Progress bar container (barra de carga estilizada)
+    const progressContainer = document.createElement("div");
+    progressContainer.style.cssText = `
+      width: 200px;
+      height: 20px;
       border: 3px solid #000000;
-      margin: 8px auto;
+      border-radius: 12px;
+      margin: 12px auto;
       display: block;
       position: relative;
       box-sizing: border-box;
+      background: #1a1a1a;
+      overflow: hidden;
+      box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 0 8px rgba(183, 255, 0, 0.3);
     `;
+
+    // Progress bar fill (se llenará según el progreso)
+    const greenLine = document.createElement("div");
+    greenLine.style.cssText = `
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(to bottom, 
+        #b7ff00 0%, 
+        #a0e600 30%,
+        #8fcc00 50%,
+        #a0e600 70%,
+        #b7ff00 100%
+      );
+      border-radius: 9px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      box-shadow: 
+        0 0 10px rgba(183, 255, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    `;
+
+    progressContainer.appendChild(greenLine);
+
+    // Store reference to progress bar
+    this.progressBarElement = greenLine;
 
     // Sub brand text - STUDIOS
     const brandSub = document.createElement("div");
@@ -584,7 +598,7 @@ export class PreloadScene extends Phaser.Scene {
     // Assemble elements
     brandMain.appendChild(brandTm);
     studioText.appendChild(brandMain);
-    studioText.appendChild(greenLine);
+    studioText.appendChild(progressContainer);
     studioText.appendChild(brandSub);
     overlay.appendChild(studioText);
 
@@ -599,17 +613,16 @@ export class PreloadScene extends Phaser.Scene {
     (this as any).studioOverlay = overlay;
     (this as any).studioText = studioText;
 
-    // Show the studio branding after a short delay
-    setTimeout(() => {
-      this.showStudioText();
-    }, 500);
+    // Show the studio branding IMMEDIATELY (sin delay)
+    this.showStudioText();
   }
 
   private showStudioText(): void {
     const studioText = (this as any).studioText;
 
     if (!studioText) {
-      this.transitionToGame();
+      // Si no hay texto, hacer transición directamente (sin await porque es void)
+      this.transitionToGame().catch(console.error);
       return;
     }
 
@@ -617,18 +630,75 @@ export class PreloadScene extends Phaser.Scene {
     studioText.style.opacity = "1";
     studioText.style.transform = "translateY(0) scale(1)";
 
-    // Hide after delay and transition to game
-    setTimeout(() => {
-      studioText.style.opacity = "0";
-      studioText.style.transform = "translateY(8px) scale(0.98)";
-
-      setTimeout(() => {
-        this.transitionToGame();
-      }, 600); // Wait for fade out transition
-    }, 2000); // Show for 2 seconds
+    // Esperar a que la carga esté completa Y mostrar por mínimo 2 segundos
+    this.waitForAssetsAndTransition();
   }
 
-  private transitionToGame(): void {
+  private waitForAssetsAndTransition(): void {
+    const minDisplayTime = 2000; // Mínimo 2 segundos de visualización
+    const startTime = Date.now();
+
+    const checkAndTransition = () => {
+      const elapsedTime = Date.now() - startTime;
+
+      // Solo hacer transición si:
+      // 1. Los assets están cargados (100%)
+      // 2. Las fuentes están listas
+      // 3. Han pasado al menos 2 segundos
+      if (
+        this.assetsLoaded &&
+        this.fontsReady &&
+        elapsedTime >= minDisplayTime
+      ) {
+        console.log("🎮 Transición a MainPage - Assets, fuentes y tiempo OK");
+
+        const studioText = (this as any).studioText;
+        if (studioText) {
+          studioText.style.opacity = "0";
+          studioText.style.transform = "translateY(8px) scale(0.98)";
+        }
+
+        setTimeout(() => {
+          this.transitionToGame().catch(console.error);
+        }, 600); // Wait for fade out transition
+      } else {
+        // Mostrar estado de carga en consola
+        if (!this.assetsLoaded) console.log("⏳ Esperando assets...");
+        if (!this.fontsReady) console.log("⏳ Esperando fuentes...");
+        if (elapsedTime < minDisplayTime)
+          console.log(
+            `⏳ Esperando tiempo mínimo... ${elapsedTime}ms/${minDisplayTime}ms`
+          );
+
+        // Revisar cada 100ms
+        setTimeout(checkAndTransition, 100);
+      }
+    };
+
+    checkAndTransition();
+  }
+
+  private updateProgressBar(progress: number): void {
+    if (this.progressBarElement) {
+      // Convert progress (0-1) to percentage
+      const percentage = Math.round(progress * 100);
+      this.progressBarElement.style.width = `${percentage}%`;
+
+      console.log(`📦 Loading: ${percentage}%`);
+    } else {
+      console.warn("⚠️ Progress bar element not found!");
+    }
+  }
+
+  private async transitionToGame(): Promise<void> {
+    // Última verificación de fuentes antes de hacer la transición
+    try {
+      await document.fonts.ready;
+      console.log("✅ Verificación final de fuentes OK");
+    } catch (error) {
+      console.warn("⚠️ Error en verificación final de fuentes:", error);
+    }
+
     // Clean up DOM overlay
     const overlay = (this as any).studioOverlay;
 
@@ -637,6 +707,9 @@ export class PreloadScene extends Phaser.Scene {
       (this as any).studioOverlay = null;
       (this as any).studioText = null;
     }
+
+    // Clear progress bar reference
+    this.progressBarElement = undefined;
 
     // Iniciar MainPage (pantalla principal)
     this.scene.start("MainPage");

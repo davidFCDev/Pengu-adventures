@@ -51,21 +51,51 @@ export class PlayerStateManager {
       this.layerName
     );
 
-    // Solo activar climbing si está en escalera Y presiona hacia arriba
-    // Detectar input de teclado o joystick móvil
+    // Detectar input de teclado o joystick móvil (arriba o abajo)
     const keyboardUp = this.cursors.up.isDown || this.wasdKeys.W.isDown;
+    const keyboardDown = this.cursors.down.isDown || this.wasdKeys.S.isDown;
     const mobileControls = (this.player as any).mobileControls;
     const joystickUp =
       mobileControls && mobileControls.joystickDirection.y < -0.5;
-    const isPressingUp = keyboardUp || joystickUp;
+    const joystickDown =
+      mobileControls && mobileControls.joystickDirection.y > 0.5;
+    const isPressingUpOrDown =
+      keyboardUp || joystickUp || keyboardDown || joystickDown;
 
-    // ACTIVAR climbing: Solo si está en escalera Y presiona UP intencionalmente
-    if (isOnLadder && isPressingUp && !this.player.getIsClimbing()) {
+    // ACTIVAR climbing: Si está en escalera Y presiona UP o DOWN intencionalmente
+    if (isOnLadder && isPressingUpOrDown && !this.player.getIsClimbing()) {
       this.player.setClimbing(true);
     }
-    // DESACTIVAR climbing: Si no está en escalera O deja de presionar UP
-    else if (this.player.getIsClimbing() && (!isOnLadder || !isPressingUp)) {
-      this.player.setClimbing(false);
+    // DESACTIVAR climbing:
+    // 1. Si ya NO está en la escalera
+    // 2. Si está bajando (DOWN presionado) Y hay suelo sólido debajo
+    else if (this.player.getIsClimbing()) {
+      const body = this.player.body as Phaser.Physics.Arcade.Body;
+      const isPressingDown = keyboardDown || joystickDown;
+
+      // Detectar si hay un tile sólido debajo del jugador
+      const tileX = Math.floor(
+        this.player.x / this.tileManager.getTilemap().tileWidth
+      );
+      const tileY = Math.floor(
+        this.player.y / this.tileManager.getTilemap().tileHeight
+      );
+
+      // Verificar tile justo debajo (en los pies del jugador)
+      const tileBelow = this.tileManager
+        .getTilemap()
+        .getTileAt(tileX, tileY + 1, false, this.layerName);
+      const hasSolidTileBelow = this.tileManager.hasTileProperty(
+        tileBelow,
+        "collision"
+      );
+
+      // Salir de climbing si:
+      // - Ya no está en tile de escalera, O
+      // - Está bajando Y hay un tile sólido debajo
+      if (!isOnLadder || (isPressingDown && hasSolidTileBelow)) {
+        this.player.setClimbing(false);
+      }
     }
   }
 

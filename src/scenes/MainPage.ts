@@ -1,5 +1,7 @@
 // You can write more code here
 
+import InstructionsModal from "../objects/ui/InstructionsModal";
+
 /* START OF COMPILED CODE */
 
 class MainPage extends Phaser.Scene {
@@ -23,21 +25,40 @@ class MainPage extends Phaser.Scene {
   // Título con letras de colores
   private titleLetters: Phaser.GameObjects.Text[] = [];
 
-  // Botón START
-  private startButton!: Phaser.GameObjects.Graphics;
-  private startText!: Phaser.GameObjects.Text;
+  // Botones estilo imagen
+  private playButton!: Phaser.GameObjects.Graphics;
+  private playText!: Phaser.GameObjects.Text;
+  private playHitArea!: Phaser.GameObjects.Rectangle;
 
-  create() {
+  private instructionsButton!: Phaser.GameObjects.Graphics;
+  private instructionsText!: Phaser.GameObjects.Text;
+  private instructionsHitArea!: Phaser.GameObjects.Rectangle;
+
+  // Modal de instrucciones
+  private instructionsModal!: InstructionsModal;
+
+  async create() {
     this.editorCreate();
 
     // Crear fondo responsive
     this.createBackground();
 
+    // ⏳ IMPORTANTE: Esperar a que las fuentes estén listas (fix para iPhone/Safari)
+    try {
+      await document.fonts.ready;
+      console.log("✅ Fuentes cargadas correctamente");
+    } catch (error) {
+      console.warn("⚠️ Error al cargar fuentes:", error);
+    }
+
     // Crear título "I AM PENGU" con colores alternados
     this.createTitle();
 
-    // Crear botón START
-    this.createStartButton();
+    // Crear botones estilo imagen
+    this.createButtons();
+
+    // Crear modal de instrucciones
+    this.instructionsModal = new InstructionsModal(this);
   }
 
   /**
@@ -95,7 +116,7 @@ class MainPage extends Phaser.Scene {
     const colors = ["#FFFFFF", "#4ECDC4", "#FFE66D"]; // Blanco, Azul, Amarillo
     const startX = 384; // Centro horizontal
     const startY = 150; // Posición vertical separada del top
-    const letterSpacing = 50; // Espacio entre letras
+    const letterSpacing = 55; // Aumentado ligeramente para TT-Trailers
 
     // Calcular offset para centrar el texto
     const totalWidth = (title.length - 1) * letterSpacing;
@@ -107,11 +128,11 @@ class MainPage extends Phaser.Scene {
       const color = colors[colorIndex];
 
       const letterText = this.add.text(currentX, startY, letter, {
-        fontFamily: "Fobble",
-        fontSize: "130px", // Aumentado de 110px a 130px
+        fontFamily: "TT-Trailers",
+        fontSize: "140px", // Aumentado para TT-Trailers
         color: color,
         stroke: "#000000",
-        strokeThickness: 12,
+        strokeThickness: 14,
         shadow: {
           offsetX: 6,
           offsetY: 6,
@@ -129,56 +150,165 @@ class MainPage extends Phaser.Scene {
   }
 
   /**
-   * Crear botón START en el centro
+   * Crear botones estilo imagen (PLAY GAME y INSTRUCTIONS)
    */
-  private createStartButton(): void {
+  private createButtons(): void {
     const centerX = 384;
-    const centerY = 512; // Centro vertical
+    const buttonWidth = 480; // Aumentado de 250 a 480 (casi como el título)
+    const buttonHeight = 90; // Aumentado de 80 a 90
+    const spacing = 20;
+    const bottomMargin = 150; // Margen desde el bottom
 
-    // Fondo del botón (amarillo #FFDE59 con borde negro)
-    this.startButton = this.add.graphics();
-    this.drawStartButton(centerX, centerY, 0xffde59);
+    // Calcular posición desde el bottom
+    const canvasHeight = this.cameras.main.height;
+    const instructionsY = canvasHeight - bottomMargin;
+    const playY = instructionsY - buttonHeight - spacing;
 
-    // Texto del botón
-    this.startText = this.add.text(centerX, centerY, "START", {
-      fontFamily: "Fobble",
-      fontSize: "48px", // Reducido de 72px a 48px
-      color: "#000000", // Negro
-      padding: { right: 10 },
+    // ===== BOTÓN PLAY GAME (Turquesa #00D4AA) =====
+    this.playButton = this.add.graphics();
+    this.drawButton(
+      this.playButton,
+      centerX,
+      playY,
+      buttonWidth,
+      buttonHeight,
+      0x00d4aa
+    );
+
+    this.playText = this.add.text(centerX, playY, "PLAY GAME", {
+      fontFamily: "TT-Trailers",
+      fontSize: "52px", // Aumentado de 42px a 52px
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 7, // Aumentado de 6 a 7
     });
-    this.startText.setOrigin(0.5, 0.5);
+    this.playText.setOrigin(0.5, 0.5);
 
-    // Hacer el botón interactivo (más pequeño)
-    const buttonHitArea = this.add.rectangle(centerX, centerY, 200, 70);
-    buttonHitArea.setInteractive({ useHandCursor: true });
+    this.playHitArea = this.add.rectangle(
+      centerX,
+      playY,
+      buttonWidth,
+      buttonHeight
+    );
+    this.playHitArea.setInteractive({ useHandCursor: true });
 
-    // Eventos del botón
-    buttonHitArea.on("pointerdown", () => {
-      // Ir al Roadmap
+    this.playHitArea.on("pointerdown", () => {
       this.scene.start("Roadmap");
     });
 
-    buttonHitArea.on("pointerover", () => {
-      // Efecto hover - amarillo más oscuro
-      this.startButton.clear();
-      this.drawStartButton(centerX, centerY, 0xffd040);
+    this.playHitArea.on("pointerover", () => {
+      this.playButton.clear();
+      this.drawButton(
+        this.playButton,
+        centerX,
+        playY,
+        buttonWidth,
+        buttonHeight,
+        0x00f0c8
+      ); // Más claro
+      this.playText.setScale(1.05);
     });
 
-    buttonHitArea.on("pointerout", () => {
-      // Volver al amarillo original
-      this.startButton.clear();
-      this.drawStartButton(centerX, centerY, 0xffde59);
+    this.playHitArea.on("pointerout", () => {
+      this.playButton.clear();
+      this.drawButton(
+        this.playButton,
+        centerX,
+        playY,
+        buttonWidth,
+        buttonHeight,
+        0x00d4aa
+      ); // Original
+      this.playText.setScale(1);
+    });
+
+    // ===== BOTÓN INSTRUCTIONS (Amarillo #FFD966) =====
+    // Ya calculado arriba: instructionsY
+
+    this.instructionsButton = this.add.graphics();
+    this.drawButton(
+      this.instructionsButton,
+      centerX,
+      instructionsY,
+      buttonWidth,
+      buttonHeight,
+      0xffd966
+    );
+
+    this.instructionsText = this.add.text(
+      centerX,
+      instructionsY,
+      "INSTRUCTIONS",
+      {
+        fontFamily: "TT-Trailers",
+        fontSize: "50px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 7,
+      }
+    );
+    this.instructionsText.setOrigin(0.5, 0.5);
+
+    this.instructionsHitArea = this.add.rectangle(
+      centerX,
+      instructionsY,
+      buttonWidth,
+      buttonHeight
+    );
+    this.instructionsHitArea.setInteractive({ useHandCursor: true });
+
+    this.instructionsHitArea.on("pointerdown", () => {
+      this.instructionsModal.show();
+    });
+
+    this.instructionsHitArea.on("pointerover", () => {
+      this.instructionsButton.clear();
+      this.drawButton(
+        this.instructionsButton,
+        centerX,
+        instructionsY,
+        buttonWidth,
+        buttonHeight,
+        0xffe699
+      ); // Más claro
+      this.instructionsText.setScale(1.05);
+    });
+
+    this.instructionsHitArea.on("pointerout", () => {
+      this.instructionsButton.clear();
+      this.drawButton(
+        this.instructionsButton,
+        centerX,
+        instructionsY,
+        buttonWidth,
+        buttonHeight,
+        0xffd966
+      ); // Original
+      this.instructionsText.setScale(1);
     });
   }
 
   /**
-   * Dibujar el botón START con el color especificado
+   * Dibujar un botón rectangular con bordes redondeados
    */
-  private drawStartButton(x: number, y: number, color: number): void {
-    this.startButton.fillStyle(color, 1);
-    this.startButton.fillRoundedRect(x - 100, y - 35, 200, 70, 15);
-    this.startButton.lineStyle(6, 0x000000, 1);
-    this.startButton.strokeRoundedRect(x - 100, y - 35, 200, 70, 15);
+  private drawButton(
+    graphics: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color: number
+  ): void {
+    graphics.fillStyle(color, 1);
+    graphics.fillRoundedRect(x - width / 2, y - height / 2, width, height, 16);
+    graphics.lineStyle(6, 0x000000, 1);
+    graphics.strokeRoundedRect(
+      x - width / 2,
+      y - height / 2,
+      width,
+      height,
+      16
+    );
   }
 
   /**
@@ -187,7 +317,7 @@ class MainPage extends Phaser.Scene {
   private repositionElements(width: number, height: number): void {
     // Reposicionar título
     const title = "I AM PENGU";
-    const letterSpacing = 50;
+    const letterSpacing = 55;
     const startY = 150;
 
     const totalWidth = (title.length - 1) * letterSpacing;
@@ -198,10 +328,26 @@ class MainPage extends Phaser.Scene {
       currentX += letterSpacing;
     }
 
-    // Reposicionar botón START
-    const buttonY = height / 2 + 50;
-    this.startButton.setPosition(width / 2, buttonY);
-    this.startText.setPosition(width / 2, buttonY);
+    // Reposicionar botones
+    const centerX = width / 2;
+    const buttonWidth = 480;
+    const buttonHeight = 90;
+    const spacing = 20;
+    const bottomMargin = 150;
+
+    // Calcular desde el bottom
+    const instructionsY = height - bottomMargin;
+    const playY = instructionsY - buttonHeight - spacing;
+
+    // PLAY GAME
+    this.playButton.setPosition(centerX, playY);
+    this.playText.setPosition(centerX, playY);
+    this.playHitArea.setPosition(centerX, playY);
+
+    // INSTRUCTIONS
+    this.instructionsButton.setPosition(centerX, instructionsY);
+    this.instructionsText.setPosition(centerX, instructionsY);
+    this.instructionsHitArea.setPosition(centerX, instructionsY);
   } /* END-USER-CODE */
 }
 

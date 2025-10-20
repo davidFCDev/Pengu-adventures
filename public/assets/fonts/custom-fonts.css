@@ -4,9 +4,9 @@
  */
 
 @font-face {
-  font-family: "Fobble";
-  src: url("Fobble_regular-Regular.otf") format("opentype");
-  font-weight: normal;
+  font-family: "TT-Trailers";
+  src: url("TT-Trailers-ExtraBold.otf") format("opentype");
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
@@ -14,7 +14,7 @@
 /* Asegurar que la fuente esté disponible globalmente */
 body,
 canvas {
-  font-family: "Fobble", sans-serif;
+  font-family: "TT-Trailers", sans-serif;
 }
 
 /* Ejemplo: Si tienes múltiples variantes */

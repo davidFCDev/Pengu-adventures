@@ -76,6 +76,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private walkSoundCooldown: number = 300; // Cooldown para evitar spam del sonido de caminar
   private wasThrowKeyDown: boolean = false; // Para detectar tap en lugar de hold
 
+  // Sistema de SLEEP
+  private isSleeping: boolean = false;
+  private lastInputTime: number = 0;
+  private sleepDelay: number = 5000; // 5 segundos de inactividad
+  private sleepZzz?: Phaser.GameObjects.Text;
+  private zzZTimer?: Phaser.Time.TimerEvent;
+  private isFirstUpdate: boolean = true; // Para inicializar el timer en el primer update
+
   constructor(scene: Phaser.Scene, x: number, y: number, texture?: string) {
     // Crear el sprite con la textura del pingüino parado
     super(scene, x, y, texture || "penguin_standing");
@@ -263,6 +271,46 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Detectar si está en el suelo
     this.isOnGround = body.touching.down || body.blocked.down;
 
+    // 💤 SISTEMA DE SLEEP: Detectar inactividad
+    const currentTime = this.scene.time.now;
+
+    // Inicializar lastInputTime en el primer update (cuando el jugador realmente está en el nivel)
+    if (this.isFirstUpdate) {
+      this.lastInputTime = currentTime;
+      this.isFirstUpdate = false;
+    }
+
+    // Detectar si hay input del usuario
+    if (this.hasUserInput()) {
+      this.lastInputTime = currentTime;
+
+      // Si estaba durmiendo, despertar
+      if (this.isSleeping) {
+        this.wakeUp();
+      }
+    }
+
+    // Si está durmiendo, actualizar posición de ZzZ y no procesar más lógica
+    if (this.isSleeping) {
+      this.updateSleepZzz();
+      body.setVelocityX(0); // No moverse mientras duerme
+      return; // No procesar más lógica de movimiento
+    }
+
+    // Si no hay input por 5 segundos y está en el suelo sin moverse, dormir
+    if (
+      currentTime - this.lastInputTime > this.sleepDelay &&
+      this.isOnGround &&
+      Math.abs(body.velocity.x) < 10 && // Velocidad casi 0
+      !this.isSwimming &&
+      !this.isClimbing &&
+      !this.isCrouching &&
+      !this.isGhost
+    ) {
+      this.startSleep();
+      return;
+    }
+
     //  ANTI-EXPLOIT: Marcar que tocó el suelo (para prevenir exploit de cambio de modo)
     if (this.isOnGround && !this.wasOnGroundLastFrame) {
       this.hasTouchedGroundSinceLastModeChange = true;
@@ -344,8 +392,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
-        !this.isClimbing &&
-        Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
+        !this.isClimbing
       ) {
         this.playAnimation("penguin_walk");
         // Crear partículas de nieve al caminar
@@ -381,8 +428,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         !this.isCrouching &&
         this.isOnGround &&
         !this.isSwimming &&
-        !this.isClimbing &&
-        Math.abs(body.velocity.y) < 10 // 🐛 FIX: No caminar si está saltando/cayendo
+        !this.isClimbing
       ) {
         this.playAnimation("penguin_walk");
         // Crear partículas de nieve al caminar
@@ -465,24 +511,41 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
       if (isMovingUp) {
         body.setVelocityY(-this.climbSpeed);
-        // Mantener animación de escalada
+        if (this.anims.isPaused) {
+          this.anims.resume();
+        }
         this.playAnimation("penguin_climb");
       } else if (isMovingDown) {
         body.setVelocityY(this.climbSpeed);
-        // Mantener animación de escalada
+        if (this.anims.isPaused) {
+          this.anims.resume();
+        }
         this.playAnimation("penguin_climb");
       } else {
-        // Si no se mueve verticalmente, detener movimiento vertical
+        // Si no se mueve verticalmente, quedarse estático en la escalera
         body.setVelocityY(0);
-        // Mantener animación de escalada pero más lenta o pausa
-        this.playAnimation("penguin_climb");
+
+        // Detener la animación en el frame actual para quedarse estático
+        if (
+          this.anims.isPlaying &&
+          this.anims.currentAnim?.key === "penguin_climb"
+        ) {
+          this.anims.pause();
+        } else if (
+          !this.anims.isPlaying ||
+          this.currentAnimation !== "penguin_climb"
+        ) {
+          this.playAnimation("penguin_climb");
+          this.anims.pause();
+        }
       }
     } else {
       // En tierra firme - sistema de salto y doble salto
 
-      // Resetear doble salto cuando toca el suelo
+      // Resetear AMBOS saltos cuando toca el suelo
       if (this.isOnGround) {
-        this.hasDoubleJump = false;
+        this.hasDoubleJump = false; // Resetear doble salto
+        this.canJump = true; // Permitir saltar de nuevo
       }
 
       // Detectar si la tecla de salto fue presionada (nuevo tap) - teclado o móvil
@@ -497,11 +560,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         currentTime - this.lastJumpTime > this.minJumpDelay;
 
       // Primer salto (desde el suelo)
+      // ❌ NO permitir saltar si está en estado CRAWL (agachado)
       if (
         jumpJustPressed &&
         this.isOnGround &&
         this.canJump &&
-        enoughTimePassed
+        enoughTimePassed &&
+        !this.isCrouching // ← NUEVO: Bloquear salto en CRAWL
       ) {
         body.setVelocityY(this.jumpVelocity);
         this.canJump = false;
@@ -521,11 +586,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         }, 200); // Cooldown del salto
       }
       // Doble salto (en el aire) - detectar nuevo tap mientras está en el aire
+      // ❌ NO permitir doble salto si está en estado CRAWL
       else if (
         jumpJustPressed &&
         !this.isOnGround &&
         !this.hasDoubleJump &&
-        enoughTimePassed
+        enoughTimePassed &&
+        !this.isCrouching // ← NUEVO: Bloquear doble salto en CRAWL
       ) {
         body.setVelocityY(this.doubleJumpVelocity); // Salto más pequeño
         this.hasDoubleJump = true; // Marcar que ya usó el doble salto
@@ -597,12 +664,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
           });
         }
       } else {
-        // SNOWBALL: No la podemos usar nadando, pero si andando, saltando
+        // SNOWBALL: No la podemos usar nadando, escalando, agachado o gateando
         const canUseSnowball =
           this.canThrow &&
           currentTime - this.lastThrowTime > this.throwCooldown &&
           !this.isSwimming && // No en agua
-          !this.isClimbing; // No escalando
+          !this.isClimbing && // No escalando
+          !this.isCrouching && // No agachado (crouch/crawl)
+          this.currentAnimation !== "penguin_crawl"; // No gateando
         if (canUseSnowball) {
           this.throwSnowball();
           this.lastThrowTime = currentTime;
@@ -621,6 +690,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
   private handleCrouch(): void {
+    // 🪜 PRIORIDAD: Si estamos escalando, NO procesar crouch en absoluto
+    // (isClimbing ya está actualizado porque playerStateManager.update() se ejecuta primero)
+    if (this.isClimbing) {
+      this.isCrouching = false;
+      return;
+    }
+
     // 🎯 CROUCH mientras te mueves: Permitir agacharse con DOWN/S incluso si te mueves
     // PERO: No activar si SOLO empujas contra una pared (sin DOWN)
     const keyboardLeft = this.cursors!.left.isDown || this.wasdKeys!.A.isDown;
@@ -631,52 +707,37 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // CROUCH si:
     // 1. Se presiona DOWN/S o SHIFT (crouchKey) - puede estar moviéndose
-    // 2. NO se está escalando
-    const keyboardCrouch =
-      this.crouchKey!.isDown || (!this.isClimbing && keyboardDown);
+    // 2. NO se está escalando (ya verificado arriba)
+    const keyboardCrouch = this.crouchKey!.isDown || keyboardDown;
 
     // Para joystick: Permitir movimiento lateral mientras se agacha
     // Solo verificar que haya suficiente presión hacia abajo
     const joystickCrouch =
-      !this.isClimbing &&
-      this.mobileControls &&
-      this.mobileControls.joystickDirection.y > 0.5; // Presión vertical hacia abajo
+      this.mobileControls && this.mobileControls.joystickDirection.y > 0.5; // Presión vertical hacia abajo
 
     const isCrouchPressed = keyboardCrouch || joystickCrouch;
     const wasCrouching = this.isCrouching;
 
-    // 🏠 DETECCIÓN DE TECHO: Si hay techo encima, forzar crouch
-    const hasCeilingAbove = this.checkCeilingCollision();
+    // ✅ LÓGICA DE CROUCH CON DETECCIÓN DE TECHO
+    // Solo verificar techo cuando intenta LEVANTARSE desde CRAWL
+    const wantsToStand = !isCrouchPressed && wasCrouching && this.isOnGround;
 
-    // 🐛 DEBUG: Registrar cuando se activa crouch
-    if ((isCrouchPressed || hasCeilingAbove) && !wasCrouching) {
-      console.log("🔴 CROUCH ACTIVADO:", {
-        reason: hasCeilingAbove ? "TECHO DETECTADO" : "TECLA PRESIONADA",
-        keyboardCrouch,
-        joystickCrouch,
-        hasCeilingAbove,
-        keys: {
-          left: keyboardLeft,
-          right: keyboardRight,
-          down: keyboardDown,
-          shift: this.crouchKey!.isDown,
-        },
-        body: {
-          blockedLeft: body.blocked.left,
-          blockedRight: body.blocked.right,
-          blockedUp: body.blocked.up,
-          velocityX: body.velocity.x.toFixed(0),
-        },
-        joystick: this.mobileControls
-          ? {
-              x: this.mobileControls.joystickDirection.x.toFixed(2),
-              y: this.mobileControls.joystickDirection.y.toFixed(2),
-            }
-          : null,
-      });
+    if (wantsToStand) {
+      // 🏠 Está agachado e intenta levantarse: verificar si hay espacio
+      const hasCeilingAbove = this.checkCeilingCollision();
+
+      if (hasCeilingAbove) {
+        // ❌ HAY TECHO: No puede levantarse, mantener agachado
+        this.isCrouching = true;
+      } else {
+        // ✅ NO HAY TECHO: Puede levantarse normalmente
+        this.isCrouching = false;
+      }
+    } else {
+      // ✅ Lógica normal: agacharse solo con input explícito + en el suelo
+      // NO se activa automáticamente por techo ni en el aire
+      this.isCrouching = !!(isCrouchPressed && this.isOnGround);
     }
-
-    this.isCrouching = isCrouchPressed || hasCeilingAbove;
 
     if (
       this.isCrouching &&
@@ -686,13 +747,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     ) {
       // Solo iniciar animación si no estaba agachado antes
       if (!wasCrouching) {
-        // 🐛 DEBUG: Log cuando se reproduce la animación CROUCH
-        console.log("🎬 REPRODUCIENDO ANIMACIÓN CROUCH", {
-          wasCrouching,
-          isCrouching: this.isCrouching,
-          currentAnimation: this.currentAnimation,
-          isOnGround: this.isOnGround,
-        });
         // 🎬 SIEMPRE reproducir la animación crouch primero (incluso en movimiento)
         this.playAnimation("penguin_crouch");
         // Cuando termine la animación crouch, cambiar a crawl si se está moviendo
@@ -733,41 +787,24 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
         const isActuallyMoving = hasVelocity && !isPushingWall;
 
-        // 🐛 DEBUG COMPLETO
-        if (isCrouchPressed) {
-          console.log("📊 ESTADO CROUCH:", {
-            velocity: body.velocity.x.toFixed(0),
-            hasVelocity,
-            isPushingWall,
-            isActuallyMoving,
-            currentAnim: this.currentAnimation,
-            blockedL: body.blocked.left,
-            blockedR: body.blocked.right,
-          });
-        }
-
         if (isPushingWall && isCrouchPressed) {
           // 🚫 Si está empujando pared, mostrar animación WALK normal (no CRAWL ni CROUCH)
-          console.log("🚫 → ACTIVANDO WALK (empujando pared)");
           this.playAnimation("penguin_walk");
         } else if (isActuallyMoving && isCrouchPressed) {
           // Solo CRAWL si presiona agacharse Y se está moviendo libremente
           // 🏃‍♂️ Mantener animación CRAWL activa mientras se mueve agachado
           if (this.currentAnimation !== "penguin_crawl") {
             // Iniciar CRAWL si no está activo
-            console.log("🏃 → INICIANDO CRAWL");
             this.updateCrouchHitbox(true);
             this.playAnimation("penguin_crawl");
           }
           // Si ya está en CRAWL, asegurar que la animación está reproduciéndose (no parada)
           else if (!this.anims.isPlaying) {
-            console.log("🔄 → REINICIANDO CRAWL");
             this.playAnimation("penguin_crawl");
           }
         } else if (!hasVelocity) {
           // Solo mantener frame estático si está completamente quieto (sin velocity)
           if (this.currentAnimation === "penguin_crawl") {
-            console.log("💤 → FRAME ESTÁTICO CROUCH");
             this.anims.stop();
             this.setFrame(24); // Último frame de crouch para estar quieto agachado
           }
@@ -1074,11 +1111,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.playAnimation("penguin_swing");
       }
     } else if (wasSwimming) {
-      // Al salir del agua, cambiar INMEDIATAMENTE a standing o la animación que corresponda
+      // Al salir del agua, dar un impulso hacia arriba para asegurar buena salida
+      body.setVelocityY(-350); // Impulso de salida del agua
+
+      // Cambiar INMEDIATAMENTE a standing o la animación que corresponda
       if (this.isOnGround) {
         this.playAnimation("penguin_standing");
-      } else if (body.velocity.y > 50) {
-        this.playAnimation("penguin_fall");
+      } else {
+        // Al salir del agua, usar animación de salto
+        this.playAnimation("penguin_jump");
       }
     }
 
@@ -1103,6 +1144,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
   public setClimbing(climbing: boolean): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
+
     this.isClimbing = climbing;
     // Si está trepando, no puede estar nadando
     if (climbing) {
@@ -1670,9 +1712,152 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * Activar estado de sleep (dormido)
+   */
+  private startSleep(): void {
+    if (this.isSleeping) return;
+
+    this.isSleeping = true;
+    this.playAnimation("penguin_sleep");
+
+    // Crear texto de ZzZ flotante
+    this.createSleepZzz();
+  }
+
+  /**
+   * Despertar del estado de sleep
+   */
+  private wakeUp(): void {
+    if (!this.isSleeping) return;
+
+    this.isSleeping = false;
+    this.playAnimation("penguin_standing");
+
+    // Eliminar ZzZ
+    if (this.sleepZzz) {
+      this.sleepZzz.destroy();
+      this.sleepZzz = undefined;
+    }
+
+    if (this.zzZTimer) {
+      this.zzZTimer.destroy();
+      this.zzZTimer = undefined;
+    }
+  }
+
+  /**
+   * Crear efecto visual de ZzZ sobre el pingüino
+   */
+  private createSleepZzz(): void {
+    // Eliminar ZzZ anterior si existe
+    if (this.sleepZzz) {
+      this.sleepZzz.destroy();
+    }
+    if (this.zzZTimer) {
+      this.zzZTimer.destroy();
+    }
+
+    // Crear texto inicial
+    this.sleepZzz = this.scene.add.text(this.x, this.y - 80, "z", {
+      fontFamily: "Arial",
+      fontSize: "32px",
+      color: "#ffffff",
+      stroke: "#000000",
+      strokeThickness: 4,
+    });
+    this.sleepZzz.setOrigin(0.5, 0.5);
+    this.sleepZzz.setDepth(this.depth + 1);
+
+    // Animación de las ZzZ (alternar entre z, zZ, zzZ)
+    let zzZState = 0;
+    const zzZTexts = ["z", "zZ", "zzZ"];
+
+    this.zzZTimer = this.scene.time.addEvent({
+      delay: 600,
+      callback: () => {
+        if (this.sleepZzz && this.isSleeping) {
+          zzZState = (zzZState + 1) % zzZTexts.length;
+          this.sleepZzz.setText(zzZTexts[zzZState]);
+
+          // Animar ZzZ flotando hacia arriba
+          this.scene.tweens.add({
+            targets: this.sleepZzz,
+            y: this.y - 80 - 15,
+            alpha: 0.3,
+            duration: 600,
+            ease: "Sine.easeOut",
+            onComplete: () => {
+              if (this.sleepZzz) {
+                this.sleepZzz.setY(this.y - 80);
+                this.sleepZzz.setAlpha(1);
+              }
+            },
+          });
+        }
+      },
+      loop: true,
+    });
+
+    // Agregar a la lista de timers activos
+    this.activeTimers.push(this.zzZTimer);
+  }
+
+  /**
+   * Actualizar posición de ZzZ cuando el jugador se mueve
+   */
+  private updateSleepZzz(): void {
+    if (this.sleepZzz && this.isSleeping) {
+      // Mantener ZzZ sobre el pingüino
+      this.sleepZzz.setX(this.x);
+      // No actualizar Y porque está animándose
+    }
+  }
+
+  /**
+   * Detectar si hay input del usuario (teclado, mouse, joystick)
+   */
+  private hasUserInput(): boolean {
+    if (!this.cursors || !this.wasdKeys) return false;
+
+    // Detectar input de teclado
+    const keyboardInput =
+      this.cursors.left.isDown ||
+      this.cursors.right.isDown ||
+      this.cursors.up.isDown ||
+      this.cursors.down.isDown ||
+      this.wasdKeys.W.isDown ||
+      this.wasdKeys.A.isDown ||
+      this.wasdKeys.S.isDown ||
+      this.wasdKeys.D.isDown ||
+      this.jumpKey?.isDown ||
+      this.throwKey?.isDown ||
+      this.crouchKey?.isDown;
+
+    // Detectar input de joystick/botones móviles
+    const mobileInput =
+      this.mobileControls &&
+      (this.mobileControls.joystickDirection.x !== 0 ||
+        this.mobileControls.joystickDirection.y !== 0 ||
+        this.mobileControls.buttonAPressed ||
+        this.mobileControls.buttonBPressed);
+
+    return keyboardInput || mobileInput || false;
+  }
+
+  /**
    * Limpia los recursos del player
    */
   public destroy(fromScene?: boolean): void {
+    // Limpiar sistema de sleep
+    if (this.sleepZzz) {
+      this.sleepZzz.destroy();
+      this.sleepZzz = undefined;
+    }
+    if (this.zzZTimer) {
+      this.zzZTimer.destroy();
+      this.zzZTimer = undefined;
+    }
+
     // Limpiar controles móviles
     if (this.mobileControls) {
       this.mobileControls.destroy();

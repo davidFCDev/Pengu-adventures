@@ -2,11 +2,14 @@ import { AquaticEnemyManager } from "../objects/enemies/AquaticEnemyManager";
 import { EnemySystem } from "../objects/enemies/EnemyManager";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 import { Player } from "../objects/player/Player";
+import { CoinSystem } from "../systems/CoinSystem";
 import { ElevatorSystem } from "../systems/ElevatorSystem";
 import { JumpButtonSystem } from "../systems/JumpButtonSystem";
 import { LifeSystem } from "../systems/LifeSystem";
+import { MiniPinguSystem } from "../systems/MiniPinguSystem";
 import { ProjectileSystem } from "../systems/ProjectileSystem";
 import { RedButtonSystem } from "../systems/RedButtonSystem";
+import { type LevelStats } from "../systems/ScoreSystem";
 import { SnowParticleSystem } from "../systems/SnowParticleSystem";
 import { SpikeBoxSystem } from "../systems/SpikeBoxSystem";
 import {
@@ -166,6 +169,10 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected initialLives: number = 3; // Vidas al inicio del nivel
   protected livesMissedDuringLevel: number = 0; // Vidas perdidas durante el nivel
 
+  // Sistemas de coleccionables (para cálculo de score en game over)
+  protected coinSystem?: CoinSystem;
+  protected miniPinguSystem?: MiniPinguSystem;
+
   // Configuración
   protected config!: GameSceneConfig;
 
@@ -258,8 +265,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
     this.isGameOverInProgress = false;
     this.hasFinishedLevel = false;
 
-    // 0.1. Iniciar cronómetro del nivel
-    this.levelStartTime = this.time.now;
+    // 0.1. Iniciar cronómetro del nivel (usar Date.now() para timestamp real)
+    this.levelStartTime = Date.now();
     this.levelEndTime = 0;
     this.livesMissedDuringLevel = 0;
 
@@ -354,8 +361,10 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   update(time: number, delta: number): void {
     if (this.player && this.playerStateManager) {
-      this.player.update();
-      this.playerStateManager.update(); // Centraliza TODA la lógica de states
+      // IMPORTANTE: Actualizar estados ANTES del player para que isClimbing/isSwimming
+      // estén correctos cuando se procesen inputs (crouch, etc.)
+      this.playerStateManager.update(); // Detecta escaleras/agua primero
+      this.player.update(); // Procesa inputs con estados actualizados
     }
 
     // Actualizar sistema de cajas con pinchos
@@ -881,6 +890,10 @@ export abstract class BaseGameScene extends Phaser.Scene {
         console.log(
           "EXIT button clicked - Returning to Roadmap without saving"
         );
+
+        // 🔇 IMPORTANTE: Detener música del nivel antes de ir al Roadmap
+        this.stopCurrentMusic();
+
         this.scene.start("Roadmap");
       });
     }
@@ -1026,6 +1039,17 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.player.setControlsActive(false);
     }
 
+    // Calcular stats actuales del nivel para enviar al SDK
+    const currentLevelStats = this.getCurrentLevelStats();
+
+    // Agregar el número de nivel a los stats
+    const levelStatsWithNumber = currentLevelStats
+      ? {
+          ...currentLevelStats,
+          levelNumber: this.getLevelNumber(),
+        }
+      : null;
+
     // Cargar GameOverUI dinámicamente y mostrar el modal
     import("../objects/ui/GameOverUI").then((module) => {
       const GameOverUI = module.default;
@@ -1036,8 +1060,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
       }
       this.gameOverUI = new GameOverUI(this);
 
-      // Mostrar el modal con animación
-      this.gameOverUI.show();
+      // Mostrar el modal con animación y pasar los stats para envío automático
+      this.gameOverUI.show(levelStatsWithNumber);
     });
   }
 
@@ -1066,17 +1090,14 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Detener música anterior si existe
     this.stopCurrentMusic();
 
-    // Verificar que el audio existe
-    if (!this.sound.get(this.config.musicKey)) {
-      this.currentMusic = this.sound.add(this.config.musicKey, {
-        loop: true,
-        volume: 0.3, // Volumen medio/bajo como solicitado
-      });
+    // Crear y reproducir la música del nivel
+    console.log(`🎵 Iniciando música: ${this.config.musicKey}`);
+    this.currentMusic = this.sound.add(this.config.musicKey, {
+      loop: true,
+      volume: 0.3, // Volumen medio/bajo como solicitado
+    });
 
-      this.currentMusic.play();
-    } else {
-      console.warn(`⚠️ Música "${this.config.musicKey}" no encontrada`);
-    }
+    this.currentMusic.play();
   }
 
   /**
@@ -1630,8 +1651,8 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     this.hasFinishedLevel = true;
 
-    // Detener cronómetro del nivel
-    this.levelEndTime = this.time.now;
+    // Detener cronómetro del nivel (usar Date.now() para timestamp real)
+    this.levelEndTime = Date.now();
 
     // Detener al player completamente
     if (this.player && this.player.body) {
@@ -1668,6 +1689,41 @@ export abstract class BaseGameScene extends Phaser.Scene {
         this.levelEndUI.show();
       });
     });
+  }
+
+  /**
+   * Método abstracto que debe ser implementado por cada nivel
+   * para devolver su número de nivel
+   */
+  protected abstract getLevelNumber(): number;
+
+  /**
+   * Calcula los stats actuales del nivel (usado para game over)
+   * Retorna los datos necesarios para calcular el score
+   */
+  protected getCurrentLevelStats(): LevelStats | null {
+    // Si no hay sistemas de coleccionables, no podemos calcular stats
+    if (!this.coinSystem || !this.miniPinguSystem) {
+      console.warn(
+        "⚠️ No se pueden calcular stats: coinSystem o miniPinguSystem no disponibles"
+      );
+      return null;
+    }
+
+    // Calcular tiempo actual del nivel
+    const currentTime = Date.now();
+    const timeInSeconds = (currentTime - this.levelStartTime) / 1000;
+
+    const stats: LevelStats = {
+      coinsCollected: this.coinSystem.getCollectedCoins(),
+      totalCoins: this.coinSystem.getTotalCoins(),
+      miniPingusCollected: this.miniPinguSystem.getCollectedMiniPingus(),
+      totalMiniPingus: this.miniPinguSystem.getTotalMiniPingus(),
+      timeInSeconds: timeInSeconds,
+      livesMissed: this.livesMissedDuringLevel,
+    };
+
+    return stats;
   }
 
   /**

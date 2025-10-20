@@ -22,6 +22,14 @@ export class PenguinSprites {
       frameHeight: this.PUDGY_FRAME_HEIGHT,
       frames: 1,
     },
+    // SLEEP separado (1120x174, 7 frames)
+    SLEEP: {
+      key: "penguin_sleep",
+      url: "https://lqy3lriiybxcejon.public.blob.vercel-storage.com/ea8d3337-dda5-448c-a832-967b4dc39be2/sleep-jrq745lRAgjSHMfMIejXnGzXxrBgpg.png?tqFk",
+      frameWidth: this.PUDGY_FRAME_WIDTH,
+      frameHeight: this.PUDGY_FRAME_HEIGHT,
+      frames: 7,
+    },
     // Spritesheet principal pudgy (8 filas x 7 columnas, 160x174 por frame)
     PUDGY_SHEET: {
       key: "pudgy_sheet",
@@ -76,6 +84,17 @@ export class PenguinSprites {
         end: 0,
       }),
       frameRate: 1,
+      repeat: -1,
+    });
+
+    // SLEEP - Dormido (7 frames)
+    scene.anims.create({
+      key: "penguin_sleep",
+      frames: scene.anims.generateFrameNumbers("penguin_sleep", {
+        start: 0,
+        end: 6,
+      }),
+      frameRate: 8,
       repeat: -1,
     });
 

@@ -38,7 +38,7 @@ export function getDevEnvironmentInfo(): DevEnvironmentInfo | null {
   }
 }
 
-export function initializeRemixSDK(game: Phaser.Game): void {
+export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
   if (!("FarcadeSDK" in window && window.FarcadeSDK)) {
     return;
   }
@@ -46,8 +46,31 @@ export function initializeRemixSDK(game: Phaser.Game): void {
   // Make the game canvas focusable
   game.canvas.setAttribute("tabindex", "-1");
 
-  // Signal ready state
-  window.FarcadeSDK.singlePlayer.actions.ready();
+  // 🎮 Signal ready state and get initial game info (sin bloquear el resto de handlers)
+  window.FarcadeSDK.singlePlayer.actions
+    .ready()
+    .then((gameInfo) => {
+      console.log("🎮 RemixUtils: GameInfo recibido:", gameInfo);
+
+      if (gameInfo?.initialGameState?.gameState) {
+        console.log("💾 RemixUtils: Encontrado estado inicial guardado");
+        (window as any).__initialGameState =
+          gameInfo.initialGameState.gameState;
+
+        window.dispatchEvent(
+          new CustomEvent("farcade_initial_state_loaded", {
+            detail: gameInfo.initialGameState.gameState,
+          })
+        );
+      } else {
+        console.log(
+          "📊 RemixUtils: No hay estado inicial guardado (nuevo jugador)"
+        );
+      }
+    })
+    .catch((error) => {
+      console.error("❌ RemixUtils: Error al llamar ready():", error);
+    });
 
   // Set mute/unmute handler
   window.FarcadeSDK.on("toggle_mute", (data: unknown) => {
@@ -58,21 +81,52 @@ export function initializeRemixSDK(game: Phaser.Game): void {
 
   // Setup play_again handler
   window.FarcadeSDK.on("play_again", () => {
-    // Reiniciar el juego llevando al jugador de vuelta al Roadmap
-    console.log("🔄 Play Again - Volviendo al Roadmap...");
+    setTimeout(() => {
+      try {
+        game.sound.stopAll();
+      } catch (error) {
+        console.warn(
+          "RemixUtils: error deteniendo audio después de play_again",
+          error
+        );
+      }
 
-    // Obtener el SceneManager
-    const sceneManager = game.scene;
+      const sceneManager = game.scene;
+      const activeScenes = [...sceneManager.getScenes(true)];
 
-    // Ir directamente al Roadmap
-    sceneManager.start("Roadmap");
+      activeScenes.forEach((scene: Phaser.Scene) => {
+        if (scene.scene.key !== "Roadmap") {
+          try {
+            sceneManager.stop(scene.scene.key);
+          } catch (stopError) {
+            console.warn(
+              `RemixUtils: no se pudo detener la escena ${scene.scene.key}`,
+              stopError
+            );
+          }
+        }
+      });
 
-    // Attempt to bring focus back to the game canvas
-    try {
-      game.canvas.focus();
-    } catch (e) {
-      // Could not programmatically focus game canvas
-    }
+      try {
+        sceneManager.start("Roadmap");
+      } catch (startError) {
+        console.error(
+          "RemixUtils: error al iniciar Roadmap tras play_again",
+          startError
+        );
+        window.location.reload();
+        return;
+      }
+
+      try {
+        game.canvas.focus();
+      } catch (focusError) {
+        console.warn(
+          "RemixUtils: no se pudo devolver el foco al canvas",
+          focusError
+        );
+      }
+    }, 0);
   });
 }
 

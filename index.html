@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,22 +15,22 @@
     <title>GAME_NAME</title>
 
     <!-- Farcade SDK - Must be loaded before the game -->
-    <script src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"></script>
-
-    <!-- Phaser Game Engine -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/@farcade/game-sdk@latest/dist/index.min.js"
+    ></script>
 
     <!-- Google Fonts - Bangers -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Bangers&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bangers&family=Pixelify+Sans:wght@400;700&display=swap"
       rel="stylesheet"
     />
     <!-- Custom Fonts - Preload for better performance -->
     <link
       rel="preload"
-      href="./assets/fonts/Fobble_regular-Regular.otf"
+      href="./assets/fonts/TT-Trailers-ExtraBold.otf"
       as="font"
       type="font/otf"
       crossorigin
@@ -52,6 +52,10 @@
         justify-content: center;
         align-items: center;
         background-color: #1a1a1a;
+        /* Prevenir zoom en Android */
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+        text-size-adjust: 100%;
       }
 
       body {
@@ -67,13 +71,18 @@
         outline: none;
         margin: 0;
         display: block;
+        /* Eliminar width/height 100% para prevenir distorsión */
         max-width: 100%;
         max-height: 100%;
+        /* Mantener aspecto ratio */
+        object-fit: contain;
         /* Prevenir problemas de touch en móvil */
         touch-action: none;
         -webkit-touch-callout: none;
         -webkit-user-select: none;
         user-select: none;
+        /* Renderizado suave para sprites de alta resolución */
+        image-rendering: auto;
       }
 
       /* Viewport específico para iOS */

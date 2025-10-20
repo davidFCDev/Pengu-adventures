@@ -5,6 +5,7 @@ export class LifeSystem {
   private currentLives: number = 3;
   private maxLives: number = 3;
   private headerBackground: Phaser.GameObjects.Rectangle;
+  private headerBorder!: Phaser.GameObjects.Graphics; // Borde del header - estilo Pudgy
 
   // Contadores en el header
   private miniPinguCountContainer?: Phaser.GameObjects.Container;
@@ -28,8 +29,8 @@ export class LifeSystem {
   private bossHealthBarBorder?: Phaser.GameObjects.Graphics;
   private bossNameText?: Phaser.GameObjects.Text;
   private bossHPText?: Phaser.GameObjects.Text; // Texto "HP"
-  private currentBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
-  private maxBossHealth: number = 1; // TEMPORAL PARA TESTEO - antes era 100
+  private currentBossHealth: number = 100;
+  private maxBossHealth: number = 100;
 
   // Botón EXIT (solo visible en niveles normales, no en boss)
   private exitButtonGraphics?: Phaser.GameObjects.Graphics;
@@ -48,17 +49,29 @@ export class LifeSystem {
     this.showCounters = showCounters;
     // Crear contenedor principal
     this.container = scene.add.container(x, y);
-    // Crear fondo del header (más oscuro)
+
+    // Crear fondo del header - estilo Pudgy (matching footer del Roadmap)
     this.headerBackground = scene.add.rectangle(
       0,
       0,
       scene.cameras.main.width,
       80,
-      0x0d0d0d, // Oscuro
-      0.95
+      0xe8f4f8, // Blanco/celeste claro (estilo Pudgy)
+      1
     );
     this.headerBackground.setOrigin(0, 0);
     this.container.add(this.headerBackground);
+
+    // Crear borde inferior negro del header - estilo Pudgy
+    this.headerBorder = scene.add.graphics();
+    this.headerBorder.lineStyle(6, 0x000000, 1);
+    this.headerBorder.beginPath();
+    this.headerBorder.moveTo(0, 80);
+    this.headerBorder.lineTo(scene.cameras.main.width, 80);
+    this.headerBorder.strokePath();
+    this.headerBorder.setScrollFactor(0);
+    this.headerBorder.setDepth(1000);
+    this.container.add(this.headerBorder);
 
     // Crear la textura del corazón si no existe
     this.createHeartTexture();
@@ -145,10 +158,10 @@ export class LifeSystem {
       this.miniPinguIcon.setScale(0.6);
       this.miniPinguCountContainer.add(this.miniPinguIcon);
 
-      // Texto contador "0" con fuente Fobble
+      // Texto contador "0" con fuente TT-Trailers
       this.miniPinguCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "38px", // Aumentado de 28px a 38px
-        fontFamily: "Fobble",
+        fontFamily: "TT-Trailers",
         color: "#FFD700", // Amarillo dorado
         stroke: "#000000",
         strokeThickness: 6, // Aumentado de 5 a 6
@@ -179,10 +192,10 @@ export class LifeSystem {
       this.coinIcon.setScale(0.8); // Aumentado para que se vea bien en el header
       this.coinCountContainer.add(this.coinIcon);
 
-      // Texto contador "0" con fuente Fobble
+      // Texto contador "0" con fuente TT-Trailers
       this.coinCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "38px", // Aumentado de 28px a 38px
-        fontFamily: "Fobble",
+        fontFamily: "TT-Trailers",
         color: "#FFD700",
         stroke: "#000000",
         strokeThickness: 6, // Aumentado de 5 a 6
@@ -243,10 +256,10 @@ export class LifeSystem {
       this.keyIcon.setScale(0.9);
       this.keyCountContainer.add(this.keyIcon);
 
-      // Texto contador "0" con fuente Fobble
+      // Texto contador "0" con fuente TT-Trailers
       this.keyCountText = this.scene.add.text(15, 0, "0", {
         fontSize: "38px", // Aumentado de 28px a 38px
-        fontFamily: "Fobble",
+        fontFamily: "TT-Trailers",
         color: "#FFD700",
         stroke: "#000000",
         strokeThickness: 6, // Aumentado de 5 a 6
@@ -314,7 +327,7 @@ export class LifeSystem {
       0,
       "HP",
       {
-        fontFamily: "Fobble",
+        fontFamily: "TT-Trailers",
         fontSize: "36px", // Aumentado de 26px a 36px
         color: "#ffffff",
         stroke: "#000000",
@@ -331,7 +344,7 @@ export class LifeSystem {
       0,
       "BOSS",
       {
-        fontFamily: "Fobble",
+        fontFamily: "TT-Trailers",
         fontSize: "36px", // Aumentado de 26px a 36px (mismo que HP)
         color: "#ffaa00", // Color naranja/dorado
         stroke: "#000000",
@@ -381,8 +394,8 @@ export class LifeSystem {
       buttonY + buttonHeight / 2,
       "EXIT",
       {
-        fontFamily: "Fobble",
-        fontSize: "24px",
+        fontFamily: "TT-Trailers",
+        fontSize: "30px", // Aumentado de 24px a 30px
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 4,
@@ -638,6 +651,15 @@ export class LifeSystem {
   // Actualizar posición del header cuando cambie el tamaño de la cámara
   public updatePosition(): void {
     this.headerBackground.setSize(this.scene.cameras.main.width, 80);
+
+    // Actualizar borde del header - estilo Pudgy
+    this.headerBorder.clear();
+    this.headerBorder.lineStyle(6, 0x000000, 1);
+    this.headerBorder.beginPath();
+    this.headerBorder.moveTo(0, 80);
+    this.headerBorder.lineTo(this.scene.cameras.main.width, 80);
+    this.headerBorder.strokePath();
+
     // Reposicionar corazones
     const heartSpacing = 50;
     const startX =

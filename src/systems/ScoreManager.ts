@@ -60,16 +60,45 @@ class ScoreManagerClass {
       console.log("📊 ScoreManager: SDK de Farcade detectado");
       this.isSDKReady = true;
 
-      // Escuchar actualizaciones del estado del juego
+      // 🎮 Escuchar evento personalizado de estado inicial desde RemixUtils
+      window.addEventListener("farcade_initial_state_loaded", ((
+        event: CustomEvent
+      ) => {
+        console.log("📊 ScoreManager: Estado inicial recibido desde ready()");
+        if (event.detail) {
+          console.log(
+            "✅ ScoreManager: Cargando estado inicial:",
+            event.detail
+          );
+          this.loadFromSDK(event.detail);
+        }
+      }) as EventListener);
+
+      // 📡 Escuchar actualizaciones del estado del juego (cuando se guarda con saveGameState)
       window.FarcadeSDK.on("game_state_updated", (event: any) => {
         console.log(
           "📊 ScoreManager: Estado del juego actualizado desde SDK",
           event
         );
-        this.loadFromSDK(event.data);
+
+        // Si hay datos, cargarlos (puede venir como event.gameState o event.data)
+        const gameState = event?.gameState || event?.data;
+        if (gameState) {
+          console.log("✅ ScoreManager: Cargando datos del SDK:", gameState);
+          this.loadFromSDK(gameState);
+        } else {
+          console.log("📊 ScoreManager: No hay datos en la actualización");
+        }
       });
 
-      console.log("📊 ScoreManager: Inicializado con SDK");
+      // 🔍 Verificar si ya hay estado inicial disponible (por si initializeSDK se llama después de ready())
+      if ((window as any).__initialGameState) {
+        console.log("📊 ScoreManager: Estado inicial encontrado en window");
+        this.loadFromSDK((window as any).__initialGameState);
+        delete (window as any).__initialGameState; // Limpiar después de cargar
+      }
+
+      console.log("✅ ScoreManager: Inicializado con SDK - esperando datos...");
     } else {
       console.warn("⚠️ ScoreManager: SDK no disponible, usando solo memoria");
       this.isSDKReady = false;
@@ -123,9 +152,10 @@ class ScoreManagerClass {
   /**
    * Guardar score de un nivel
    * Solo guarda si es mejor que el score anterior
-   * Desbloquea automáticamente el siguiente nivel al completar
+   * @param scoreData - Datos del score a guardar
+   * @param unlockNext - Si true, desbloquea el siguiente nivel (por defecto false para game over)
    */
-  public saveScore(scoreData: LevelScore): void {
+  public saveScore(scoreData: LevelScore, unlockNext: boolean = false): void {
     const levelNumber = scoreData.levelNumber;
     const currentBest = this.scores.get(levelNumber);
 
@@ -142,18 +172,20 @@ class ScoreManagerClass {
         `📊 ScoreManager: Nuevo mejor score para Level ${levelNumber}: ${scoreData.score}`
       );
 
-      // Desbloquear el siguiente nivel automáticamente
-      // Niveles: 1-6 → índices: 0-5
-      const currentLevelIndex = levelNumber - 1; // levelNumber es 1-based
-      const nextLevelIndex = currentLevelIndex + 1;
+      // Desbloquear el siguiente nivel solo si se indica explícitamente (completado)
+      if (unlockNext) {
+        // Niveles: 1-6 → índices: 0-5
+        const currentLevelIndex = levelNumber - 1; // levelNumber es 1-based
+        const nextLevelIndex = currentLevelIndex + 1;
 
-      // Si hay un siguiente nivel (máximo 6 niveles, índice 5)
-      if (nextLevelIndex < 6) {
-        if (!this.isLevelUnlocked(nextLevelIndex)) {
-          this.unlockLevel(nextLevelIndex, true); // skipSave=true para guardar solo una vez
-          console.log(
-            `🔓 Nivel ${nextLevelIndex + 1} desbloqueado automáticamente`
-          );
+        // Si hay un siguiente nivel (máximo 6 niveles, índice 5)
+        if (nextLevelIndex < 6) {
+          if (!this.isLevelUnlocked(nextLevelIndex)) {
+            this.unlockLevel(nextLevelIndex, true); // skipSave=true para guardar solo una vez
+            console.log(
+              `🔓 Nivel ${nextLevelIndex + 1} desbloqueado automáticamente`
+            );
+          }
         }
       }
 
@@ -189,13 +221,16 @@ class ScoreManagerClass {
         version: "1.0.0",
       };
 
-      // Guardar en SDK usando multiplayer API (funciona también para single player)
-      window.FarcadeSDK.multiplayer.actions.updateGameState({
-        data: this.gameData,
-        alertUserIds: [], // No necesitamos alertar a otros jugadores
+      // 💾 Guardar en SDK usando la API correcta de SINGLE PLAYER
+      // Esto persiste los datos en el servidor de Remix
+      window.FarcadeSDK.singlePlayer.actions.saveGameState({
+        gameState: this.gameData,
       });
 
-      console.log("✅ ScoreManager: Datos guardados en SDK", this.gameData);
+      console.log(
+        "✅ ScoreManager: Datos guardados en SDK con saveGameState",
+        this.gameData
+      );
     } catch (error) {
       console.error("❌ ScoreManager: Error al guardar en SDK", error);
     }

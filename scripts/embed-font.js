@@ -12,7 +12,7 @@ const fontPath = path.join(
   "public",
   "assets",
   "fonts",
-  "Fobble_regular-Regular.otf"
+  "TT-Trailers-ExtraBold.otf"
 );
 const htmlPath = path.join(rootDir, "dist", "index.html");
 const outputPath = path.join(rootDir, "dist", "index-standalone.html");
@@ -27,9 +27,9 @@ try {
   // Crear CSS con fuente embebida
   const fontCss = `<style>
 @font-face {
-  font-family: "Fobble";
+  font-family: "TT-Trailers";
   src: url(data:font/otf;base64,${fontBase64}) format("opentype");
-  font-weight: normal;
+  font-weight: 800;
   font-style: normal;
   font-display: swap;
 }
@@ -38,10 +38,30 @@ try {
   // Leer HTML
   let html = fs.readFileSync(htmlPath, "utf8");
 
-  // Reemplazar referencias externas por CSS inline
-  html = html.replace(/<link rel="preload"[^>]*Fobble[^>]*>/g, "");
+  // **FIX 1**: Cambiar SDK de @latest a @0.2.1 para compatibilidad Farcade
+  html = html.replace(/@farcade\/game-sdk@latest/g, "@farcade/game-sdk@0.2.1");
+
+  // **FIX 2**: Agregar Phaser CDN si no existe
+  if (!html.includes("phaser.min.js")) {
+    // Insertar después del script del SDK
+    html = html.replace(
+      /(<script[^>]*@farcade\/game-sdk[^>]*><\/script>)/,
+      '$1\n    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>'
+    );
+  }
+
+  // **FIX 3**: Simplificar Google Fonts a solo Bangers (Pixelify Sans no se usa)
   html = html.replace(
-    /<link rel="stylesheet"[^>]*custom-fonts\.css[^>]*>/g,
+    /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Bangers&amp;family=Pixelify\+Sans:[^"]*" rel="stylesheet">/g,
+    '<link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">'
+  );
+
+  // Reemplazar referencias externas por CSS inline
+  html = html.replace(/<link rel="preload"[^>]*TT-Trailers[^>]*>/g, "");
+
+  // Reemplazar <link> de custom-fonts.css con el CSS embebido
+  html = html.replace(
+    /<link rel="stylesheet" href="\.\/assets\/fonts\/custom-fonts\.css">/g,
     fontCss
   );
 

@@ -7,11 +7,16 @@ import { calculateLevelScore, type LevelStats } from "../systems/ScoreSystem";
 import { BaseGameScene, GameSceneConfig } from "./BaseGameScene";
 
 export class Level4 extends BaseGameScene {
-  private coinSystem!: CoinSystem;
   private keySystem!: KeySystem;
   private doorSystem!: DoorSystem;
-  private miniPinguSystem!: MiniPinguSystem;
   private freezableEnemies: FreezableEnemy[] = [];
+
+  /**
+   * Retorna el nÃºmero del nivel (requerido por BaseGameScene)
+   */
+  protected getLevelNumber(): number {
+    return 4;
+  }
 
   constructor() {
     const config: GameSceneConfig = {
@@ -35,15 +40,15 @@ export class Level4 extends BaseGameScene {
       enableSpikeBoxes: true,
       spikeBoxConfig: {
         spikeBoxTileIds: [287], // GID de las cajas con pinchos en el tileset
-        moveInterval: 800, // Pausa más corta (0.8s) para movimiento fluido
-        moveSpeed: 250, // Velocidad de movimiento (más rápido y explosivo)
+        moveInterval: 800, // Pausa mï¿½s corta (0.8s) para movimiento fluido
+        moveSpeed: 250, // Velocidad de movimiento (mï¿½s rï¿½pido y explosivo)
         damage: 1, // Quitar 1 vida
-        knockbackForce: 300, // Fuerza de repulsión
+        knockbackForce: 300, // Fuerza de repulsiï¿½n
       },
       // ?? Habilitar sistema de plataformas temporales
       enableTemporaryPlatforms: true,
       temporaryPlatformConfig: {
-        temporaryPlatformGID: 215, // GID del tile con signo de exclamación
+        temporaryPlatformGID: 215, // GID del tile con signo de exclamaciï¿½n
         disappearDelay: 1000, // 1 segundo antes de desaparecer
         disappearDuration: 300, // 300ms de fade out
         invisibleDuration: 4000, // 4 segundos invisible
@@ -57,9 +62,9 @@ export class Level4 extends BaseGameScene {
       elevatorConfig: {
         leftTileGID: 20, // GID = firstgid(1) + tileID(19)
         rightTileGID: 2, // GID = firstgid(1) + tileID(1)
-        moveSpeed: 100, // Velocidad de movimiento vertical continuo (píxeles/segundo)
+        moveSpeed: 100, // Velocidad de movimiento vertical continuo (pï¿½xeles/segundo)
       },
-      // ?? Habilitar sistema de enemigos acuáticos
+      // ?? Habilitar sistema de enemigos acuï¿½ticos
       enableAquaticEnemies: true,
       aquaticEnemyConfig: {
         manualPositions: [
@@ -84,14 +89,14 @@ export class Level4 extends BaseGameScene {
   }
 
   /**
-   * Método requerido por BaseGameScene
+   * Mï¿½todo requerido por BaseGameScene
    * Crear el mapa y asignar los layers
    */
   protected createMap(): void {
     // Crear el tilemap desde el JSON cargado
     this.tilemap = this.make.tilemap({ key: this.config.tilemapKey });
 
-    // Añadir los tilesets
+    // Aï¿½adir los tilesets
     const tilesets = this.config.tilesets || [];
     tilesets.forEach((tilesetConfig) => {
       this.tilemap.addTilesetImage(tilesetConfig.name, tilesetConfig.imageKey);
@@ -171,9 +176,9 @@ export class Level4 extends BaseGameScene {
       { x: 4352, y: 384 },
       { x: 4608, y: 288 },
     ];
-    this.coinSystem.createCoins(coinPositions);
+    this.coinSystem!.createCoins(coinPositions);
     this.time.delayedCall(100, () => {
-      if (this.player) this.coinSystem.setupPlayerCollision(this.player);
+      if (this.player) this.coinSystem!.setupPlayerCollision(this.player);
     });
   }
 
@@ -192,9 +197,9 @@ export class Level4 extends BaseGameScene {
       { x: 2688, y: 2080 },
       { x: 2848, y: 128 },
     ];
-    this.miniPinguSystem.createMiniPingus(miniPinguPositions);
+    this.miniPinguSystem!.createMiniPingus(miniPinguPositions);
     this.time.delayedCall(100, () => {
-      if (this.player) this.miniPinguSystem.setupPlayerCollision(this.player);
+      if (this.player) this.miniPinguSystem!.setupPlayerCollision(this.player);
     });
   }
 
@@ -245,7 +250,7 @@ export class Level4 extends BaseGameScene {
       );
       this.freezableEnemies.push(enemy);
 
-      // Configurar colisión con el player
+      // Configurar colisiï¿½n con el player
       this.time.delayedCall(100, () => {
         if (this.player) {
           this.physics.add.overlap(
@@ -276,7 +281,7 @@ export class Level4 extends BaseGameScene {
    * Configurar colisiones entre enemigos y proyectiles
    */
   private setupEnemyProjectileCollisions(): void {
-    // Escuchar cuando se crea una nueva snowball y configurar colisión con cada enemigo
+    // Escuchar cuando se crea una nueva snowball y configurar colisiï¿½n con cada enemigo
     this.events.on("snowballCreated", (snowball: any) => {
       this.freezableEnemies.forEach((enemy) => {
         this.physics.add.overlap(
@@ -323,17 +328,17 @@ export class Level4 extends BaseGameScene {
     const timeInSeconds = (this.levelEndTime - this.levelStartTime) / 1000;
 
     const stats: LevelStats = {
-      coinsCollected: this.coinSystem.getCollectedCoins(),
-      totalCoins: this.coinSystem.getTotalCoins(),
-      miniPingusCollected: this.miniPinguSystem.getCollectedMiniPingus(),
-      totalMiniPingus: this.miniPinguSystem.getTotalMiniPingus(),
+      coinsCollected: this.coinSystem!.getCollectedCoins(),
+      totalCoins: this.coinSystem!.getTotalCoins(),
+      miniPingusCollected: this.miniPinguSystem!.getCollectedMiniPingus(),
+      totalMiniPingus: this.miniPinguSystem!.getTotalMiniPingus(),
       timeInSeconds: timeInSeconds,
       livesMissed: this.livesMissedDuringLevel,
     };
 
     const scoreBreakdown = calculateLevelScore(stats);
 
-    console.log("?? Level 4 Score:", scoreBreakdown);
+    console.log("ðŸ“Š Level 4 Score:", scoreBreakdown);
 
     return {
       ...stats,

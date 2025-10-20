@@ -65,32 +65,36 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
   }
 
   private createSnowballGraphic(): void {
-    // Crear una bola de nieve más grande y detallada
+    // Crear una bola de nieve redonda y bien centrada (tamaño reducido)
+    const size = 32; // Reducido de 52 a 32
+    const radius = 14; // Reducido de 24 a 14
+    const center = size / 2; // Centro del canvas (16, 16)
+
     const graphics = this.scene.add.graphics();
 
-    // Bola principal más grande
+    // Bola principal blanca centrada
     graphics.fillStyle(0xffffff);
-    graphics.fillCircle(0, 0, 24); // Más grande: radio 24 en lugar de 16
+    graphics.fillCircle(center, center, radius);
 
     // Borde gris para definición
-    graphics.lineStyle(4, 0xcccccc);
-    graphics.strokeCircle(0, 0, 24);
+    graphics.lineStyle(2, 0xcccccc); // Borde más fino
+    graphics.strokeCircle(center, center, radius);
 
-    // Más detalles de nieve para mayor realismo
+    // Detalles de nieve (ajustados al centro y tamaño reducido)
     graphics.fillStyle(0xeeeeee);
-    graphics.fillCircle(-8, -6, 4);
-    graphics.fillCircle(6, 8, 3);
-    graphics.fillCircle(-3, 10, 3);
-    graphics.fillCircle(10, -4, 2);
-    graphics.fillCircle(-12, 2, 2);
+    graphics.fillCircle(center - 5, center - 4, 2.5);
+    graphics.fillCircle(center + 4, center + 5, 2);
+    graphics.fillCircle(center - 2, center + 6, 2);
+    graphics.fillCircle(center + 6, center - 2, 1.5);
+    graphics.fillCircle(center - 7, center + 1, 1.5);
 
-    // Generar textura más grande
-    graphics.generateTexture("snowball", 52, 52); // 52x52 para la nueva bola
+    // Generar textura con el tamaño correcto
+    graphics.generateTexture("snowball", size, size);
     graphics.destroy();
 
     // Aplicar la textura al sprite
     this.setTexture("snowball");
-    this.setDisplaySize(52, 52);
+    this.setDisplaySize(size, size);
   }
 
   private launch(): void {
@@ -120,7 +124,6 @@ export class Snowball extends Phaser.Physics.Arcade.Sprite {
   private checkTileCollision(obj1: any, obj2: any): boolean {
     // obj2 es el tile, verificar si tiene collision=true
     if (obj2 && obj2.properties) {
-
       return obj2.properties.collision === true;
     }
     // Si no tiene propiedades, no colisionar por defecto

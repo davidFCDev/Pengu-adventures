@@ -16,7 +16,7 @@ export class SnowParticleSystem {
   private surfaceLayer?: Phaser.Tilemaps.TilemapLayer;
   private mapWidth: number = 0;
   private mapHeight: number = 0;
-  private maxSnowflakes: number = 350; // Cantidad total de copos en el mapa (aumentado de 200 a 350)
+  private maxSnowflakes: number = 350; // Cantidad total de copos en el mapa
 
   constructor(
     scene: Phaser.Scene,
@@ -24,6 +24,15 @@ export class SnowParticleSystem {
   ) {
     this.scene = scene;
     this.surfaceLayer = surfaceLayer;
+
+    // 🚀 MOBILE OPTIMIZATION: Reducir partículas drásticamente en móviles
+    if (this.isMobileDevice()) {
+      this.maxSnowflakes = 50; // Reducir de 350 a 50 en móviles (85% menos)
+      console.log(
+        "📱 Mobile detected: Snow particles reduced to",
+        this.maxSnowflakes
+      );
+    }
 
     // Obtener dimensiones del mapa completo
     if (surfaceLayer && surfaceLayer.tilemap) {
@@ -231,5 +240,25 @@ export class SnowParticleSystem {
         snowflake.graphic.destroy();
       }
     }
+  }
+
+  /**
+   * Detectar si el dispositivo es móvil
+   */
+  private isMobileDevice(): boolean {
+    // Verificar por user agent
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobileUA =
+      /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        userAgent
+      );
+
+    // Verificar por touch support
+    const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    // Verificar por ancho de pantalla (menor a 768px se considera móvil)
+    const isNarrowScreen = window.innerWidth < 768;
+
+    return isMobileUA || (hasTouch && isNarrowScreen);
   }
 }
