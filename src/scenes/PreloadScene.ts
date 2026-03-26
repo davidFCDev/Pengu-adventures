@@ -502,7 +502,10 @@ export class PreloadScene extends PreloadSceneBase {
       this.checkTransition(); // Re-evaluar transición tras cargar fuentes
       console.log("✅ TT-Trailers cargada y verificada");
     } catch (error) {
-      console.warn("⚠️ Error/timeout al cargar fuentes en PreloadScene:", error);
+      console.warn(
+        "⚠️ Error/timeout al cargar fuentes en PreloadScene:",
+        error,
+      );
       try {
         await fontLoadWithTimeout(this.loadFontFallback(fontFamily));
         await this.forceFontPaint(fontFamily);
