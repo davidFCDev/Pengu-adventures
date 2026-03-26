@@ -57,15 +57,86 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
         (window as any).__initialGameState =
           gameInfo.initialGameState.gameState;
 
+        // Guardar nivel guardado para que PreloadScene pueda usarlo
+        const savedLevel = (gameInfo.initialGameState.gameState as any)
+          ?.currentLevel;
+        if (savedLevel) {
+          (window as any).__savedLevel = savedLevel;
+          console.log(
+            `📍 RemixUtils: Nivel guardado encontrado: ${savedLevel}`,
+          );
+        }
+
+        // Restaurar score acumulado si existe Y el juego aún no ha empezado
+        const savedAccScore = (gameInfo.initialGameState.gameState as any)
+          ?.accumulatedScore;
+        if (typeof savedAccScore === "number" && !window.__scoreLockedByGame) {
+          window.__accumulatedScore = savedAccScore;
+          console.log(
+            `💰 RemixUtils: Score acumulado restaurado: ${savedAccScore}`,
+          );
+        } else if (window.__scoreLockedByGame) {
+          console.log(
+            `⚠️ RemixUtils: Score NO restaurado (juego ya en progreso)`,
+          );
+        }
+
+        // Restaurar vidas guardadas si existen
+        const savedLives = (gameInfo.initialGameState.gameState as any)?.lives;
+        if (
+          typeof savedLives === "number" &&
+          savedLives >= 1 &&
+          savedLives <= 3
+        ) {
+          window.__currentLives = savedLives;
+          console.log(`❤️ RemixUtils: Vidas restauradas: ${savedLives}`);
+        }
+
         window.dispatchEvent(
           new CustomEvent("farcade_initial_state_loaded", {
             detail: gameInfo.initialGameState.gameState,
-          })
+          }),
         );
       } else {
         console.log(
-          "📊 RemixUtils: No hay estado inicial guardado (nuevo jugador)"
+          "📊 RemixUtils: No hay estado inicial guardado (nuevo jugador)",
         );
+      }
+
+      // También verificar gameState directamente del SDK (nueva API 0.3.0)
+      // Solo si el juego no ha empezado aún
+      if (!window.__scoreLockedByGame) {
+        try {
+          const sdkGameState = window.FarcadeSDK.gameState;
+          if (sdkGameState && (sdkGameState as any).currentLevel) {
+            (window as any).__savedLevel = (sdkGameState as any).currentLevel;
+            console.log(
+              `📍 RemixUtils: Nivel guardado (gameState): ${(sdkGameState as any).currentLevel}`,
+            );
+          }
+          if (
+            sdkGameState &&
+            typeof (sdkGameState as any).accumulatedScore === "number"
+          ) {
+            window.__accumulatedScore = (sdkGameState as any).accumulatedScore;
+            console.log(
+              `💰 RemixUtils: Score acumulado (gameState): ${(sdkGameState as any).accumulatedScore}`,
+            );
+          }
+          if (
+            sdkGameState &&
+            typeof (sdkGameState as any).lives === "number" &&
+            (sdkGameState as any).lives >= 1 &&
+            (sdkGameState as any).lives <= 3
+          ) {
+            window.__currentLives = (sdkGameState as any).lives;
+            console.log(
+              `❤️ RemixUtils: Vidas restauradas (gameState): ${(sdkGameState as any).lives}`,
+            );
+          }
+        } catch (e) {
+          // Ignorar si no está disponible
+        }
       }
     })
     .catch((error) => {
@@ -79,7 +150,7 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
     }
   });
 
-  // Setup play_again handler
+  // Setup play_again handler - reinicia el nivel actual (sin Roadmap)
   window.FarcadeSDK.on("play_again", () => {
     setTimeout(() => {
       try {
@@ -87,35 +158,60 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
       } catch (error) {
         console.warn(
           "RemixUtils: error deteniendo audio después de play_again",
-          error
+          error,
         );
       }
 
       const sceneManager = game.scene;
       const activeScenes = [...sceneManager.getScenes(true)];
 
+      // Encontrar la escena de nivel activa para reiniciarla
+      const levelScene = activeScenes.find(
+        (s: Phaser.Scene) =>
+          s.scene.key.startsWith("Level") || s.scene.key === "FirstBoss",
+      );
+      const targetScene = levelScene?.scene.key;
+
+      // Detener todas las escenas activas
       activeScenes.forEach((scene: Phaser.Scene) => {
-        if (scene.scene.key !== "Roadmap") {
-          try {
-            sceneManager.stop(scene.scene.key);
-          } catch (stopError) {
-            console.warn(
-              `RemixUtils: no se pudo detener la escena ${scene.scene.key}`,
-              stopError
-            );
-          }
+        try {
+          sceneManager.stop(scene.scene.key);
+        } catch (stopError) {
+          console.warn(
+            `RemixUtils: no se pudo detener la escena ${scene.scene.key}`,
+            stopError,
+          );
         }
       });
 
-      try {
-        sceneManager.start("Roadmap");
-      } catch (startError) {
-        console.error(
-          "RemixUtils: error al iniciar Roadmap tras play_again",
-          startError
+      if (targetScene) {
+        // Reiniciar el nivel donde se quedó el jugador
+        try {
+          sceneManager.start(targetScene);
+          console.log(`🔄 play_again: reiniciando ${targetScene}`);
+        } catch (startError) {
+          console.error(
+            `RemixUtils: error al iniciar ${targetScene} tras play_again`,
+            startError,
+          );
+          // Fallback: ir a PreloadScene para carga segura
+          try {
+            sceneManager.start("PreloadScene");
+          } catch {
+            window.location.reload();
+          }
+          return;
+        }
+      } else {
+        // No se encontró escena activa: ir a PreloadScene para carga segura
+        console.log(
+          "🔄 play_again: sin escena activa, volviendo a PreloadScene",
         );
-        window.location.reload();
-        return;
+        try {
+          sceneManager.start("PreloadScene");
+        } catch {
+          window.location.reload();
+        }
       }
 
       try {
@@ -123,7 +219,7 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
       } catch (focusError) {
         console.warn(
           "RemixUtils: no se pudo devolver el foco al canvas",
-          focusError
+          focusError,
         );
       }
     }, 0);

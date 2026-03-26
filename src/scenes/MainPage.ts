@@ -70,42 +70,40 @@ class MainPage extends Phaser.Scene {
 
     // Hacer el fondo responsive
     this.makeBackgroundResponsive();
+
+    // Listen for resize events in development
+    this.scale.on("resize", this.handleResize, this);
   }
 
+  private handleResize = (gameSize: Phaser.Structs.Size): void => {
+    this.makeBackgroundResponsive();
+    // Reposicionar elementos si es necesario
+    if (this.titleLetters.length > 0) {
+      this.repositionElements(gameSize.width, gameSize.height);
+    }
+  };
+
   /**
-   * Hacer que el fondo sea responsive y ocupe todo el height
+   * Hacer que el fondo cubra todo el canvas dinámicamente
    */
   private makeBackgroundResponsive(): void {
-    const { width, height } = this.cameras.main;
+    const canvasWidth = this.cameras.main.width;
+    const canvasHeight = this.cameras.main.height;
 
     // Centrar la imagen en el canvas
-    this.backgroundImage.setPosition(width / 2, height / 2);
+    this.backgroundImage.setPosition(canvasWidth / 2, canvasHeight / 2);
 
     // Obtener las dimensiones originales de la imagen
     const imageWidth = this.backgroundImage.width;
     const imageHeight = this.backgroundImage.height;
 
-    // Calcular la escala necesaria para cubrir toda la pantalla
-    const scaleX = width / imageWidth;
-    const scaleY = height / imageHeight;
-    // Usar Math.max para cubrir todo el height
+    // Calcular la escala necesaria para cubrir todo el canvas
+    const scaleX = canvasWidth / imageWidth;
+    const scaleY = canvasHeight / imageHeight;
     const scale = Math.max(scaleX, scaleY);
 
     // Aplicar la escala
     this.backgroundImage.setScale(scale);
-
-    // Hacer que la imagen se ajuste si cambia el tamaño de la ventana
-    this.scale.on("resize", (gameSize: { width: number; height: number }) => {
-      const newScaleX = gameSize.width / imageWidth;
-      const newScaleY = gameSize.height / imageHeight;
-      const newScale = Math.max(newScaleX, newScaleY);
-
-      this.backgroundImage.setPosition(gameSize.width / 2, gameSize.height / 2);
-      this.backgroundImage.setScale(newScale);
-
-      // Reposicionar título y botón
-      this.repositionElements(gameSize.width, gameSize.height);
-    });
   }
 
   /**

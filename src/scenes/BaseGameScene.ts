@@ -1,5 +1,6 @@
 import { AquaticEnemyManager } from "../objects/enemies/AquaticEnemyManager";
 import { EnemySystem } from "../objects/enemies/EnemyManager";
+import { TipNPC } from "../objects/npcs/TipNPC";
 import { PenguinSprites } from "../objects/player/PenguinSprites";
 import { Player } from "../objects/player/Player";
 import { CoinSystem } from "../systems/CoinSystem";
@@ -13,8 +14,8 @@ import { type LevelStats } from "../systems/ScoreSystem";
 import { SnowParticleSystem } from "../systems/SnowParticleSystem";
 import { SpikeBoxSystem } from "../systems/SpikeBoxSystem";
 import {
-  TemporaryPlatformConfig,
-  TemporaryPlatformSystem,
+    TemporaryPlatformConfig,
+    TemporaryPlatformSystem,
 } from "../systems/TemporaryPlatformSystem";
 import { PlayerStateManager, setupTileMapSystem } from "../systems/tilemap";
 
@@ -220,7 +221,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
           backgroundLayerName,
           ["spritesheet-backgrounds-default"],
           0,
-          0
+          0,
         ) || undefined;
     }
 
@@ -229,8 +230,12 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.config.surfaceLayerName,
       ["spritesheet-tiles-default"],
       0,
-      0
+      0,
     )!;
+
+    if (!this.surfaceLayer) {
+      console.error("❌ surfaceLayer no se pudo crear");
+    }
 
     // Crear layer de objetos
     this.objectsLayer =
@@ -238,7 +243,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
         objectsLayerName,
         ["spritesheet-tiles-default"],
         0,
-        0
+        0,
       ) || undefined;
 
     // Configurar layer de objetos
@@ -271,7 +276,14 @@ export abstract class BaseGameScene extends Phaser.Scene {
     this.livesMissedDuringLevel = 0;
 
     // 1. Crear el mapa específico (implementado por la escena hija)
-    this.createMap();
+    try {
+      this.createMap();
+    } catch (mapError) {
+      console.error("❌ Error creando el mapa:", mapError);
+      // Fallback: volver a Level1 si el mapa falla
+      this.scene.start("Level1");
+      return;
+    }
 
     // 2. Crear las animaciones del pingüino
     PenguinSprites.createAnimations(this);
@@ -297,8 +309,11 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // 8. Configurar la cámara
     this.setupCamera();
 
-    // 10. Posicionar el player basándose en el tile de inicio (después de que todo esté configurado)
+    // 9. Posicionar el player basándose en el tile de inicio (después de que todo esté configurado)
     this.positionPlayerAtStart();
+
+    // 10. Crear NPCs con tips
+    this.createTipNPCs();
 
     // 11. Inicializar música del nivel
     this.setupLevelMusic();
@@ -412,6 +427,47 @@ export abstract class BaseGameScene extends Phaser.Scene {
   }
 
   /**
+   * Crear NPCs con tips en las posiciones marcadas con tip=true
+   * Override este método en las escenas hijas para personalizar mensajes
+   */
+  protected createTipNPCs(): void {
+    if (!this.surfaceLayer) return;
+
+    const tipPositions: Array<{ x: number; y: number }> = [];
+
+    // Buscar tiles con propiedad tip=true en la capa de superficies
+    this.surfaceLayer.forEachTile((tile: Phaser.Tilemaps.Tile) => {
+      if (tile && tile.properties) {
+        const hasTip = this.checkTileProperty(tile, "tip");
+        if (hasTip) {
+          // Posicionar NPC un tile a la derecha
+          const npcX = tile.pixelX + tile.width + tile.width / 2;
+          const npcY = tile.pixelY + tile.height;
+          tipPositions.push({ x: npcX, y: npcY });
+        }
+      }
+    });
+
+    // Crear NPCs en las posiciones encontradas
+    tipPositions.forEach((pos, index) => {
+      // Obtener mensaje personalizado por nivel
+      const message = this.getTipMessage(index);
+      const npc = new TipNPC(this, pos.x, pos.y, message);
+      // Los NPCs se añaden automáticamente a la escena en el constructor
+    });
+
+    console.log(`✨ Creados ${tipPositions.length} NPCs con tips`);
+  }
+
+  /**
+   * Obtener el mensaje del tip para un NPC específico
+   * Override este método en las escenas hijas para personalizar mensajes
+   */
+  protected getTipMessage(index: number): string {
+    return "Hello"; // Mensaje por defecto
+  }
+
+  /**
    * Configurar el sistema automático de tilemap
    */
   private setupTileMapSystem(): void {
@@ -422,7 +478,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this.config.surfaceLayerName,
       this.player.getCursors()!,
       this.player.getWasdKeys(),
-      this.tilemap
+      this.tilemap,
     );
 
     if (layer) {
@@ -502,7 +558,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     if (this.surfaceLayer) {
       this.playerCollider = this.physics.add.collider(
         this.player,
-        this.surfaceLayer
+        this.surfaceLayer,
       );
       this.player.setCollider(this.playerCollider);
     }
@@ -547,7 +603,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
             if (tilesetData.tiles) {
               const localTileId = tile.index - tilesetData.firstgid;
               const tileData = tilesetData.tiles.find(
-                (t: any) => t.id === localTileId
+                (t: any) => t.id === localTileId,
               );
               if (tileData) {
                 tileName = tileData.type || tileData.class || "";
@@ -559,7 +615,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     } catch (error) {
       console.warn(
         "Error al obtener información del tile para auto-configuración:",
-        error
+        error,
       );
     }
 
@@ -702,7 +758,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
               spikeWidth,
               spikeHeight,
               0x000000, // Color negro
-              0 // Alpha 0 = completamente invisible
+              0, // Alpha 0 = completamente invisible
             );
 
             // Añadir física estática
@@ -773,7 +829,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected checkTileProperty(
     tile: Phaser.Tilemaps.Tile,
     property: string,
-    expectedValue: any = true
+    expectedValue: any = true,
   ): boolean {
     if (!tile) return false;
 
@@ -805,7 +861,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
    */
   protected getTilePropertyValue(
     tile: Phaser.Tilemaps.Tile,
-    property: string
+    property: string,
   ): any {
     if (!tile) return null;
 
@@ -882,19 +938,52 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     this.lifeSystem = new LifeSystem(this, 0, 0, showCounters, bossName);
 
+    // Restaurar vidas persistidas entre niveles (si existen)
+    const savedLives = window.__currentLives;
+    if (typeof savedLives === "number" && savedLives >= 1 && savedLives <= 3) {
+      this.lifeSystem.setInitialLives(savedLives);
+    }
+
     // Configurar callbacks de botones (solo en niveles normales, no boss)
     if (!bossName) {
-      // Callback del botón EXIT
-      this.lifeSystem.setExitCallback(() => {
-        // Abandonar el nivel sin guardar progreso y volver al Roadmap
+      // Callback del botón SAVE - enviar score + guardar nivel actual
+      this.lifeSystem.setSaveCallback(() => {
+        const currentLevel = this.scene.key;
+        const currentLives = this.lifeSystem.getCurrentLives();
         console.log(
-          "EXIT button clicked - Returning to Roadmap without saving"
+          `💾 SAVE button clicked - Level: ${currentLevel}, Lives: ${currentLives}`,
         );
 
-        // 🔇 IMPORTANTE: Detener música del nivel antes de ir al Roadmap
-        this.stopCurrentMusic();
+        // Solo enviamos el score ACUMULADO de niveles COMPLETADOS anteriormente.
+        // El nivel actual NO cuenta (evita farmeo de score rejugando).
+        const accumulatedScore = window.__accumulatedScore || 0;
+        console.log(
+          `💰 Score acumulado (niveles anteriores): ${accumulatedScore}`,
+        );
 
-        this.scene.start("Roadmap");
+        try {
+          if (window.FarcadeSDK) {
+            // 1. Guardar estado: nivel actual + score + vidas restantes
+            window.FarcadeSDK.singlePlayer.actions.saveGameState({
+              gameState: {
+                currentLevel,
+                accumulatedScore,
+                lives: currentLives,
+              },
+            });
+            console.log(
+              `✅ Nivel ${currentLevel} guardado (score: ${accumulatedScore}, lives: ${currentLives})`,
+            );
+
+            // 2. Enviar solo score acumulado con gameOver (sin parcial del nivel actual)
+            window.FarcadeSDK.singlePlayer.actions.gameOver({
+              score: accumulatedScore,
+            });
+            console.log(`✅ Score enviado: ${accumulatedScore}`);
+          }
+        } catch (error) {
+          console.error("❌ Error al guardar/enviar:", error);
+        }
       });
     }
 
@@ -919,7 +1008,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       (data: { collected: number; total: number }) => {
         // Actualizar contador visual de monedas
         this.lifeSystem.updateCoinCount(data.collected);
-      }
+      },
     );
 
     // Escuchar evento de recolección de mini-pingüinos (reutilizable para todos los niveles)
@@ -928,7 +1017,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       (data: { collected: number; total: number }) => {
         // Actualizar contador visual de mini-pingüinos
         this.lifeSystem.updateMiniPinguCount(data.collected);
-      }
+      },
     );
 
     // Escuchar evento de recolección de llaves (reutilizable para todos los niveles)
@@ -980,7 +1069,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
         this.spikesGroup,
         this.handleSpikeCollision,
         undefined,
-        this
+        this,
       );
     }
 
@@ -991,7 +1080,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
         this.objectsLayer,
         this.handleObjectCollision,
         undefined,
-        this
+        this,
       );
     }
   }
@@ -1029,6 +1118,9 @@ export abstract class BaseGameScene extends Phaser.Scene {
    * Mostrar modal de Game Over (en lugar de reiniciar directamente)
    */
   private restartLevel(): void {
+    // Game Over: resetear vidas para el próximo intento
+    window.__currentLives = 3;
+
     // Reproducir sonido de game over
     this.sound.play("game_over_sound", {
       volume: 0.6,
@@ -1060,8 +1152,14 @@ export abstract class BaseGameScene extends Phaser.Scene {
       }
       this.gameOverUI = new GameOverUI(this);
 
+      // Pasar score acumulado junto a los stats del nivel
+      const accumulatedScore = window.__accumulatedScore || 0;
+      const statsWithAccumulated = levelStatsWithNumber
+        ? { ...levelStatsWithNumber, accumulatedScore }
+        : { accumulatedScore };
+
       // Mostrar el modal con animación y pasar los stats para envío automático
-      this.gameOverUI.show(levelStatsWithNumber);
+      this.gameOverUI.show(statsWithAccumulated);
     });
   }
 
@@ -1250,7 +1348,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
         const physicsSprite = this.physics.add.sprite(
           centerX,
           centerY - 10,
-          ""
+          "",
         );
         physicsSprite.setVisible(false);
         (physicsSprite.body as Phaser.Physics.Arcade.Body).setSize(60, 80);
@@ -1297,7 +1395,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
           playerX,
           playerY,
           wall.worldX,
-          wall.worldY - 30 // Ajustado para el centro de la montaña
+          wall.worldY - 30, // Ajustado para el centro de la montaña
         );
 
         if (distance <= 200) {
@@ -1362,7 +1460,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
             rotate: { start: 0, end: 360 },
             emitting: false,
             tint: 0xffffff, // Asegurar que sean blancas
-          }
+          },
         );
 
         particles.explode(point.quantity, point.x, point.y);
@@ -1398,7 +1496,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createSpikeBoxSystem(): void {
     if (!this.surfaceLayer) {
       console.warn(
-        "⚠️ No se puede crear sistema de cajas con pinchos: falta surfaceLayer"
+        "⚠️ No se puede crear sistema de cajas con pinchos: falta surfaceLayer",
       );
       return;
     }
@@ -1430,7 +1528,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createTemporaryPlatformSystem(): void {
     if (!this.tilemap || !this.player) {
       console.warn(
-        "⚠️ No se puede crear sistema de plataformas temporales: falta tilemap o player"
+        "⚠️ No se puede crear sistema de plataformas temporales: falta tilemap o player",
       );
       return;
     }
@@ -1440,7 +1538,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // El GID es obligatorio, si no se proporciona mostrar warning
     if (!config.temporaryPlatformGID) {
       console.warn(
-        "⚠️ No se puede crear sistema de plataformas temporales: falta temporaryPlatformGID en la configuración"
+        "⚠️ No se puede crear sistema de plataformas temporales: falta temporaryPlatformGID en la configuración",
       );
       return;
     }
@@ -1449,7 +1547,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this,
       this.tilemap,
       this.player,
-      config as TemporaryPlatformConfig
+      config as TemporaryPlatformConfig,
     );
   }
 
@@ -1459,7 +1557,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createElevatorSystem(): void {
     if (!this.tilemap || !this.surfaceLayer || !this.player) {
       console.warn(
-        "⚠️ No se puede crear sistema de elevadores: falta tilemap, surfaceLayer o player"
+        "⚠️ No se puede crear sistema de elevadores: falta tilemap, surfaceLayer o player",
       );
       return;
     }
@@ -1468,7 +1566,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
 
     if (!config || !config.leftTileGID || !config.rightTileGID) {
       console.warn(
-        "⚠️ No se puede crear sistema de elevadores: faltan leftTileGID y rightTileGID en elevatorConfig"
+        "⚠️ No se puede crear sistema de elevadores: faltan leftTileGID y rightTileGID en elevatorConfig",
       );
       return;
     }
@@ -1491,7 +1589,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createJumpButtonSystem(): void {
     if (!this.tilemap || !this.player) {
       console.warn(
-        "⚠️ No se puede crear sistema de jump buttons: falta tilemap o player"
+        "⚠️ No se puede crear sistema de jump buttons: falta tilemap o player",
       );
       return;
     }
@@ -1515,7 +1613,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createRedButtonSystem(): void {
     if (!this.tilemap || !this.player) {
       console.warn(
-        "⚠️ No se puede crear sistema de botones rojos: falta tilemap o player"
+        "⚠️ No se puede crear sistema de botones rojos: falta tilemap o player",
       );
       return;
     }
@@ -1538,7 +1636,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createAquaticEnemySystem(): void {
     if (!this.player || !this.surfaceLayer) {
       console.warn(
-        "⚠️ No se puede crear sistema de enemigos acuáticos: faltan player o surfaceLayer"
+        "⚠️ No se puede crear sistema de enemigos acuáticos: faltan player o surfaceLayer",
       );
       return;
     }
@@ -1551,7 +1649,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       (!config.manualPositions && (!this.tilemap || !config.aquaticEnemyGID))
     ) {
       console.warn(
-        "⚠️ No se puede crear sistema de enemigos acuáticos: falta configuración (manualPositions o aquaticEnemyGID)"
+        "⚠️ No se puede crear sistema de enemigos acuáticos: falta configuración (manualPositions o aquaticEnemyGID)",
       );
       return;
     }
@@ -1575,7 +1673,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
   protected createEnemySystem(): void {
     if (!this.player || !this.surfaceLayer) {
       console.warn(
-        "⚠️ No se puede crear sistema de enemigos: faltan player o surfaceLayer"
+        "⚠️ No se puede crear sistema de enemigos: faltan player o surfaceLayer",
       );
       return;
     }
@@ -1584,7 +1682,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
       this,
       this.player,
       this.surfaceLayer,
-      this.config.enemyConfig
+      this.config.enemyConfig,
     );
 
     this.enemySystem.initialize(this.config.playerStartPosition);
@@ -1592,7 +1690,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Configurar colisiones con proyectiles si existe el sistema
     if (this.projectileSystem) {
       this.enemySystem.setupProjectileCollisions(
-        this.projectileSystem.getProjectileGroup()
+        this.projectileSystem.getProjectileGroup(),
       );
     }
   }
@@ -1637,7 +1735,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
             this.onLevelEnd();
           },
           undefined,
-          this
+          this,
         );
       }
     });
@@ -1680,7 +1778,25 @@ export abstract class BaseGameScene extends Phaser.Scene {
     }
 
     // Calcular score del nivel
-    const levelScore = this.calculateLevelScore();
+    let levelScore: any = null;
+    try {
+      levelScore = this.calculateLevelScore();
+    } catch (e) {
+      console.error("❌ Error calculando score del nivel:", e);
+    }
+
+    // Acumular score entre niveles
+    const prevAccumulated = window.__accumulatedScore || 0;
+    const thisLevelScore = levelScore?.finalScore || 0;
+    window.__accumulatedScore = prevAccumulated + thisLevelScore;
+    window.__scoreLockedByGame = true; // Asegurar que SDK no sobrescriba
+
+    // Persistir vidas actuales para el siguiente nivel
+    const currentLives = this.lifeSystem.getCurrentLives();
+    window.__currentLives = currentLives;
+    console.log(
+      `💰 Score acumulado: ${prevAccumulated} + ${thisLevelScore} = ${window.__accumulatedScore} (level: ${this.scene.key}) | ❤️ Vidas: ${currentLives}`,
+    );
 
     // Mostrar UI de fin de nivel con un pequeño delay para ver la animación completa
     this.time.delayedCall(300, () => {
@@ -1705,7 +1821,7 @@ export abstract class BaseGameScene extends Phaser.Scene {
     // Si no hay sistemas de coleccionables, no podemos calcular stats
     if (!this.coinSystem || !this.miniPinguSystem) {
       console.warn(
-        "⚠️ No se pueden calcular stats: coinSystem o miniPinguSystem no disponibles"
+        "⚠️ No se pueden calcular stats: coinSystem o miniPinguSystem no disponibles",
       );
       return null;
     }

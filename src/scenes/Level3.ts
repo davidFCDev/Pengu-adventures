@@ -134,32 +134,40 @@ export class Level3 extends BaseGameScene {
 
     // Crear los layers
     if (this.config.backgroundLayerName) {
-      this.backgroundLayer = this.tilemap.createLayer(
-        this.config.backgroundLayerName,
-        ["spritesheet-backgrounds-default"],
-        0,
-        0
-      )!;
+      this.backgroundLayer =
+        this.tilemap.createLayer(
+          this.config.backgroundLayerName,
+          ["spritesheet-backgrounds-default"],
+          0,
+          0,
+        ) || undefined;
     }
 
     this.surfaceLayer = this.tilemap.createLayer(
       this.config.surfaceLayerName,
       ["spritesheet-tiles-default"],
       0,
-      0
+      0,
     )!;
 
-    if (this.config.objectsLayerName) {
-      this.objectsLayer = this.tilemap.createLayer(
-        this.config.objectsLayerName,
-        ["spritesheet-tiles-default"],
-        0,
-        0
-      )!;
+    if (!this.surfaceLayer) {
+      console.error("❌ surfaceLayer no se pudo crear en Level3");
+    }
 
-      // Asegurar que el layer sea visible
-      this.objectsLayer.setVisible(true);
-      this.objectsLayer.setAlpha(1);
+    if (this.config.objectsLayerName) {
+      this.objectsLayer =
+        this.tilemap.createLayer(
+          this.config.objectsLayerName,
+          ["spritesheet-tiles-default"],
+          0,
+          0,
+        ) || undefined;
+
+      // Asegurar que el layer sea visible (solo si se creó correctamente)
+      if (this.objectsLayer) {
+        this.objectsLayer.setVisible(true);
+        this.objectsLayer.setAlpha(1);
+      }
     }
   }
 
@@ -329,7 +337,7 @@ export class Level3 extends BaseGameScene {
         pos.x,
         pos.y,
         surfaceLayer,
-        pos.direction
+        pos.direction,
       );
 
       // Guardar referencia del enemigo
@@ -352,7 +360,7 @@ export class Level3 extends BaseGameScene {
               }
             },
             undefined,
-            this
+            this,
           );
         }
       });
@@ -386,7 +394,7 @@ export class Level3 extends BaseGameScene {
             }
           },
           undefined,
-          this
+          this,
         );
       });
     });
@@ -418,7 +426,7 @@ export class Level3 extends BaseGameScene {
                 iceBlock,
                 undefined,
                 undefined,
-                this
+                this,
               );
 
               // Marcar que este bloque ya tiene collider
@@ -526,5 +534,13 @@ export class Level3 extends BaseGameScene {
       ...scoreBreakdown,
       levelNumber: 3,
     };
+  }
+
+  /**
+   * Personalizar mensajes de tips para Level3
+   */
+  protected getTipMessage(index: number): string {
+    const messages = ["Yellow blocks\ndisappear"];
+    return messages[index] || messages[0];
   }
 }

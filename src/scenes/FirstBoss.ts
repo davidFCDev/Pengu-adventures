@@ -2,6 +2,10 @@
 
 /* START OF COMPILED CODE */
 
+import {
+  calculateBossLevelScore,
+  type BossLevelStats,
+} from "../systems/ScoreSystem";
 import { BaseGameScene, GameSceneConfig } from "./BaseGameScene";
 
 /**
@@ -100,11 +104,11 @@ class FirstBoss extends BaseGameScene {
     const firstBoss = this.add.tilemap("FirstBoss");
     firstBoss.addTilesetImage(
       "spritesheet-backgrounds-default",
-      "spritesheet-backgrounds-default"
+      "spritesheet-backgrounds-default",
     );
     firstBoss.addTilesetImage(
       "spritesheet-tiles-default",
-      "spritesheet-tiles-default"
+      "spritesheet-tiles-default",
     );
 
     // superficies - Layer de colisiones (única capa del nivel)
@@ -112,7 +116,7 @@ class FirstBoss extends BaseGameScene {
       "superficies",
       ["spritesheet-tiles-default"],
       0,
-      offsetY // Desplazar hacia abajo para alinear con la base de la pantalla
+      offsetY, // Desplazar hacia abajo para alinear con la base de la pantalla
     );
 
     // Boss Bat - Sprite del jefe (empieza en frame 10 - primer frame de WAKE)
@@ -121,7 +125,7 @@ class FirstBoss extends BaseGameScene {
       384,
       offsetY + 192,
       "boss-bat-spritesheet",
-      10
+      10,
     );
     bossBat.scaleX = 0.65;
     bossBat.scaleY = 0.65;
@@ -131,6 +135,20 @@ class FirstBoss extends BaseGameScene {
     this.bossBat = bossBat;
 
     this.events.emit("scene-awake");
+  }
+
+  /**
+   * Retorna el número de nivel (6 para el boss)
+   */
+  protected getLevelNumber(): number {
+    return 6;
+  }
+
+  /**
+   * Override - el boss no tiene calculateLevelScore normal
+   */
+  protected calculateLevelScore(): any {
+    return null; // El boss usa onBossDefeated() directamente
   }
 
   /**
@@ -150,7 +168,7 @@ class FirstBoss extends BaseGameScene {
     if (this.surfaceLayer) {
       this.surfaceLayer.setCollisionByProperty({ collides: true });
       console.log(
-        "✅ FirstBoss: Layer de superficies configurado con colisiones"
+        "✅ FirstBoss: Layer de superficies configurado con colisiones",
       );
     }
 
@@ -338,7 +356,7 @@ class FirstBoss extends BaseGameScene {
           blur: 8,
           fill: true,
         },
-      }
+      },
     );
     dangerText.setOrigin(0.5);
     dangerText.setDepth(1000);
@@ -493,7 +511,7 @@ class FirstBoss extends BaseGameScene {
     const drop = this.physics.add.sprite(
       this.bossBat.x,
       this.bossBat.y + 50,
-      "acidDrop"
+      "acidDrop",
     ) as Phaser.Physics.Arcade.Sprite;
 
     // Configurar físicas
@@ -525,7 +543,7 @@ class FirstBoss extends BaseGameScene {
   private createAcidSplash(
     x: number,
     y: number,
-    onPlayer: boolean = false
+    onPlayer: boolean = false,
   ): void {
     console.log("💥 Creando explosión de gota ácida");
 
@@ -657,7 +675,7 @@ class FirstBoss extends BaseGameScene {
     console.log(
       `⚪ Tiempo de batalla: ${battleTime.toFixed(1)}s | Velocidad: ${
         this.snowballSpeed
-      }px/s | Doble: ${spawnDouble}`
+      }px/s | Doble: ${spawnDouble}`,
     );
 
     // Decidir aleatoriamente desde qué lado aparece (0 = izquierda, 1 = derecha)
@@ -672,14 +690,14 @@ class FirstBoss extends BaseGameScene {
     console.log(
       `⚪ Lanzando bola de nieve desde ${
         fromLeft ? "izquierda" : "derecha"
-      } en Y=${surfaceY}`
+      } en Y=${surfaceY}`,
     );
 
     // Crear la bola de nieve
     this.rollingSnowball = this.physics.add.sprite(
       startX,
       surfaceY,
-      "roller-snowball"
+      "roller-snowball",
     );
 
     // Configurar físicas
@@ -725,7 +743,7 @@ class FirstBoss extends BaseGameScene {
         const secondSnowball = this.physics.add.sprite(
           secondStartX,
           surfaceY,
-          "roller-snowball"
+          "roller-snowball",
         );
 
         secondSnowball.setVelocityX(secondVelocityX);
@@ -769,7 +787,7 @@ class FirstBoss extends BaseGameScene {
 
               particle.setPosition(
                 secondSnowball.x + offsetX,
-                secondSnowball.y + offsetY
+                secondSnowball.y + offsetY,
               );
               particle.setDepth(49);
 
@@ -794,7 +812,7 @@ class FirstBoss extends BaseGameScene {
         this.physics.add.overlap(secondSnowball, this.player, () => {
           if (!secondSnowball.active) return;
           console.log(
-            "💥 Jugador golpeado por bola de nieve rodante (segunda)"
+            "💥 Jugador golpeado por bola de nieve rodante (segunda)",
           );
           this.player.takeDamage(secondSnowball.x);
         });
@@ -877,7 +895,7 @@ class FirstBoss extends BaseGameScene {
 
           particle.setPosition(
             this.rollingSnowball.x + offsetX,
-            this.rollingSnowball.y + offsetY
+            this.rollingSnowball.y + offsetY,
           );
           particle.setDepth(49);
 
@@ -1067,7 +1085,7 @@ class FirstBoss extends BaseGameScene {
         this.confusedSprite = this.add.sprite(
           this.bossBat.x,
           this.bossBat.y - 150,
-          "confused-status-spritesheet"
+          "confused-status-spritesheet",
         );
         this.confusedSprite.setScale(0.25); // Reducido a 25% (antes 35%)
         this.confusedSprite.setDepth(1000); // Asegurar que se vea encima
@@ -1130,7 +1148,7 @@ class FirstBoss extends BaseGameScene {
         this.isAttacking = false;
         this.isStunned = false;
         console.log(
-          "✅ Boss de vuelta en posición - Listo para siguiente ataque"
+          "✅ Boss de vuelta en posición - Listo para siguiente ataque",
         );
       },
     });
@@ -1167,7 +1185,7 @@ class FirstBoss extends BaseGameScene {
         snowballCenterX,
         snowballCenterY,
         bossCenterX,
-        bossCenterY
+        bossCenterY,
       );
 
       // Solo destruir la bola cuando esté muy cerca del centro (menos de 60px del centro)
@@ -1206,7 +1224,7 @@ class FirstBoss extends BaseGameScene {
     const currentHealth = this.lifeSystem.getBossHealth();
 
     console.log(
-      `💔 Boss recibe ${damage} de daño. Salud restante: ${currentHealth}`
+      `💔 Boss recibe ${damage} de daño. Salud restante: ${currentHealth}`,
     );
 
     // Verificar si el boss ha sido derrotado
@@ -1277,22 +1295,33 @@ class FirstBoss extends BaseGameScene {
           }
 
           // Calcular tiempo del nivel
-          this.levelEndTime = this.time.now;
+          this.levelEndTime = Date.now();
           const timeInSeconds =
             (this.levelEndTime - this.levelStartTime) / 1000;
 
-          // Crear scoreData para el modal (sin coins ni mini-pingus)
+          // Calcular score con el sistema oficial de boss
+          const bossStats: BossLevelStats = {
+            timeInSeconds,
+            livesMissed: this.livesMissedDuringLevel || 0,
+          };
+          const scoreBreakdown = calculateBossLevelScore(bossStats);
+          console.log("📊 Boss Score:", scoreBreakdown);
+
+          // Acumular score
+          const prevAccumulated = window.__accumulatedScore || 0;
+          window.__accumulatedScore =
+            prevAccumulated + scoreBreakdown.finalScore;
+          console.log(
+            `💰 Score acumulado: ${prevAccumulated} + ${scoreBreakdown.finalScore} = ${window.__accumulatedScore}`,
+          );
+
+          // Crear scoreData para el modal
           const levelScore = {
             timeInSeconds,
             livesMissed: this.livesMissedDuringLevel || 0,
-            coins: 0, // Sin monedas en boss level
-            miniPingus: 0, // Sin mini-pingus en boss level
-            finalScore: Math.max(
-              0,
-              1000 -
-                Math.floor(timeInSeconds) * 10 -
-                this.livesMissedDuringLevel * 100
-            ),
+            timeMultiplier: scoreBreakdown.timeMultiplier,
+            livesMultiplier: scoreBreakdown.livesMultiplier,
+            finalScore: scoreBreakdown.finalScore,
           };
 
           // Pausar la física del juego para que el jugador no pueda morir
@@ -1306,7 +1335,7 @@ class FirstBoss extends BaseGameScene {
                 this,
                 levelScore,
                 "Congratulations!",
-                true // isBossLevel = true
+                true, // isBossLevel = true
               );
               this.levelEndUI.show();
             });
@@ -1334,7 +1363,7 @@ class FirstBoss extends BaseGameScene {
         "🔄 Boss moviendose - X:",
         Math.round(this.bossBat.x),
         "Dir:",
-        this.bossDirection
+        this.bossDirection,
       );
     }
 

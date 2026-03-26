@@ -18,16 +18,25 @@ const config: Phaser.Types.Core.GameConfig = {
   width: GameSettings.canvas.width,
   height: GameSettings.canvas.height,
   scale: {
-    mode: Phaser.Scale.FIT, // FIT mantiene aspect ratio sin distorsión y sin zoom
+    mode: Phaser.Scale.FIT, // FIT mantiene aspect ratio y escala sin distorsión
     parent: document.body,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: GameSettings.canvas.width,
     height: GameSettings.canvas.height,
-    // Mejoras para móvil: expandir para llenar la pantalla
+    // Mejoras para móvil
     expandParent: false, // Desactivado para prevenir zoom en Android
     fullscreenTarget: document.body,
+    // Permitir que el canvas se ajuste al viewport completo
+    min: {
+      width: GameSettings.canvas.width,
+      height: 1080,
+    },
+    max: {
+      width: GameSettings.canvas.width,
+      height: 1600,
+    },
   },
-  backgroundColor: "#1a1a1a",
+  backgroundColor: "#000000", // Negro para letterboxing
   // Scene order: PreloadScene -> MainPage -> Roadmap (Level Select) -> Level1 -> Level2 -> Level3 -> Level4 -> Level5 -> FirstBoss (BOSS)
   scene: [
     PreloadScene,

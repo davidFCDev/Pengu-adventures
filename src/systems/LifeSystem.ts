@@ -4,8 +4,17 @@ export class LifeSystem {
   private hearts: Phaser.GameObjects.Image[] = [];
   private currentLives: number = 3;
   private maxLives: number = 3;
-  private headerBackground: Phaser.GameObjects.Rectangle;
-  private headerBorder!: Phaser.GameObjects.Graphics; // Borde del header - estilo Pudgy
+  private footerBackground: Phaser.GameObjects.Rectangle;
+  private footerBorder!: Phaser.GameObjects.Graphics;
+
+  // Altura del footer y posición base
+  private readonly FOOTER_HEIGHT = 80;
+  private get canvasHeight(): number {
+    return this.scene.cameras.main.height;
+  }
+  private get footerY(): number {
+    return this.canvasHeight - this.FOOTER_HEIGHT;
+  }
 
   // Contadores en el header
   private miniPinguCountContainer?: Phaser.GameObjects.Container;
@@ -32,46 +41,46 @@ export class LifeSystem {
   private currentBossHealth: number = 100;
   private maxBossHealth: number = 100;
 
-  // Botón EXIT (solo visible en niveles normales, no en boss)
-  private exitButtonGraphics?: Phaser.GameObjects.Graphics;
-  private exitButtonText?: Phaser.GameObjects.Text;
-  private exitButtonHitArea?: Phaser.GameObjects.Rectangle;
-  private onExitCallback?: () => void; // Callback para manejar el exit desde la escena
+  // Botón SAVE
+  private saveButtonGraphics?: Phaser.GameObjects.Graphics;
+  private saveButtonText?: Phaser.GameObjects.Text;
+  private saveButtonHitArea?: Phaser.GameObjects.Rectangle;
+  private onSaveCallback?: () => void; // Callback para manejar el save desde la escena
 
   constructor(
     scene: Phaser.Scene,
     x: number = 0,
     y: number = 0,
     showCounters: boolean = true,
-    bossName?: string // Nombre del boss para mostrar en el header
+    bossName?: string, // Nombre del boss para mostrar en el header
   ) {
     this.scene = scene;
     this.showCounters = showCounters;
     // Crear contenedor principal
     this.container = scene.add.container(x, y);
 
-    // Crear fondo del header - estilo Pudgy (matching footer del Roadmap)
-    this.headerBackground = scene.add.rectangle(
+    // Crear fondo del footer - estilo Pudgy (pegado abajo)
+    this.footerBackground = scene.add.rectangle(
       0,
-      0,
+      this.footerY,
       scene.cameras.main.width,
-      80,
+      this.FOOTER_HEIGHT,
       0xe8f4f8, // Blanco/celeste claro (estilo Pudgy)
-      1
+      1,
     );
-    this.headerBackground.setOrigin(0, 0);
-    this.container.add(this.headerBackground);
+    this.footerBackground.setOrigin(0, 0);
+    this.container.add(this.footerBackground);
 
-    // Crear borde inferior negro del header - estilo Pudgy
-    this.headerBorder = scene.add.graphics();
-    this.headerBorder.lineStyle(6, 0x000000, 1);
-    this.headerBorder.beginPath();
-    this.headerBorder.moveTo(0, 80);
-    this.headerBorder.lineTo(scene.cameras.main.width, 80);
-    this.headerBorder.strokePath();
-    this.headerBorder.setScrollFactor(0);
-    this.headerBorder.setDepth(1000);
-    this.container.add(this.headerBorder);
+    // Crear borde superior negro del footer - estilo Pudgy
+    this.footerBorder = scene.add.graphics();
+    this.footerBorder.lineStyle(6, 0x000000, 1);
+    this.footerBorder.beginPath();
+    this.footerBorder.moveTo(0, this.footerY);
+    this.footerBorder.lineTo(scene.cameras.main.width, this.footerY);
+    this.footerBorder.strokePath();
+    this.footerBorder.setScrollFactor(0);
+    this.footerBorder.setDepth(1000);
+    this.container.add(this.footerBorder);
 
     // Crear la textura del corazón si no existe
     this.createHeartTexture();
@@ -87,11 +96,16 @@ export class LifeSystem {
     if (bossName) {
       this.createBossHealthBar(bossName);
     } else {
-      // Solo crear botón EXIT si NO es nivel de boss
-      this.createExitButton();
+      // Crear botón SAVE solo si el usuario tiene el item "save-state"
+      if (window.FarcadeSDK && window.FarcadeSDK.hasItem("save-state")) {
+        console.log("✅ Usuario tiene item 'save-state', mostrando botón SAVE");
+        this.createSaveButton();
+      } else {
+        console.log("ℹ️ Usuario NO tiene item 'save-state', botón SAVE oculto");
+      }
     }
 
-    // Crear los corazones FUERA del header (debajo del header, centrados)
+    // Crear los corazones encima del footer
     this.createHearts();
 
     // Mantener el sistema de vidas fijo en la pantalla
@@ -105,14 +119,13 @@ export class LifeSystem {
   }
 
   /**
-   * Crear corazones FUERA del header, debajo y centrados
+   * Crear corazones en columna vertical, lado izquierdo, centrados en pantalla
    */
   private createHearts(): void {
-    const heartSpacing = 45; // Espacio entre corazones
-    const startX =
-      this.scene.cameras.main.width / 2 -
-      (heartSpacing * (this.maxLives - 1)) / 2;
-    const heartY = 110; // Debajo del header (header = 80px alto)
+    const heartSpacing = 55; // Espacio vertical entre corazones
+    const heartX = 40; // Pegados al lado izquierdo
+    const centerY = this.scene.cameras.main.height / 2;
+    const startY = centerY - (heartSpacing * (this.maxLives - 1)) / 2;
 
     // Debug: verificar que la textura esté cargada
     if (!this.scene.textures.exists("heart_spritesheet")) {
@@ -123,12 +136,12 @@ export class LifeSystem {
     for (let i = 0; i < this.maxLives; i++) {
       // Usar el spritesheet de corazones, frame 0 (corazón lleno)
       const heart = this.scene.add.image(
-        startX + i * heartSpacing,
-        heartY,
+        heartX,
+        startY + i * heartSpacing,
         "heart_spritesheet",
-        0 // Frame 0 = corazón lleno
+        0, // Frame 0 = corazón lleno
       );
-      heart.setScale(1.3); // Reducido ligeramente (antes 1.5)
+      heart.setScale(1.8);
       this.hearts.push(heart);
       this.container.add(heart);
     }
@@ -141,12 +154,12 @@ export class LifeSystem {
     // Posición izquierda con espaciado equilibrado (evenly)
     const headerWidth = this.scene.cameras.main.width;
     const xPosition = headerWidth * 0.25; // 25% del ancho
-    const yPosition = 40; // Centro vertical del header
+    const yPosition = this.footerY + 40; // Centro vertical del footer
 
     // Crear contenedor para el contador de mini-pingüinos (centrado en su posición)
     this.miniPinguCountContainer = this.scene.add.container(
       xPosition,
-      yPosition
+      yPosition,
     );
     this.miniPinguCountContainer.setScrollFactor(0);
     this.miniPinguCountContainer.setDepth(1000);
@@ -178,7 +191,7 @@ export class LifeSystem {
     // Posición central con espaciado equilibrado (evenly)
     const headerWidth = this.scene.cameras.main.width;
     const xPosition = headerWidth * 0.5; // 50% del ancho (centro exacto)
-    const yPosition = 40; // Centro vertical del header
+    const yPosition = this.footerY + 40; // Centro vertical del footer
 
     // Crear contenedor para el contador de monedas (centrado en su posición)
     this.coinCountContainer = this.scene.add.container(xPosition, yPosition);
@@ -230,7 +243,7 @@ export class LifeSystem {
     // Posición derecha con espaciado equilibrado (evenly)
     const headerWidth = this.scene.cameras.main.width;
     const xPosition = headerWidth * 0.75; // 75% del ancho
-    const yPosition = 40; // Centro vertical del header
+    const yPosition = this.footerY + 40; // Centro vertical del footer
 
     // Crear contenedor para el contador de llaves (centrado en su posición)
     this.keyCountContainer = this.scene.add.container(xPosition, yPosition);
@@ -251,7 +264,7 @@ export class LifeSystem {
         -15,
         0,
         "spritesheet-tiles-frames",
-        keyFrame
+        keyFrame,
       );
       this.keyIcon.setScale(0.9);
       this.keyCountContainer.add(this.keyIcon);
@@ -285,7 +298,7 @@ export class LifeSystem {
     // Crear contenedor para la barra de salud del boss
     this.bossHealthContainer = this.scene.add.container(
       this.scene.cameras.main.width / 2,
-      40 // Centro vertical del header
+      this.footerY + 40, // Centro vertical del footer
     );
 
     // Dimensiones de la barra (reducida para mejor centrado)
@@ -300,7 +313,7 @@ export class LifeSystem {
       -barHeight / 2,
       barWidth,
       barHeight,
-      8
+      8,
     );
     this.bossHealthContainer.add(this.bossHealthBarBackground);
 
@@ -317,7 +330,7 @@ export class LifeSystem {
       -barHeight / 2,
       barWidth,
       barHeight,
-      8
+      8,
     );
     this.bossHealthContainer.add(this.bossHealthBarBorder);
 
@@ -333,7 +346,7 @@ export class LifeSystem {
         stroke: "#000000",
         strokeThickness: 7, // Aumentado de 6 a 7
         fontStyle: "bold",
-      }
+      },
     );
     this.bossHPText.setOrigin(1, 0.5); // Alineado desde la derecha para mantener distancia con barra
     this.bossHealthContainer.add(this.bossHPText);
@@ -350,7 +363,7 @@ export class LifeSystem {
         stroke: "#000000",
         strokeThickness: 7, // Aumentado de 6 a 7 (mismo que HP)
         fontStyle: "bold",
-      }
+      },
     );
     this.bossNameText.setOrigin(0, 0.5); // Alineado desde la izquierda para mantener distancia con barra
     this.bossHealthContainer.add(this.bossNameText);
@@ -360,125 +373,125 @@ export class LifeSystem {
   }
 
   /**
-   * Crear botón EXIT (pequeño, rojo, debajo del header a la derecha)
+   * Crear botón SAVE (verde, encima del footer a la derecha)
    */
-  private createExitButton(): void {
-    const buttonWidth = 100;
-    const buttonHeight = 40;
+  private createSaveButton(): void {
+    const buttonWidth = 140;
+    const buttonHeight = 55;
     const buttonX = this.scene.cameras.main.width - buttonWidth - 20; // 20px de margen derecho
-    const buttonY = 90; // Debajo del header de 80px + 10px de margen
+    const buttonY = this.footerY - buttonHeight - 10; // Encima del footer + 10px de margen
 
-    // Crear Graphics para el botón (rectángulo redondeado rojo)
-    this.exitButtonGraphics = this.scene.add.graphics();
-    this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo oscuro
-    this.exitButtonGraphics.fillRoundedRect(
+    // Crear Graphics para el botón (rectángulo redondeado verde)
+    this.saveButtonGraphics = this.scene.add.graphics();
+    this.saveButtonGraphics.fillStyle(0x2d8b2d, 1); // Verde oscuro
+    this.saveButtonGraphics.fillRoundedRect(
       buttonX,
       buttonY,
       buttonWidth,
       buttonHeight,
-      8
+      8,
     );
     // Borde negro
-    this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
-    this.exitButtonGraphics.strokeRoundedRect(
+    this.saveButtonGraphics.lineStyle(3, 0x000000, 1);
+    this.saveButtonGraphics.strokeRoundedRect(
       buttonX,
       buttonY,
       buttonWidth,
       buttonHeight,
-      8
+      8,
     );
 
-    // Texto "EXIT" en blanco
-    this.exitButtonText = this.scene.add.text(
+    // Texto "SAVE" en blanco
+    this.saveButtonText = this.scene.add.text(
       buttonX + buttonWidth / 2,
       buttonY + buttonHeight / 2,
-      "EXIT",
+      "SAVE",
       {
         fontFamily: "TT-Trailers",
-        fontSize: "30px", // Aumentado de 24px a 30px
+        fontSize: "38px",
         color: "#ffffff",
         stroke: "#000000",
-        strokeThickness: 4,
+        strokeThickness: 5,
         fontStyle: "bold",
-      }
+      },
     );
-    this.exitButtonText.setOrigin(0.5, 0.5);
+    this.saveButtonText.setOrigin(0.5, 0.5);
 
-    // Crear área interactiva (hitbox) - IMPORTANTE: necesita fillColor para ser clickable
-    this.exitButtonHitArea = this.scene.add.rectangle(
+    // Crear área interactiva (hitbox)
+    this.saveButtonHitArea = this.scene.add.rectangle(
       buttonX + buttonWidth / 2,
       buttonY + buttonHeight / 2,
       buttonWidth,
       buttonHeight,
-      0x000000, // Color (invisible porque alpha será 0.01)
-      0.01 // Casi invisible pero clickable
+      0x000000,
+      0.01,
     );
-    this.exitButtonHitArea.setInteractive({ useHandCursor: true });
-    this.exitButtonHitArea.setOrigin(0.5, 0.5);
-    this.exitButtonHitArea.setScrollFactor(0); // No se mueve con la cámara
-    this.exitButtonHitArea.setDepth(1001); // Por encima del container (1000)
+    this.saveButtonHitArea.setInteractive({ useHandCursor: true });
+    this.saveButtonHitArea.setOrigin(0.5, 0.5);
+    this.saveButtonHitArea.setScrollFactor(0);
+    this.saveButtonHitArea.setDepth(1001);
 
-    // Hover effect - rojo más oscuro
-    this.exitButtonHitArea.on("pointerover", () => {
-      if (this.exitButtonGraphics) {
-        this.exitButtonGraphics.clear();
-        this.exitButtonGraphics.fillStyle(0x990000, 1); // Rojo más oscuro
-        this.exitButtonGraphics.fillRoundedRect(
+    // Hover effect - verde más oscuro
+    this.saveButtonHitArea.on("pointerover", () => {
+      if (this.saveButtonGraphics) {
+        this.saveButtonGraphics.clear();
+        this.saveButtonGraphics.fillStyle(0x1e6b1e, 1); // Verde más oscuro
+        this.saveButtonGraphics.fillRoundedRect(
           buttonX,
           buttonY,
           buttonWidth,
           buttonHeight,
-          8
+          8,
         );
-        this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
-        this.exitButtonGraphics.strokeRoundedRect(
+        this.saveButtonGraphics.lineStyle(3, 0x000000, 1);
+        this.saveButtonGraphics.strokeRoundedRect(
           buttonX,
           buttonY,
           buttonWidth,
           buttonHeight,
-          8
+          8,
         );
       }
     });
 
-    // Hover out - volver a rojo normal
-    this.exitButtonHitArea.on("pointerout", () => {
-      if (this.exitButtonGraphics) {
-        this.exitButtonGraphics.clear();
-        this.exitButtonGraphics.fillStyle(0xcc0000, 1); // Rojo normal
-        this.exitButtonGraphics.fillRoundedRect(
+    // Hover out - volver a verde normal
+    this.saveButtonHitArea.on("pointerout", () => {
+      if (this.saveButtonGraphics) {
+        this.saveButtonGraphics.clear();
+        this.saveButtonGraphics.fillStyle(0x2d8b2d, 1); // Verde normal
+        this.saveButtonGraphics.fillRoundedRect(
           buttonX,
           buttonY,
           buttonWidth,
           buttonHeight,
-          8
+          8,
         );
-        this.exitButtonGraphics.lineStyle(3, 0x000000, 1);
-        this.exitButtonGraphics.strokeRoundedRect(
+        this.saveButtonGraphics.lineStyle(3, 0x000000, 1);
+        this.saveButtonGraphics.strokeRoundedRect(
           buttonX,
           buttonY,
           buttonWidth,
           buttonHeight,
-          8
+          8,
         );
       }
     });
 
     // Click event - llamar callback si existe
-    this.exitButtonHitArea.on("pointerdown", () => {
-      console.log("EXIT button clicked!"); // Debug
+    this.saveButtonHitArea.on("pointerdown", () => {
+      console.log("💾 SAVE button clicked!");
       // Efecto de escala al hacer click
-      if (this.exitButtonText) {
+      if (this.saveButtonText) {
         this.scene.tweens.add({
-          targets: this.exitButtonText,
+          targets: this.saveButtonText,
           scaleX: 0.9,
           scaleY: 0.9,
           duration: 100,
           yoyo: true,
           onComplete: () => {
             // Ejecutar callback después de la animación
-            if (this.onExitCallback) {
-              this.onExitCallback();
+            if (this.onSaveCallback) {
+              this.onSaveCallback();
             }
           },
         });
@@ -487,22 +500,22 @@ export class LifeSystem {
 
     // NO agregar al container, configurar individualmente
     // Graphics
-    this.exitButtonGraphics.setScrollFactor(0);
-    this.exitButtonGraphics.setDepth(1000);
+    this.saveButtonGraphics.setScrollFactor(0);
+    this.saveButtonGraphics.setDepth(1000);
 
     // Text
-    this.exitButtonText.setScrollFactor(0);
-    this.exitButtonText.setDepth(1001);
+    this.saveButtonText.setScrollFactor(0);
+    this.saveButtonText.setDepth(1001);
 
     // HitArea ya tiene scrollFactor(0) y depth(1001) configurados arriba
   }
 
   /**
-   * Establecer callback para el botón EXIT
-   * @param callback Función a ejecutar cuando se presione EXIT
+   * Establecer callback para el botón SAVE
+   * @param callback Función a ejecutar cuando se presione SAVE
    */
-  public setExitCallback(callback: () => void): void {
-    this.onExitCallback = callback;
+  public setSaveCallback(callback: () => void): void {
+    this.onSaveCallback = callback;
   }
 
   /**
@@ -533,7 +546,7 @@ export class LifeSystem {
       -barHeight / 2 + 2,
       fillWidth - 4,
       barHeight - 4,
-      6
+      6,
     );
   }
 
@@ -581,7 +594,7 @@ export class LifeSystem {
           // Cambiar a corazón vacío (frame 2)
           heart.setFrame(2);
           heart.setAlpha(0.8);
-          heart.setScale(1.5);
+          heart.setScale(1.8);
         },
       });
     }
@@ -607,7 +620,7 @@ export class LifeSystem {
         yoyo: true,
         ease: "Back.easeOut",
         onComplete: () => {
-          heart.setScale(1.5);
+          heart.setScale(1.8);
         },
       });
     }
@@ -619,7 +632,7 @@ export class LifeSystem {
     this.hearts.forEach((heart) => {
       heart.setFrame(0); // Frame 0 = corazón lleno
       heart.setAlpha(1);
-      heart.setScale(1.5);
+      heart.setScale(1.8);
     });
   }
   /**
@@ -631,12 +644,35 @@ export class LifeSystem {
       this.scene.tweens.killTweensOf(heart);
       heart.setFrame(0); // Frame 0 = corazón lleno
       heart.setAlpha(1);
-      heart.setScale(1.5);
+      heart.setScale(1.8);
     });
     this.currentLives = this.maxLives;
   }
   public getCurrentLives(): number {
     return this.currentLives;
+  }
+
+  /**
+   * Establecer vidas iniciales (para persistencia entre niveles)
+   * Actualiza el estado interno y los corazones visuales
+   */
+  public setInitialLives(lives: number): void {
+    const clampedLives = Math.max(0, Math.min(lives, this.maxLives));
+    this.currentLives = clampedLives;
+    // Actualizar los corazones visuales
+    for (let i = 0; i < this.maxLives; i++) {
+      if (this.hearts[i]) {
+        if (i < clampedLives) {
+          this.hearts[i].setFrame(0); // Lleno
+          this.hearts[i].setAlpha(1);
+        } else {
+          this.hearts[i].setFrame(2); // Vacío
+          this.hearts[i].setAlpha(0.8);
+        }
+        this.hearts[i].setScale(1.8);
+      }
+    }
+    console.log(`❤️ Vidas inicializadas: ${clampedLives}/${this.maxLives}`);
   }
   public getMaxLives(): number {
     return this.maxLives;
@@ -648,25 +684,29 @@ export class LifeSystem {
   public destroy(): void {
     this.container.destroy();
   }
-  // Actualizar posición del header cuando cambie el tamaño de la cámara
+  // Actualizar posición del footer cuando cambie el tamaño de la cámara
   public updatePosition(): void {
-    this.headerBackground.setSize(this.scene.cameras.main.width, 80);
+    this.footerBackground.setPosition(0, this.footerY);
+    this.footerBackground.setSize(
+      this.scene.cameras.main.width,
+      this.FOOTER_HEIGHT,
+    );
 
-    // Actualizar borde del header - estilo Pudgy
-    this.headerBorder.clear();
-    this.headerBorder.lineStyle(6, 0x000000, 1);
-    this.headerBorder.beginPath();
-    this.headerBorder.moveTo(0, 80);
-    this.headerBorder.lineTo(this.scene.cameras.main.width, 80);
-    this.headerBorder.strokePath();
+    // Actualizar borde del footer - estilo Pudgy
+    this.footerBorder.clear();
+    this.footerBorder.lineStyle(6, 0x000000, 1);
+    this.footerBorder.beginPath();
+    this.footerBorder.moveTo(0, this.footerY);
+    this.footerBorder.lineTo(this.scene.cameras.main.width, this.footerY);
+    this.footerBorder.strokePath();
 
-    // Reposicionar corazones
-    const heartSpacing = 50;
-    const startX =
-      this.scene.cameras.main.width / 2 -
-      (heartSpacing * (this.maxLives - 1)) / 2;
+    // Reposicionar corazones (columna izquierda, centrados verticalmente)
+    const heartSpacing = 55;
+    const heartX = 40;
+    const centerY = this.scene.cameras.main.height / 2;
+    const startY = centerY - (heartSpacing * (this.maxLives - 1)) / 2;
     this.hearts.forEach((heart, index) => {
-      heart.setPosition(startX + index * heartSpacing, 40);
+      heart.setPosition(heartX, startY + index * heartSpacing);
     });
   }
 }

@@ -201,68 +201,50 @@ class Roadmap extends Phaser.Scene {
       volume: 0.5,
     });
     this.music.play();
+
+    // Listen for resize events
+    this.scale.on("resize", this.handleResize, this);
   }
 
+  private handleResize = (gameSize: Phaser.Structs.Size): void => {
+    this.makeBackgroundResponsive();
+    this.updateFooterPosition();
+  };
+
   /**
-   * Hacer que el fondo sea responsive y ocupe todo el height
+   * Hacer que el fondo cubra todo el canvas dinámicamente sin distorsión
    */
   private makeBackgroundResponsive(): void {
-    const { width, height } = this.cameras.main;
+    const canvasWidth = this.cameras.main.width;
+    const canvasHeight = this.cameras.main.height;
 
     // Centrar la imagen en el canvas
-    this.backgroundImage.setPosition(width / 2, height / 2);
+    this.backgroundImage.setPosition(canvasWidth / 2, canvasHeight / 2);
 
     // Obtener las dimensiones originales de la imagen
     const imageWidth = this.backgroundImage.width;
     const imageHeight = this.backgroundImage.height;
-
-    // 🎨 Calcular aspect ratios
     const imageAspect = imageWidth / imageHeight;
-    const screenAspect = width / height;
+    const screenAspect = canvasWidth / canvasHeight;
 
-    // 📐 Mantener aspect ratio y hacer zoom para cubrir (como object-fit: cover)
-    // Usa la escala que cubra completamente sin estirar
+    // Mantener aspect ratio y hacer zoom para cubrir (como object-fit: cover)
     let scale: number;
     if (screenAspect > imageAspect) {
       // Pantalla más ancha que la imagen: escalar por ancho
-      scale = width / imageWidth;
+      scale = canvasWidth / imageWidth;
     } else {
-      // Pantalla más alta que la imagen: escalar por altura con zoom mínimo
-      scale = height / imageHeight;
+      // Pantalla más alta que la imagen: escalar por altura
+      scale = canvasHeight / imageHeight;
     }
 
-    // 🔍 Aplicar un zoom adicional del 5% para evitar bordes y cubrir mejor
+    // Aplicar un zoom adicional del 5% para evitar bordes
     scale *= 1.05;
 
     // Aplicar la escala uniforme (sin estirar)
     this.backgroundImage.setScale(scale);
 
-    // Posicionar título de manera responsive
-    this.titleText.setPosition(width / 2, 100);
-
-    // Opcional: Hacer que la imagen se ajuste si cambia el tamaño de la ventana
-    this.scale.on("resize", (gameSize: { width: number; height: number }) => {
-      const newScreenAspect = gameSize.width / gameSize.height;
-
-      let newScale: number;
-      if (newScreenAspect > imageAspect) {
-        newScale = gameSize.width / imageWidth;
-      } else {
-        newScale = gameSize.height / imageHeight;
-      }
-
-      // Aplicar zoom del 5%
-      newScale *= 1.05;
-
-      this.backgroundImage.setPosition(gameSize.width / 2, gameSize.height / 2);
-      this.backgroundImage.setScale(newScale);
-
-      // Reposicionar título
-      this.titleText.setPosition(gameSize.width / 2, 100);
-
-      // Reposicionar footer
-      this.updateFooterPosition();
-    });
+    // Posicionar título
+    this.titleText.setPosition(canvasWidth / 2, 100);
   }
 
   /**
@@ -867,12 +849,14 @@ class Roadmap extends Phaser.Scene {
     if (levelIndex >= 1) {
       const { AssetLoader } = await import("../utils/AssetLoader");
 
-      // Show loading text
+      // Show loading text with consistent game style
       const loadingText = this.add
-        .text(384, 512, "Loading...", {
-          fontFamily: "Pixelify Sans",
-          fontSize: "32px",
+        .text(384, 512, "LOADING...", {
+          fontFamily: "TT-Trailers",
+          fontSize: "48px",
           color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 8,
         })
         .setOrigin(0.5);
 

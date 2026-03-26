@@ -1004,7 +1004,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // this.scene.sound.play('wind_sound', { volume: 0.3 });
   }
   /**
-   * Crear efecto de partículas de nieve al caminar - más realista
+   * Crear efecto de burbujas de humo/polvo de nieve al caminar
    */
   private createSnowWalkEffect(): void {
     const currentTime = this.scene.time.now;
@@ -1021,66 +1021,79 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const footY = this.y + 45; // Justo en el nivel del suelo
     // Alternar pie para el próximo paso
     this.isLeftFootStep = !this.isLeftFootStep;
-    // EFECTO 1: Salpicadura inicial de nieve (como si pisara)
-    const splashParticles = this.scene.add.particles(
-      footX,
-      footY,
-      "snow_particle",
-      {
-        speed: { min: 40, max: 120 },
-        scale: { min: 0.4, max: 1.2 },
-        alpha: { start: 0.9, end: 0.1 },
-        lifespan: { min: 400, max: 800 },
-        quantity: { min: 8, max: 12 },
-        // Ángulo en forma de abanico hacia atrás y a los lados
-        angle: this.isFacingRight
-          ? { min: 135, max: 225 } // Hacia la izquierda si mira derecha
-          : { min: -45, max: 45 }, // Hacia la derecha si mira izquierda
-        gravityY: 200, // Gravedad más fuerte para que caigan naturalmente
-        // Sin emitZone específica, usará la posición base
-      }
-    );
-    // EFECTO 2: Polvo/nieve que se levanta (más sutil)
-    const dustParticles = this.scene.add.particles(
+
+    // EFECTO 1: Burbujas de humo/polvo que flotan hacia arriba
+    const smokeParticles = this.scene.add.particles(
       footX,
       footY - 5,
       "snow_particle",
       {
-        speed: { min: 15, max: 40 },
-        scale: { min: 0.2, max: 0.6 },
-        alpha: { start: 0.6, end: 0 },
+        speed: { min: 20, max: 50 },
+        scale: { start: 0.4, end: 1.8 }, // Empiezan pequeñas y se expanden como burbujas
+        alpha: { start: 0.7, end: 0 }, // Se desvanecen gradualmente
         lifespan: { min: 600, max: 1000 },
-        quantity: { min: 4, max: 7 },
-        angle: { min: -30, max: 30 }, // Hacia arriba
-        gravityY: -50, // Gravedad negativa para que floten un poco
-        // Sin emitZone específica, usará la posición base
+        quantity: { min: 4, max: 6 },
+        angle: { min: -60, max: -120 }, // Hacia arriba con variación
+        gravityY: -80, // Flotan hacia arriba
+        frequency: -1, // Solo emite una vez
+        tint: [0xffffff, 0xe8f4ff, 0xd0e8ff], // Tonos blancos/azulados
+        rotate: { min: 0, max: 360 }, // Rotación para efecto de humo
+        emitting: false,
       }
     );
-    // EFECTO 3: Rastro de nieve que cae del pie (acumulación)
-    const trailParticles = this.scene.add.particles(
+
+    // EFECTO 2: Pequeñas partículas de polvo que se dispersan lateralmente
+    const dustParticles = this.scene.add.particles(
       footX,
-      footY - 10,
+      footY,
       "snow_particle",
       {
-        speed: { min: 5, max: 25 },
-        scale: { min: 0.3, max: 0.8 },
-        alpha: { start: 0.7, end: 0.2 },
-        lifespan: { min: 800, max: 1200 },
-        quantity: { min: 3, max: 5 },
-        angle: { min: 80, max: 100 }, // Hacia abajo principalmente
-        gravityY: 150,
-        // Sin emitZone específica, usará la posición base
+        speed: { min: 30, max: 80 },
+        scale: { start: 0.3, end: 0.8 }, // Crecen ligeramente
+        alpha: { start: 0.6, end: 0 },
+        lifespan: { min: 400, max: 700 },
+        quantity: { min: 5, max: 8 },
+        // Se dispersan hacia los lados y ligeramente hacia arriba
+        angle: this.isFacingRight
+          ? { min: 120, max: 180 } // Hacia atrás-izquierda si mira derecha
+          : { min: 0, max: 60 }, // Hacia atrás-derecha si mira izquierda
+        gravityY: -30, // Ligeramente hacia arriba
+        frequency: -1,
+        tint: [0xffffff, 0xf5f5f5, 0xe0e0e0],
+        emitting: false,
       }
     );
-    // Destruir los emisores después de tiempos diferentes para más realismo
-    this.scene.time.delayedCall(150, () => {
-      splashParticles.destroy();
-    });
-    this.scene.time.delayedCall(300, () => {
+
+    // EFECTO 3: Burbujas de nieve que flotan y se expanden suavemente
+    const bubbleParticles = this.scene.add.particles(
+      footX,
+      footY - 8,
+      "snow_particle",
+      {
+        speed: { min: 10, max: 30 },
+        scale: { start: 0.5, end: 2.2 }, // Se expanden como burbujas grandes
+        alpha: { start: 0.5, end: 0 }, // Muy translúcidas
+        lifespan: { min: 800, max: 1200 },
+        quantity: { min: 2, max: 4 },
+        angle: { min: -80, max: -100 }, // Mayormente hacia arriba
+        gravityY: -60, // Flotan suavemente
+        frequency: -1,
+        tint: [0xffffff, 0xf0f8ff],
+        rotate: { min: -180, max: 180 }, // Rotación lenta
+        emitting: false,
+      }
+    );
+
+    // Emitir las partículas una sola vez
+    smokeParticles.explode();
+    dustParticles.explode();
+    bubbleParticles.explode();
+
+    // Destruir los emisores después de que terminen
+    this.scene.time.delayedCall(1300, () => {
+      smokeParticles.destroy();
       dustParticles.destroy();
-    });
-    this.scene.time.delayedCall(500, () => {
-      trailParticles.destroy();
+      bubbleParticles.destroy();
     });
   }
   private updateAnimations(): void {

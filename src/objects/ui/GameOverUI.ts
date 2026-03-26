@@ -1,5 +1,4 @@
 // GameOverUI.ts - Modal de Game Over con estilo similar a LevelEndUI
-import { ScoreManager } from "../../systems/ScoreManager";
 import {
   calculateLevelScore,
   type LevelStats,
@@ -58,7 +57,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       0,
       0,
       this.scene.cameras.main.width,
-      this.scene.cameras.main.height
+      this.scene.cameras.main.height,
     );
     this.background.setScrollFactor(0);
     this.background.setDepth(999);
@@ -77,7 +76,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       centerY - halfHeight,
       modalWidth,
       modalHeight,
-      25 // Bordes más redondeados
+      25, // Bordes más redondeados
     );
     this.modalBackground.lineStyle(8, 0x000000, 1); // Borde más grueso (de 6 a 8)
     this.modalBackground.strokeRoundedRect(
@@ -85,7 +84,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       centerY - halfHeight,
       modalWidth,
       modalHeight,
-      25
+      25,
     );
     this.modalBackground.setScrollFactor(0);
     this.modalBackground.setDepth(1000);
@@ -125,7 +124,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.backButtonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
     this.backButtonGraphics.strokeRoundedRect(
@@ -133,7 +132,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.backButtonGraphics.setScrollFactor(0);
     this.backButtonGraphics.setDepth(1001);
@@ -159,7 +158,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       buttonWidth,
       buttonHeight,
       0x000000,
-      0
+      0,
     );
     this.backButtonHitArea.setInteractive({ useHandCursor: true });
     this.backButtonHitArea.setScrollFactor(0);
@@ -175,7 +174,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.backButtonGraphics.lineStyle(6, 0x000000, 1);
       this.backButtonGraphics.strokeRoundedRect(
@@ -183,7 +182,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.backButtonText.setScale(1.05);
     });
@@ -195,7 +194,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.backButtonGraphics.lineStyle(6, 0x000000, 1);
       this.backButtonGraphics.strokeRoundedRect(
@@ -203,7 +202,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.backButtonText.setScale(1);
     });
@@ -230,7 +229,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.retryButtonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
     this.retryButtonGraphics.strokeRoundedRect(
@@ -238,7 +237,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.retryButtonGraphics.setScrollFactor(0);
     this.retryButtonGraphics.setDepth(1001);
@@ -264,7 +263,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
       buttonWidth,
       buttonHeight,
       0x000000,
-      0
+      0,
     );
     this.retryButtonHitArea.setInteractive({ useHandCursor: true });
     this.retryButtonHitArea.setScrollFactor(0);
@@ -280,7 +279,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.retryButtonGraphics.lineStyle(6, 0x000000, 1);
       this.retryButtonGraphics.strokeRoundedRect(
@@ -288,7 +287,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.retryButtonText.setScale(1.05);
     });
@@ -300,7 +299,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.retryButtonGraphics.lineStyle(6, 0x000000, 1);
       this.retryButtonGraphics.strokeRoundedRect(
@@ -308,7 +307,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.retryButtonText.setScale(1);
     });
@@ -338,59 +337,44 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
   }
 
   /**
-   * Enviar score total al SDK cuando pierdes las 3 vidas
+   * Enviar score al SDK cuando pierdes las 3 vidas (sin persistencia)
    */
   private sendScoreToSDK(currentLevelStats?: any): void {
-    console.log("🎮 Game Over - Enviando score automáticamente al SDK...");
+    console.log("🎮 Game Over - Enviando score al SDK...");
 
-    // Si hay stats del nivel actual, calcular el score y guardarlo
+    let levelScore = 0;
+
+    // Calcular score del nivel actual si hay stats
     if (currentLevelStats && currentLevelStats.levelNumber) {
-      console.log("📊 Stats del nivel actual:", currentLevelStats);
-
-      // Extraer LevelStats sin el levelNumber
-      const { levelNumber, ...levelStats } = currentLevelStats;
-
-      // Calcular el score usando el sistema de puntuación
+      const { levelNumber, accumulatedScore, ...levelStats } =
+        currentLevelStats;
       const scoreBreakdown = calculateLevelScore(levelStats as LevelStats);
-      console.log("🎯 Score calculado para nivel actual:", scoreBreakdown);
-
-      // Crear objeto completo para guardar (con 'score' en vez de 'finalScore')
-      const fullStats = {
-        ...levelStats,
-        ...scoreBreakdown,
-        score: scoreBreakdown.finalScore, // ScoreManager espera 'score', no 'finalScore'
-        levelNumber: levelNumber,
-      };
-
-      console.log("💾 Guardando stats completos:", fullStats);
-      // NO desbloquear siguiente nivel cuando se pierde (unlockNext: false)
-      ScoreManager.saveScore(fullStats, false);
+      levelScore = scoreBreakdown.finalScore;
+      console.log("🎯 Score del nivel:", levelScore);
     }
 
-    // Obtener el score total acumulado (suma de MEJORES scores de TODOS los niveles)
-    const totalScore = ScoreManager.getTotalScore();
-    console.log("💯 Total Score a enviar:", totalScore);
+    // Score total = acumulado (niveles anteriores) + score parcial del nivel actual
+    const accumulatedScore = currentLevelStats?.accumulatedScore || 0;
+    const totalScore = accumulatedScore + levelScore;
+    console.log(
+      `💰 Score total: ${accumulatedScore} (acumulado) + ${levelScore} (nivel) = ${totalScore}`,
+    );
 
-    // ⏱️ IMPORTANTE: Esperar un momento para que updateGameState se complete
-    // antes de enviar gameOver (que puede cerrar la app inmediatamente)
+    // Enviar al SDK con gameOver (sin guardar estado)
     setTimeout(() => {
-      // Enviar al SDK con gameOver
       if (window.FarcadeSDK) {
         try {
           window.FarcadeSDK.singlePlayer.actions.gameOver({
             score: totalScore,
           });
-          console.log(
-            "✅ Score enviado al SDK después de guardar:",
-            totalScore
-          );
+          console.log("✅ Score enviado al SDK:", totalScore);
         } catch (error) {
           console.error("❌ Error al enviar score al SDK:", error);
         }
       } else {
         console.warn("⚠️ SDK no disponible - Score no enviado");
       }
-    }, 500); // 500ms debería ser suficiente para que updateGameState se complete
+    }, 300);
   }
 
   public show(currentLevelStats?: any): void {
@@ -398,7 +382,7 @@ export default class GameOverUI extends Phaser.GameObjects.Container {
     // Solo enviamos el score al SDK, NO mostramos ningún modal
     // El SDK mostrará su propia pantalla de "Play Again"
     console.log(
-      "🎮 Game Over - Enviando score y esperando pantalla del SDK..."
+      "🎮 Game Over - Enviando score y esperando pantalla del SDK...",
     );
     this.sendScoreToSDK(currentLevelStats);
 

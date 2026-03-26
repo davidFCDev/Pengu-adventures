@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "Level2.tmx",
+    "activeFile": "testmap.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -37,11 +37,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.25,
+            "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2100,
-                "y": 1164
+                "x": 858,
+                "y": 1340
             }
         },
         "Level1.tmx#spritesheet-backgrounds-default": {
@@ -53,10 +53,10 @@
         },
         "Level2.tmx": {
             "scale": 0.33,
-            "selectedLayer": 3,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 3530.30303030303,
-                "y": 1351.5151515151517
+                "x": 1406.060606060606,
+                "y": 1212.121212121212
             }
         },
         "Level2.tmx#spritesheet-backgrounds-default": {
@@ -70,11 +70,11 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.25,
-            "selectedLayer": 0,
+            "scale": 0.33,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 2632,
-                "y": 1012
+                "x": 3845.454545454545,
+                "y": 1469.6969696969697
             }
         },
         "Level3.tmx#spritesheet-backgrounds-default": {
@@ -88,18 +88,19 @@
             "expandedObjectLayers": [
                 4
             ],
-            "scale": 0.25,
+            "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2460,
-                "y": 1052
+                "x": 2188,
+                "y": 632
             }
         },
         "Level4.tmx#spritesheet-backgrounds-default": {
             "scaleInDock": 0.33
         },
         "Level4.tmx#spritesheet-tiles-default": {
-            "scaleInDock": 0.5
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
         },
         "Level5.tmx": {
             "expandedObjectLayers": [
@@ -108,7 +109,7 @@
             "scale": 0.33,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 2215.151515151515,
+                "x": 3284.848484848485,
                 "y": 1287.8787878787878
             }
         },
@@ -178,6 +179,21 @@
         "TestingMap.tmx#spritesheet-tiles-default": {
             "scaleInDock": 0.5,
             "scaleInEditor": 0.5
+        },
+        "testmap.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 327,
+                "y": 544
+            }
+        },
+        "testmap.tmx#spritesheet-backgrounds-default": {
+            "scaleInDock": 0.5
+        },
+        "testmap.tmx#spritesheet-tiles-default": {
+            "scaleInDock": 0.5,
+            "scaleInEditor": 1
         }
     },
     "last.exportedFilePath": "C:/Users/34664/OneDrive/Escritorio/Proyectos/Remix/05_10-pengu-adventures/assets",
@@ -189,17 +205,18 @@
     "map.tileWidth": 64,
     "map.width": 12,
     "openFiles": [
-        "Level2.tmx"
+        "testmap.tmx"
     ],
     "project": "TileMaps.tiled-project",
     "property.type": "bool",
     "recentFiles": [
+        "testmap.tmx",
+        "Level4.tmx",
+        "Level5.tmx",
+        "Level3.tmx",
         "Level2.tmx",
         "Level1.tmx",
-        "Level5.tmx",
-        "Level4.tmx",
         "FirstBoss.tmx",
-        "Level3.tmx",
         "LevelBaseToCopy.tmx",
         "TestingMap.tmx",
         "LevelBase.tmx",

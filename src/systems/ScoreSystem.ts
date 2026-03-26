@@ -57,6 +57,9 @@ const SCORE_CONSTANTS = {
   COIN_POINTS: 10, // 10 puntos por moneda
   MINI_PINGU_POINTS: 100, // 100 puntos por mini-pingu (10x más que una moneda)
 
+  // Bonus mínimo por completar un nivel (garantiza score > 0)
+  COMPLETION_BONUS: 50,
+
   // Tiempos objetivo (en segundos) para multiplicadores perfectos
   FAST_TIME_THRESHOLD: 60, // Menos de 1 minuto = multiplicador máximo
   SLOW_TIME_THRESHOLD: 300, // Más de 5 minutos = multiplicador mínimo
@@ -83,7 +86,7 @@ const SCORE_CONSTANTS = {
  */
 function calculateTimeMultiplier(
   timeInSeconds: number,
-  isBossLevel: boolean = false
+  isBossLevel: boolean = false,
 ): number {
   const fastThreshold = isBossLevel
     ? SCORE_CONSTANTS.BOSS_FAST_TIME
@@ -151,8 +154,9 @@ export function calculateLevelScore(stats: LevelStats): ScoreBreakdown {
   const miniPinguPoints =
     stats.miniPingusCollected * SCORE_CONSTANTS.MINI_PINGU_POINTS;
 
-  // 3. Score base (antes de multiplicadores)
-  const baseScore = coinPoints + miniPinguPoints;
+  // 3. Score base = coleccionables + bonus por completar el nivel
+  const baseScore =
+    coinPoints + miniPinguPoints + SCORE_CONSTANTS.COMPLETION_BONUS;
 
   // 4. Calcular multiplicadores
   const timeMultiplier = calculateTimeMultiplier(stats.timeInSeconds, false);

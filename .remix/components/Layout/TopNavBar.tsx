@@ -1,92 +1,100 @@
-import React from 'react'
-import { useDashboard } from '../../contexts'
-import { sendRemixCommand } from '../../utils'
-import { cn, tw } from '../../utils/tw'
-import '../../styles/app.css'
+import React from "react";
+import { useDashboard } from "../../contexts";
+import "../../styles/app.css";
+import { sendRemixCommand } from "../../utils";
+import { tw } from "../../utils/tw";
 
 interface TopNavBarProps {
   // Props can be added as needed
 }
 
 export const TopNavBar: React.FC<TopNavBarProps> = () => {
-  const { state, dispatch } = useDashboard()
+  const { state, dispatch } = useDashboard();
 
   const handleRefresh = () => {
     // Find all game iframes and reload them
-    const iframe1 = document.getElementById('game-iframe-1') as HTMLIFrameElement
-    const iframe2 = document.getElementById('game-iframe-2') as HTMLIFrameElement
-    const iframeSingle = document.getElementById('game-iframe') as HTMLIFrameElement
-    
+    const iframe1 = document.getElementById(
+      "game-iframe-1"
+    ) as HTMLIFrameElement;
+    const iframe2 = document.getElementById(
+      "game-iframe-2"
+    ) as HTMLIFrameElement;
+    const iframeSingle = document.getElementById(
+      "game-iframe"
+    ) as HTMLIFrameElement;
+
     // Reload single player iframe
     if (iframeSingle) {
-      iframeSingle.src = iframeSingle.src
+      iframeSingle.src = iframeSingle.src;
     }
-    
+
     // Reload multiplayer iframes
     if (iframe1) {
-      iframe1.src = iframe1.src
+      iframe1.src = iframe1.src;
     }
     if (iframe2) {
-      iframe2.src = iframe2.src
+      iframe2.src = iframe2.src;
     }
-    
+
     // Reset game state in dashboard
     dispatch({
-      type: 'GAME_UPDATE',
+      type: "GAME_UPDATE",
       payload: {
         isGameOver: false,
-        score: 0
-      }
-    })
-    
+        score: 0,
+      },
+    });
+
     // Clear SDK events
     dispatch({
-      type: 'SDK_CLEAR_EVENTS'
-    })
-  }
+      type: "SDK_CLEAR_EVENTS",
+    });
+  };
 
   const handleMuteToggle = () => {
-    const newMutedState = !state.sdk.isMuted
-    
+    const newMutedState = !state.sdk.isMuted;
+
     // First, send command to game to actually toggle mute
-    sendRemixCommand('toggle_mute', { isMuted: newMutedState })
+    sendRemixCommand("toggle_mute", { isMuted: newMutedState });
 
     // Update dashboard state
     dispatch({
-      type: 'SDK_SET_MUTED',
-      payload: newMutedState
-    })
+      type: "SDK_SET_MUTED",
+      payload: newMutedState,
+    });
 
     // Trigger SDK event for dashboard
     dispatch({
-      type: 'SDK_ADD_EVENT',
+      type: "SDK_ADD_EVENT",
       payload: {
-        type: 'toggle_mute',
+        type: "toggle_mute",
         data: { isMuted: newMutedState },
-        timestamp: Date.now()
-      }
-    })
+        timestamp: Date.now(),
+      },
+    });
 
     // Update SDK flags (should persist to show working integration)
     dispatch({
-      type: 'SDK_UPDATE_FLAGS',
-      payload: { toggleMute: true }
-    })
+      type: "SDK_UPDATE_FLAGS",
+      payload: { toggleMute: true },
+    });
 
     // Communicate with game iframe if SDK mock is available
     if (window.__remixSDKMock) {
-      window.__remixSDKMock.triggerMute(newMutedState)
+      window.__remixSDKMock.triggerMute(newMutedState);
     }
-  }
+  };
 
   return (
-    <div className={tw`
+    <div
+      className={tw`
       w-full
       flex justify-end items-center gap-2
       mb-2
-    `}>
-      <button 
-        type="button" 
+    `}
+    >
+      <button
+        type="button"
         className={tw`
           group inline-flex items-center justify-center
           w-8 h-8 rounded-md
@@ -99,20 +107,20 @@ export const TopNavBar: React.FC<TopNavBarProps> = () => {
         title="Refresh game"
         aria-label="Refresh game"
       >
-        <svg 
+        <svg
           className="w-4 h-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] fill-white opacity-80 group-hover:opacity-100 transition-opacity"
-          xmlns="http://www.w3.org/2000/svg" 
-          width="24" 
-          height="24" 
-          viewBox="0 0 24 24" 
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <path d="M13.5 2c-5.621 0-10.211 4.443-10.475 10h-3.025l5 6.625 5-6.625h-2.975c.257-3.351 3.06-6 6.475-6 3.584 0 6.5 2.916 6.5 6.5s-2.916 6.5-6.5 6.5c-1.863 0-3.542-.793-4.728-2.053l-2.427 3.216c1.877 1.754 4.389 2.837 7.155 2.837 5.79 0 10.5-4.71 10.5-10.5s-4.71-10.5-10.5-10.5z"/>
+          <path d="M13.5 2c-5.621 0-10.211 4.443-10.475 10h-3.025l5 6.625 5-6.625h-2.975c.257-3.351 3.06-6 6.475-6 3.584 0 6.5 2.916 6.5 6.5s-2.916 6.5-6.5 6.5c-1.863 0-3.542-.793-4.728-2.053l-2.427 3.216c1.877 1.754 4.389 2.837 7.155 2.837 5.79 0 10.5-4.71 10.5-10.5s-4.71-10.5-10.5-10.5z" />
         </svg>
       </button>
-      
-      <button 
-        type="button" 
+
+      <button
+        type="button"
         className={tw`
           group inline-flex items-center justify-center
           w-8 h-8 rounded-md
@@ -126,12 +134,12 @@ export const TopNavBar: React.FC<TopNavBarProps> = () => {
         aria-label={state.sdk.isMuted ? "Unmute audio" : "Mute audio"}
         aria-pressed={state.sdk.isMuted}
       >
-        <svg 
+        <svg
           className="w-4 h-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)] fill-white opacity-80 group-hover:opacity-100 transition-opacity"
-          xmlns="http://www.w3.org/2000/svg" 
-          width="24" 
-          height="24" 
-          viewBox="0 0 24 24" 
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
           aria-hidden="true"
         >
           {state.sdk.isMuted ? (
@@ -144,14 +152,14 @@ export const TopNavBar: React.FC<TopNavBarProps> = () => {
         </svg>
       </button>
     </div>
-  )
-}
+  );
+};
 
 // Extend window type for SDK mock access
 declare global {
   interface Window {
     __remixSDKMock?: {
-      triggerMute(isMuted: boolean): void
-    }
+      triggerMute(isMuted: boolean): void;
+    };
   }
 }

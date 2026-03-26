@@ -15,6 +15,10 @@ declare const FarcadeSDK: FarcadeSDK;
 declare global {
   interface Window {
     FarcadeSDK?: FarcadeSDK;
+    __accumulatedScore?: number;
+    __currentLives?: number; // Lives persisted across levels (1-3)
+    __savedLevel?: string;
+    __scoreLockedByGame?: boolean; // Prevents SDK from clobbering score after game starts
   }
 }
 

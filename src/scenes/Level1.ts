@@ -285,6 +285,15 @@ class Level1 extends BaseGameScene {
   }
 
   /**
+   * Personalizar mensajes de tips para Level1
+   */
+  protected getTipMessage(index: number): string {
+    // Por ahora solo hay un NPC, pero podemos añadir más mensajes si hay más
+    const messages = ["Jump and don't\nforget the keys!"];
+    return messages[index] || messages[0];
+  }
+
+  /**
    * Método abstracto requerido por BaseGameScene
    * Aquí creamos el tilemap y configuramos los layers
    */

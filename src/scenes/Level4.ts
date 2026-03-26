@@ -104,32 +104,40 @@ export class Level4 extends BaseGameScene {
 
     // Crear los layers
     if (this.config.backgroundLayerName) {
-      this.backgroundLayer = this.tilemap.createLayer(
-        this.config.backgroundLayerName,
-        ["spritesheet-backgrounds-default"],
-        0,
-        0
-      )!;
+      this.backgroundLayer =
+        this.tilemap.createLayer(
+          this.config.backgroundLayerName,
+          ["spritesheet-backgrounds-default"],
+          0,
+          0,
+        ) || undefined;
     }
 
     this.surfaceLayer = this.tilemap.createLayer(
       this.config.surfaceLayerName,
       ["spritesheet-tiles-default"],
       0,
-      0
+      0,
     )!;
 
-    if (this.config.objectsLayerName) {
-      this.objectsLayer = this.tilemap.createLayer(
-        this.config.objectsLayerName,
-        ["spritesheet-tiles-default"],
-        0,
-        0
-      )!;
+    if (!this.surfaceLayer) {
+      console.error("❌ surfaceLayer no se pudo crear en Level4");
+    }
 
-      // Asegurar que el layer sea visible
-      this.objectsLayer.setVisible(true);
-      this.objectsLayer.setAlpha(1);
+    if (this.config.objectsLayerName) {
+      this.objectsLayer =
+        this.tilemap.createLayer(
+          this.config.objectsLayerName,
+          ["spritesheet-tiles-default"],
+          0,
+          0,
+        ) || undefined;
+
+      // Asegurar que el layer sea visible (solo si se creó correctamente)
+      if (this.objectsLayer) {
+        this.objectsLayer.setVisible(true);
+        this.objectsLayer.setAlpha(1);
+      }
     }
   }
 
@@ -246,7 +254,7 @@ export class Level4 extends BaseGameScene {
         pos.x,
         pos.y,
         this.surfaceLayer,
-        index % 2 === 0 ? 1 : -1
+        index % 2 === 0 ? 1 : -1,
       );
       this.freezableEnemies.push(enemy);
 
@@ -267,7 +275,7 @@ export class Level4 extends BaseGameScene {
               }
             },
             undefined,
-            this
+            this,
           );
         }
       });
@@ -298,7 +306,7 @@ export class Level4 extends BaseGameScene {
             }
           },
           undefined,
-          this
+          this,
         );
       });
     });
@@ -345,5 +353,13 @@ export class Level4 extends BaseGameScene {
       ...scoreBreakdown,
       levelNumber: 4,
     };
+  }
+
+  /**
+   * Personalizar mensajes de tips para Level4
+   */
+  protected getTipMessage(index: number): string {
+    const messages = ["Jump and\nclimb fast"];
+    return messages[index] || messages[0];
   }
 }

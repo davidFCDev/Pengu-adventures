@@ -1,4 +1,5 @@
-import { ScoreManager } from "../../systems/ScoreManager";
+// LevelEndUI.ts - UI que se muestra cuando el jugador completa el nivel
+// Sin persistencia de estado - navegación directa al siguiente nivel
 
 /**
  * UI que se muestra cuando el jugador completa el nivel
@@ -16,7 +17,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     scene: Phaser.Scene,
     scoreData?: any,
     titleText?: string,
-    isBossLevel: boolean = false
+    isBossLevel: boolean = false,
   ) {
     super(scene, 0, 0);
     scene.add.existing(this);
@@ -29,7 +30,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       "🎯 LevelEndUI creado - isBossLevel:",
       this.isBossLevel,
       "scoreData:",
-      this.scoreData
+      this.scoreData,
     );
 
     // Fijar al centro de la cámara
@@ -49,7 +50,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       this.scene.cameras.main.width,
       this.scene.cameras.main.height,
       0x000000,
-      0.8 // Aumentado de 0.7 a 0.8 para más contraste
+      0.8, // Aumentado de 0.7 a 0.8 para más contraste
     );
     this.background.setScrollFactor(0);
     this.add(this.background);
@@ -64,7 +65,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       centerY - modalHeight / 2,
       modalWidth,
       modalHeight,
-      25 // Bordes más redondeados
+      25, // Bordes más redondeados
     );
     modalBg.lineStyle(8, 0x000000, 1); // Borde más grueso (de 6 a 8)
     modalBg.strokeRoundedRect(
@@ -72,7 +73,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       centerY - modalHeight / 2,
       modalWidth,
       modalHeight,
-      25
+      25,
     );
     modalBg.setScrollFactor(0);
     this.add(modalBg);
@@ -88,7 +89,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         color: "#ffffff",
         stroke: "#000000",
         strokeThickness: 10, // Aumentado de 8 a 10
-      }
+      },
     );
     completeText.setOrigin(0.5, 0.5);
     completeText.setScrollFactor(0);
@@ -130,7 +131,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       "🪙 Verificando monedas - isBossLevel:",
       this.isBossLevel,
       "coinsCollected:",
-      this.scoreData.coinsCollected
+      this.scoreData.coinsCollected,
     );
     if (!this.isBossLevel && this.scoreData.coinsCollected !== undefined) {
       const coinsText = this.scene.add.text(
@@ -143,7 +144,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
           color: "#FFD700", // Amarillo dorado
           stroke: "#000000",
           strokeThickness: 6, // Aumentado de 5 a 6
-        }
+        },
       );
       coinsText.setOrigin(0.5);
       coinsText.setScrollFactor(0);
@@ -156,7 +157,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       "🐧 Verificando mini-pingus - isBossLevel:",
       this.isBossLevel,
       "miniPingusCollected:",
-      this.scoreData.miniPingusCollected
+      this.scoreData.miniPingusCollected,
     );
     if (!this.isBossLevel && this.scoreData.miniPingusCollected !== undefined) {
       const pinguText = this.scene.add.text(
@@ -169,7 +170,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
           color: "#00D9FF", // Celeste brillante
           stroke: "#000000",
           strokeThickness: 6, // Aumentado de 5 a 6
-        }
+        },
       );
       pinguText.setOrigin(0.5);
       pinguText.setScrollFactor(0);
@@ -186,7 +187,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         startX,
         currentY,
         `Time: ${formatTime(
-          this.scoreData.timeInSeconds
+          this.scoreData.timeInSeconds,
         )}${timeMultiplierText}`,
         {
           fontFamily: "TT-Trailers",
@@ -194,7 +195,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
           color: "#ffffff", // Blanco
           stroke: "#000000",
           strokeThickness: 6, // Aumentado de 5 a 6
-        }
+        },
       );
       timeText.setOrigin(0.5);
       timeText.setScrollFactor(0);
@@ -217,7 +218,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
           color: "#FF6B6B", // Rojo suave
           stroke: "#000000",
           strokeThickness: 6, // Aumentado de 5 a 6
-        }
+        },
       );
       livesText.setOrigin(0.5);
       livesText.setScrollFactor(0);
@@ -247,11 +248,32 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         color: "#ffffff", // Blanco con stroke negro
         stroke: "#000000",
         strokeThickness: 10, // Aumentado de 8 a 10
-      }
+      },
     );
     finalScoreText.setOrigin(0.5);
     finalScoreText.setScrollFactor(0);
     this.add(finalScoreText);
+
+    // 6. Score Total acumulado - amarillo dorado
+    const totalAccumulated = window.__accumulatedScore || 0;
+    if (totalAccumulated > this.scoreData.finalScore) {
+      currentY += 60;
+      const totalScoreText = this.scene.add.text(
+        startX,
+        currentY,
+        `TOTAL: ${totalAccumulated}`,
+        {
+          fontFamily: "TT-Trailers",
+          fontSize: "50px",
+          color: "#FFD700", // Amarillo dorado
+          stroke: "#000000",
+          strokeThickness: 8,
+        },
+      );
+      totalScoreText.setOrigin(0.5);
+      totalScoreText.setScrollFactor(0);
+      this.add(totalScoreText);
+    }
   }
   private createNextButton(x: number, y: number): void {
     // Botón verde menta (primario) - MUCHO MÁS GRANDE
@@ -267,7 +289,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.buttonGraphics.lineStyle(6, 0x000000, 1); // Borde más grueso
     this.buttonGraphics.strokeRoundedRect(
@@ -275,7 +297,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       y - halfHeight,
       buttonWidth,
       buttonHeight,
-      15
+      15,
     );
     this.buttonGraphics.setScrollFactor(0);
     this.buttonGraphics.setDepth(1001);
@@ -302,7 +324,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
       buttonWidth,
       buttonHeight,
       0x000000,
-      0
+      0,
     );
     this.buttonHitArea.setInteractive({ useHandCursor: true });
     this.buttonHitArea.setScrollFactor(0);
@@ -318,7 +340,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.buttonGraphics.lineStyle(6, 0x000000, 1);
       this.buttonGraphics.strokeRoundedRect(
@@ -326,7 +348,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.buttonText.setScale(1.05);
     });
@@ -338,7 +360,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.buttonGraphics.lineStyle(6, 0x000000, 1);
       this.buttonGraphics.strokeRoundedRect(
@@ -346,7 +368,7 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
         y - halfHeight,
         buttonWidth,
         buttonHeight,
-        15
+        15,
       );
       this.buttonText.setScale(1);
     });
@@ -359,73 +381,121 @@ export class LevelEndUI extends Phaser.GameObjects.Container {
     });
   }
   private onNextLevel(): void {
-    // Guardar score si existe
-    if (this.scoreData && this.scoreData.finalScore !== undefined) {
-      // Para boss level, usar levelNumber 6 (FirstBoss es el nivel 6)
-      const levelNumber = this.isBossLevel ? 6 : this.scoreData.levelNumber;
-
-      ScoreManager.saveScore(
-        {
-          levelNumber: levelNumber,
-          score: this.scoreData.finalScore,
-          coinsCollected: this.scoreData.coinsCollected || 0,
-          totalCoins: this.scoreData.totalCoins || 0,
-          miniPingusCollected: this.scoreData.miniPingusCollected || 0,
-          totalMiniPingus: this.scoreData.totalMiniPingus || 0,
-          timeInSeconds: this.scoreData.timeInSeconds,
-          livesMissed: this.scoreData.livesMissed,
-        },
-        true
-      ); // unlockNext: true porque completó el nivel exitosamente
-
-      console.log(
-        `✅ Score guardado para nivel ${levelNumber} (Boss: ${this.isBossLevel})`
-      );
-    }
-
     // Ocultar UI primero
     this.hide();
 
     const currentScene = this.scene;
-    currentScene.time.delayedCall(200, () => {
-      // Si es boss level, siempre volver al Roadmap
-      if (this.isBossLevel) {
-        console.log("🎯 Boss derrotado! Volviendo al Roadmap...");
-        currentScene.scene.start("Roadmap");
-        return;
-      }
+    const centerX = currentScene.cameras.main.width / 2;
+    const centerY = currentScene.cameras.main.height / 2;
 
-      // Para niveles normales, obtener el índice del nivel actual
+    // Mostrar texto "Loading..." mientras se cargan los assets
+    const loadingBg = currentScene.add.rectangle(
+      centerX,
+      centerY,
+      currentScene.cameras.main.width,
+      currentScene.cameras.main.height,
+      0x000000,
+      0.85,
+    );
+    loadingBg.setScrollFactor(0);
+    loadingBg.setDepth(30000);
+
+    const loadingText = currentScene.add.text(
+      centerX,
+      centerY,
+      "LOADING NEXT LEVEL...",
+      {
+        fontFamily: "TT-Trailers",
+        fontSize: "52px",
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 8,
+      },
+    );
+    loadingText.setOrigin(0.5, 0.5);
+    loadingText.setScrollFactor(0);
+    loadingText.setDepth(30001);
+
+    // Animación de puntos parpadeantes
+    currentScene.tweens.add({
+      targets: loadingText,
+      alpha: 0.4,
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+    });
+
+    currentScene.time.delayedCall(200, async () => {
       const sceneKey = currentScene.scene.key;
-      const levelIndex = this.getLevelIndexFromSceneKey(sceneKey);
+      const nextScene = this.getNextSceneKey(sceneKey);
 
-      // Desbloquear el siguiente nivel
-      if (levelIndex !== -1 && levelIndex < 5) {
-        // 0-4 son Level1-5, 5 es FirstBoss
-        console.log(
-          `Level ${levelIndex + 1} completed! Next level: ${levelIndex + 2}`
-        );
+      if (nextScene) {
+        // Cargar assets del siguiente nivel antes de navegar
+        console.log(`📦 Cargando assets de ${nextScene}...`);
+        try {
+          const { AssetLoader } = await import("../../utils/AssetLoader");
+          switch (nextScene) {
+            case "Level2":
+              await AssetLoader.loadLevel2Assets(currentScene);
+              break;
+            case "Level3":
+              await AssetLoader.loadLevel3Assets(currentScene);
+              break;
+            case "Level4":
+              await AssetLoader.loadLevel4Assets(currentScene);
+              break;
+            case "Level5":
+              await AssetLoader.loadLevel5Assets(currentScene);
+              break;
+            case "FirstBoss":
+              await AssetLoader.loadFirstBossAssets(currentScene);
+              break;
+          }
+        } catch (error) {
+          console.error(`❌ Error cargando assets de ${nextScene}:`, error);
+        }
+
+        // Limpiar loading y navegar
+        loadingBg.destroy();
+        loadingText.destroy();
+        console.log(`➡️ Navegando a ${nextScene}...`);
+        currentScene.sound.stopAll();
+        currentScene.scene.start(nextScene);
+      } else {
+        // Último nivel completado (Boss) → enviar score TOTAL acumulado al SDK
+        loadingBg.destroy();
+        loadingText.destroy();
+        console.log("🏆 Juego completado! Enviando score total al SDK...");
+        const totalScore = window.__accumulatedScore || 0;
+        console.log(`💰 Score total acumulado: ${totalScore}`);
+        if (window.FarcadeSDK) {
+          try {
+            window.FarcadeSDK.singlePlayer.actions.gameOver({
+              score: totalScore,
+            });
+          } catch (error) {
+            console.error("❌ Error al enviar score al SDK:", error);
+          }
+        }
       }
-
-      // Redirigir al Roadmap
-      currentScene.scene.start("Roadmap");
     });
   }
 
   /**
-   * Obtiene el índice del nivel (0-5) a partir del scene key
+   * Obtiene la siguiente escena en la progresión de niveles
    */
-  private getLevelIndexFromSceneKey(sceneKey: string): number {
-    const levelMap: { [key: string]: number } = {
-      Level1: 0,
-      Level2: 1,
-      Level3: 2,
-      Level4: 3,
-      Level5: 4,
-      FirstBoss: 5,
+  private getNextSceneKey(currentKey: string): string | null {
+    const progression: { [key: string]: string } = {
+      Level1: "Level2",
+      Level2: "Level3",
+      Level3: "Level4",
+      Level4: "Level5",
+      Level5: "FirstBoss",
     };
-    return levelMap[sceneKey] ?? -1;
+    return progression[currentKey] || null; // FirstBoss no tiene siguiente
   }
+
   public show(): void {
     this.setVisible(true);
 
