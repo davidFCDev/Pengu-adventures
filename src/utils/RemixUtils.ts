@@ -150,7 +150,7 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
     }
   });
 
-  // Setup play_again handler - reinicia el nivel actual (sin Roadmap)
+  // Setup play_again handler - reinicia desde Level1 con score y vidas reseteados
   window.FarcadeSDK.on("play_again", () => {
     setTimeout(() => {
       try {
@@ -162,15 +162,15 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
         );
       }
 
+      // Resetear estado global del run
+      window.__accumulatedScore = 0;
+      window.__currentLives = 3;
+      window.__scoreLockedByGame = false;
+      (window as any).__savedLevel = undefined;
+      console.log("🔄 play_again: score=0, vidas=3, volviendo a PreloadScene");
+
       const sceneManager = game.scene;
       const activeScenes = [...sceneManager.getScenes(true)];
-
-      // Encontrar la escena de nivel activa para reiniciarla
-      const levelScene = activeScenes.find(
-        (s: Phaser.Scene) =>
-          s.scene.key.startsWith("Level") || s.scene.key === "FirstBoss",
-      );
-      const targetScene = levelScene?.scene.key;
 
       // Detener todas las escenas activas
       activeScenes.forEach((scene: Phaser.Scene) => {
@@ -184,34 +184,11 @@ export async function initializeRemixSDK(game: Phaser.Game): Promise<void> {
         }
       });
 
-      if (targetScene) {
-        // Reiniciar el nivel donde se quedó el jugador
-        try {
-          sceneManager.start(targetScene);
-          console.log(`🔄 play_again: reiniciando ${targetScene}`);
-        } catch (startError) {
-          console.error(
-            `RemixUtils: error al iniciar ${targetScene} tras play_again`,
-            startError,
-          );
-          // Fallback: ir a PreloadScene para carga segura
-          try {
-            sceneManager.start("PreloadScene");
-          } catch {
-            window.location.reload();
-          }
-          return;
-        }
-      } else {
-        // No se encontró escena activa: ir a PreloadScene para carga segura
-        console.log(
-          "🔄 play_again: sin escena activa, volviendo a PreloadScene",
-        );
-        try {
-          sceneManager.start("PreloadScene");
-        } catch {
-          window.location.reload();
-        }
+      // Siempre volver a PreloadScene para un arranque limpio desde Level1
+      try {
+        sceneManager.start("PreloadScene");
+      } catch {
+        window.location.reload();
       }
 
       try {

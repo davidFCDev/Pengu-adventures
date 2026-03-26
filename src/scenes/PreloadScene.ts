@@ -454,13 +454,30 @@ export class PreloadScene extends PreloadSceneBase {
     const heavyVariant = `800 140px "${fontFamily}"`;
     const lightVariant = `800 32px "${fontFamily}"`;
 
+    // Timeout de seguridad: en iOS, document.fonts.ready puede colgarse
+    // si Google Fonts u otras fuentes externas no terminan de cargar.
+    const FONT_TIMEOUT_MS = 4000;
+
+    const fontLoadWithTimeout = <T>(promise: Promise<T>): Promise<T> =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Font loading timeout")),
+            FONT_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+
     try {
       if (this.canUseDocumentFonts()) {
-        await Promise.all([
-          document.fonts.ready,
-          document.fonts.load(heavyVariant),
-          document.fonts.load(lightVariant),
-        ]);
+        await fontLoadWithTimeout(
+          Promise.all([
+            document.fonts.ready,
+            document.fonts.load(heavyVariant),
+            document.fonts.load(lightVariant),
+          ]),
+        );
 
         const loadedViaSet =
           document.fonts.check(heavyVariant) ||
@@ -474,10 +491,10 @@ export class PreloadScene extends PreloadSceneBase {
           console.warn(
             "⚠️ TT-Trailers no fue confirmada via FontFaceSet, aplicando fallback",
           );
-          await this.loadFontFallback(fontFamily);
+          await fontLoadWithTimeout(this.loadFontFallback(fontFamily));
         }
       } else {
-        await this.loadFontFallback(fontFamily);
+        await fontLoadWithTimeout(this.loadFontFallback(fontFamily));
       }
 
       await this.forceFontPaint(fontFamily);
@@ -485,9 +502,9 @@ export class PreloadScene extends PreloadSceneBase {
       this.checkTransition(); // Re-evaluar transición tras cargar fuentes
       console.log("✅ TT-Trailers cargada y verificada");
     } catch (error) {
-      console.warn("⚠️ Error al cargar fuentes en PreloadScene:", error);
+      console.warn("⚠️ Error/timeout al cargar fuentes en PreloadScene:", error);
       try {
-        await this.loadFontFallback(fontFamily);
+        await fontLoadWithTimeout(this.loadFontFallback(fontFamily));
         await this.forceFontPaint(fontFamily);
       } catch (fallbackError) {
         console.warn(

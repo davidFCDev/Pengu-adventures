@@ -38,8 +38,8 @@ try {
   // Leer HTML
   let html = fs.readFileSync(htmlPath, "utf8");
 
-  // **FIX 1**: Cambiar SDK de @latest a @0.2.1 para compatibilidad Farcade
-  html = html.replace(/@farcade\/game-sdk@latest/g, "@farcade/game-sdk@0.2.1");
+  // **FIX 1**: Fijar SDK a v0.3.0 (necesario para hasItem, purchase, etc.)
+  html = html.replace(/@farcade\/game-sdk@latest/g, "@farcade/game-sdk@0.3.0");
 
   // **FIX 2**: Agregar Phaser CDN si no existe
   if (!html.includes("phaser.min.js")) {

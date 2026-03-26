@@ -97,11 +97,23 @@ export class LifeSystem {
       this.createBossHealthBar(bossName);
     } else {
       // Crear botón SAVE solo si el usuario tiene el item "save-state"
-      if (window.FarcadeSDK && window.FarcadeSDK.hasItem("save-state")) {
-        console.log("✅ Usuario tiene item 'save-state', mostrando botón SAVE");
-        this.createSaveButton();
-      } else {
-        console.log("ℹ️ Usuario NO tiene item 'save-state', botón SAVE oculto");
+      try {
+        const hasSaveItem =
+          window.FarcadeSDK &&
+          typeof window.FarcadeSDK.hasItem === "function" &&
+          window.FarcadeSDK.hasItem("save-state");
+        if (hasSaveItem) {
+          console.log(
+            "✅ Usuario tiene item 'save-state', mostrando botón SAVE",
+          );
+          this.createSaveButton();
+        } else {
+          console.log(
+            "ℹ️ Usuario NO tiene item 'save-state', botón SAVE oculto",
+          );
+        }
+      } catch (e) {
+        console.warn("⚠️ Error al comprobar hasItem('save-state'):", e);
       }
     }
 
